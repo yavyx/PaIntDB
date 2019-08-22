@@ -1,7 +1,5 @@
 import csv
 
-import pandas as pd
-
 
 def remove_nones(dictionary):
     """Replace None values with 'NA' strings, because NetworkX's GraphML does not accept None values as attributes."""

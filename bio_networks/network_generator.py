@@ -25,8 +25,16 @@ class BioNetwork:
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
         detection_methods = {'computational': 0, 'mixed': 1, 'experimental': 2, 'all': 3}
+
         with sqlite3.connect(DB_PATH) as db_connection:
             cursor = db_connection.cursor()
+            if self._metabolites is True:
+                cursor.execute('SELECT id, kegg, pubchem, cas, chebi, ecocyc FROM metabolite')
+                self._raw_info['metabolite'] = cursor.fetchall()
+                interaction_type = "'p-p', 'p-m', 'm-p'"
+            else:
+                interaction_type = 'p-p'
+
             if detection_methods[self._detection_method] in [0, 1, 2]:
                 # Node info (lists to generate dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
@@ -38,8 +46,9 @@ class BioNetwork:
                                   INNER JOIN interaction
                                   ON interaction_id = interaction.id
                                   WHERE strain = ?
-                                  AND is_experimental = ?""",
-                               [self._strain, detection_methods[self._detection_method]])
+                                  AND is_experimental = ?
+                                  AND type IN (?)""",
+                               [self._strain, detection_methods[self._detection_method], interaction_type])
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
                 # Edge info (dataFrames to merge with the edge list dataFrame)
@@ -58,7 +67,8 @@ class BioNetwork:
                                   FROM interaction_participants 
                                   INNER JOIN interaction
                                   ON interaction_participants.interaction_id = interaction.id 
-                                  WHERE strain = ?""",
+                                  WHERE strain = ?
+                                  AND type = ?""",
                                [self._strain])
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
@@ -84,7 +94,6 @@ class BioNetwork:
                               INNER JOIN protein_localizations
                               ON id = localization_id""")
             self._raw_info['localization'] = cursor.fetchall()
-
         # Change sources ID's to numeric
         self._raw_info['sources'].interaction_id = pd.to_numeric(self._raw_info['sources'].interaction_id,
                                                                  downcast='integer')
@@ -226,7 +235,6 @@ class CombinedNetwork(DENetwork):
 
     def add_significance_source(self):
         """Adds a significance source indicating if it is from RNASeq or TnSeq"""
-
         for node in self._network.nodes():
             if (node in self._de_genes) and (node in self._tnseq_genes):
                 self._network.node[node]['significance_source'] = 'both'
