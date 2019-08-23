@@ -31,12 +31,17 @@ class BioNetwork:
             if self._metabolites is True:
                 cursor.execute('SELECT id, kegg, pubchem, cas, chebi, ecocyc FROM metabolite')
                 self._raw_info['metabolite'] = cursor.fetchall()
-                interaction_type = "'p-p', 'p-m', 'm-p'"
+                interaction_type = ['p-p', 'p-m', 'm-p']
+                # Parameters for safe SQL querying
+                params = [self._strain, detection_methods[self._detection_method]] + interaction_type
+                params_all = [self._strain] + interaction_type
             else:
-                interaction_type = 'p-p'
+                # Only include protein-protein interactions
+                params = [self._strain, detection_methods[self._detection_method], 'p-p']
+                params_all = [self._strain, 'p-p']
 
             if detection_methods[self._detection_method] in [0, 1, 2]:
-                # Node info (lists to generate dictionaries later)
+                # Node info (lists to generate noe attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
                                   FROM interaction_participants
                                   INNER JOIN interaction_sources
@@ -47,11 +52,10 @@ class BioNetwork:
                                   ON interaction_id = interaction.id
                                   WHERE strain = ?
                                   AND is_experimental = ?
-                                  AND type IN (?)""",
-                               [self._strain, detection_methods[self._detection_method], interaction_type])
+                                  AND type IN (%s)""" % ', '.join('?'*len(interaction_type)), params)
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
-                # Edge info (dataFrames to merge with the edge list dataFrame)
+                # Edge info (dataFrame to merge with the edge list dataFrame)
                 self._raw_info['sources'] = pd.read_sql_query("""SELECT is_experimental, interaction_id
                                                                  FROM interaction_source 
                                                                  INNER JOIN interaction_sources
@@ -62,14 +66,13 @@ class BioNetwork:
                                                               params=[detection_methods[self._detection_method]])
 
             elif detection_methods[self._detection_method] == 3:
-                # Node info (lists to generate dictionaries later)
+                # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction_id, type
                                   FROM interaction_participants 
                                   INNER JOIN interaction
                                   ON interaction_participants.interaction_id = interaction.id 
                                   WHERE strain = ?
-                                  AND type = ?""",
-                               [self._strain])
+                                  AND type IN (%s)""" % ', '.join('?'*len(interaction_type)), params_all)
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
                 # Edge info (dataFrames to merge with the edge list dataFrame)
@@ -140,8 +143,9 @@ class BioNetwork:
                                                                  interaction_participants[i+1][0],
                                                                  interaction_participants[i][2])
         if self._order == 0:
-            interactions_of_interest = [interactionID for interactionID, genes in interaction_edges.items()
-                                        if genes[0] in self._genes_of_interest and genes[1] in self._genes_of_interest]
+            interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
+                                        if interactors[0] in self._genes_of_interest
+                                        and interactors[1] in self._genes_of_interest]
         elif self._order == 1:
             if self._metabolites is True:
                 interactions_of_interest = [interactionID for interactionID, genes in interaction_edges.items()
@@ -168,7 +172,8 @@ class BioNetwork:
         nx.set_node_attributes(self._network, db_tidy_info['short_names'])
         nx.set_node_attributes(self._network, db_tidy_info['localization'], name='localization')
 
-        if self._order == 1:  # Label seed proteins in first-order networks.
+        # Label seed proteins in first-order networks.
+        if self._order == 1:
             for node in self._network.nodes():
                 if node in self._genes_of_interest:
                     self._network.node[node]['seed'] = 1
@@ -234,7 +239,7 @@ class CombinedNetwork(DENetwork):
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
 
     def add_significance_source(self):
-        """Adds a significance source indicating if it is from RNASeq or TnSeq"""
+        """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
         for node in self._network.nodes():
             if (node in self._de_genes) and (node in self._tnseq_genes):
                 self._network.node[node]['significance_source'] = 'both'
