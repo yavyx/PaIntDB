@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from collections import defaultdict
 
 import networkx as nx
 import pandas as pd
@@ -30,7 +31,7 @@ class BioNetwork:
             cursor = db_connection.cursor()
             if self._metabolites is True:
                 cursor.execute('SELECT id, kegg, pubchem, cas, chebi, ecocyc FROM metabolite')
-                self._raw_info['metabolite'] = cursor.fetchall()
+                self._raw_info['metabolites'] = cursor.fetchall()
                 interaction_type = ['p-p', 'p-m', 'm-p']
                 # Parameters for safe SQL querying
                 params = [self._strain, detection_methods[self._detection_method]] + interaction_type
@@ -130,11 +131,36 @@ class BioNetwork:
             short_names[key] = helpers.remove_nones(value)
         db_tidy_info['short_names'] = short_names
 
+        if self._metabolites is True:
+            metabolites = self._raw_info['metabolites']
+            metabolite_node_info = dict()
+            for metabolite in metabolites:
+                metabolite_node_info[metabolite[0]] = dict(kegg=metabolite[1],
+                                                           pubchem=metabolite[2],
+                                                           cas=metabolite[3],
+                                                           chebi=metabolite[4],
+                                                           ecocyc=metabolite[5])
+            for key, value in metabolite_node_info.items():
+                metabolite_node_info[key] = helpers.remove_nones(value)
+            db_tidy_info['metabolites'] = metabolite_node_info
+
         return db_tidy_info
+
+    @staticmethod
+    def map_metabolites(edge_list_dict):
+        """Maps metabolites to their corresponding gene."""
+        gene_metabolite_map = defaultdict(list)  # Creates a dictionary with empty lists as default values.
+        for interactors in edge_list_dict.values():
+            if interactors[2] == 'p-m' or interactors[2] == 'm-p':
+                if interactors[0].startswith('PA'):  # Check if first interactor is a gene, if not the second must be.
+                    gene_metabolite_map[interactors[0]].append(interactors[1])
+                else:
+                    gene_metabolite_map[interactors[1]].append(interactors[0])
+        return gene_metabolite_map
 
     def make_edge_list(self):
         """Returns a Pandas edge list dataFrame that can be directly used to generate a network with NetworkX, and
-        filters the genes of interest."""
+        filters the genes of interest. Adds metabolites of interest if needed."""
         interaction_participants = self._raw_info['interaction_participants']
         interaction_edges = dict()
         # Create a dictionary edge list from the list of interactions (two rows per interaction)
@@ -146,15 +172,31 @@ class BioNetwork:
             interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                         if interactors[0] in self._genes_of_interest
                                         and interactors[1] in self._genes_of_interest]
+            if self._metabolites is True:
+                metabolites_of_interest = list()
+                mapped_metabolites = BioNetwork.map_metabolites(interaction_edges)
+                for protein, metabolites in mapped_metabolites.items():
+                    if protein in self._genes_of_interest:
+                        metabolites_of_interest.append(metabolites)
+                # Unnest metabolite list
+                metabolites_of_interest = [metabolite for sublist in metabolites_of_interest for metabolite in sublist]
+
+            interactions_of_interest = [
+                interactionID for interactionID, interactors in interaction_edges.items()
+                if (interactors[0] in self._genes_of_interest or interactors[0] in metabolites_of_interest)
+                and (interactors[1] in self._genes_of_interest or interactors[1] in metabolites_of_interest)
+            ]
+
         elif self._order == 1:
             if self._metabolites is True:
-                interactions_of_interest = [interactionID for interactionID, genes in interaction_edges.items()
-                                            if genes[0] in self._genes_of_interest
-                                            or genes[1] in self._genes_of_interest]
+                interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
+                                            if interactors[0] in self._genes_of_interest
+                                            or interactors[1] in self._genes_of_interest]
             else:
                 interactions_of_interest = [interactionID for interactionID, genes in interaction_edges.items()
                                             if (genes[0] in self._genes_of_interest
-                                                or genes[1] in self._genes_of_interest) and genes[2] == 'p-p']
+                                            or genes[1] in self._genes_of_interest)
+                                            and genes[2] == 'p-p']
         self._interactions_of_interest = interactions_of_interest
 
         edge_list_df = (pd.DataFrame.from_dict(interaction_edges, orient='index',
@@ -171,6 +213,8 @@ class BioNetwork:
         nx.set_node_attributes(self._network, db_tidy_info['proteins'])
         nx.set_node_attributes(self._network, db_tidy_info['short_names'])
         nx.set_node_attributes(self._network, db_tidy_info['localization'], name='localization')
+        if self._metabolites is True:
+            nx.set_node_attributes(self._network, db_tidy_info['metabolites'])
 
         # Label seed proteins in first-order networks.
         if self._order == 1:
