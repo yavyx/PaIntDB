@@ -181,11 +181,12 @@ class BioNetwork:
                 # Unnest metabolite list
                 metabolites_of_interest = [metabolite for sublist in metabolites_of_interest for metabolite in sublist]
 
-            interactions_of_interest = [
-                interactionID for interactionID, interactors in interaction_edges.items()
-                if (interactors[0] in self._genes_of_interest or interactors[0] in metabolites_of_interest)
-                and (interactors[1] in self._genes_of_interest or interactors[1] in metabolites_of_interest)
-            ]
+            # Check which genes/metabolites combinations are of interest.
+                interactions_of_interest = [
+                    interactionID for interactionID, interactors in interaction_edges.items()
+                    if (interactors[0] in self._genes_of_interest or interactors[0] in metabolites_of_interest)
+                    and (interactors[1] in self._genes_of_interest or interactors[1] in metabolites_of_interest)
+                ]
 
         elif self._order == 1:
             if self._metabolites is True:
