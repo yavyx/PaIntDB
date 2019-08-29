@@ -23,6 +23,12 @@ class BioNetwork:
         self._interactions_of_interest = []
         self._network = nx.Graph()
 
+    def get_genes(self):
+        return self._genes_of_interest
+
+    def get_network(self):
+        return self._network
+
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
         detection_methods = {'computational': 0, 'mixed': 1, 'experimental': 2, 'all': 3}
@@ -33,13 +39,12 @@ class BioNetwork:
                 cursor.execute('SELECT id, kegg, pubchem, cas, chebi, ecocyc FROM metabolite')
                 self._raw_info['metabolites'] = cursor.fetchall()
                 interaction_type = ['p-p', 'p-m', 'm-p']
-                # Parameters for safe SQL querying
-                params = [self._strain, detection_methods[self._detection_method]] + interaction_type
-                params_all = [self._strain] + interaction_type
             else:
-                # Only include protein-protein interactions
-                params = [self._strain, detection_methods[self._detection_method], 'p-p']
-                params_all = [self._strain, 'p-p']
+                interaction_type = ['p-p']
+
+            # Parameters for safe SQL querying
+            params = [self._strain, detection_methods[self._detection_method]] + interaction_type
+            params_all = [self._strain] + interaction_type
 
             if detection_methods[self._detection_method] in [0, 1, 2]:
                 # Node info (lists to generate noe attribute dictionaries later)
@@ -203,7 +208,7 @@ class BioNetwork:
         edge_list_df = (pd.DataFrame.from_dict(interaction_edges, orient='index',
                                                columns=['interactor1', 'interactor2', 'type'])
                         .merge(self._raw_info['sources'], how='left', left_index=True, right_on='interaction_id')
-                        .query('interaction_id in @interactions_of_interest')
+                        .query('interaction_id in @interactions_of_interest')  # Filter interactions
                         )
         return edge_list_df
 
@@ -282,6 +287,14 @@ class CombinedNetwork(DENetwork):
         self._de_genes = helpers.get_genes(de_genes_path)
         self._tnseq_genes = helpers.get_genes(tnseq_genes_path)
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
+
+    def get_de_genes(self):
+        """Returns the Differentially Expressed genes in the network."""
+        return self._de_genes
+
+    def get_tnseq_genes(self):
+        """Returns the TnSeq genes in the network."""
+        return self._tnseq_genes
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
