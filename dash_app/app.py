@@ -10,6 +10,11 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div([
     html.H1(children='PaIntDB'),
 
+    dcc.Upload(html.Button('Upload Gene List')),
+
+    html.Hr(),
+
+
     html.Div(children='Select the strain:'),
     dcc.RadioItems(
         options=[

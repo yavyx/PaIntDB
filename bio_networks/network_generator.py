@@ -21,7 +21,7 @@ class BioNetwork:
         self._genes_of_interest = helpers.get_genes(gene_list_path)
         self._raw_info = dict()
         self._interactions_of_interest = []
-        self._network = nx.Graph()
+        self._network = BioNetwork.make_network(self)
 
     def get_genes(self):
         return self._genes_of_interest
@@ -168,6 +168,7 @@ class BioNetwork:
         filters the genes of interest. Adds metabolites of interest if needed."""
         interaction_participants = self._raw_info['interaction_participants']
         interaction_edges = dict()
+        interactions_of_interest = []
         # Create a dictionary edge list from the list of interactions (two rows per interaction)
         for i in range(0, len(interaction_participants), 2):
             interaction_edges[interaction_participants[i][1]] = (interaction_participants[i][0],
@@ -246,6 +247,7 @@ class BioNetwork:
         network_data = BioNetwork.make_edge_list(self)
         BioNetwork.build_network(self, network_data, tidy_db_info)
         BioNetwork.add_locus_tags(self)
+        return self._network
 
     def write_gml(self, file_name):
         """Export the network as a GraphML file."""
@@ -277,6 +279,7 @@ class DENetwork(BioNetwork):
     def make_network(self):
         super().make_network()
         nx.set_node_attributes(self._network, self._de_info)
+        return self._network
 
 
 class CombinedNetwork(DENetwork):
@@ -311,4 +314,4 @@ class CombinedNetwork(DENetwork):
     def make_network(self):
         super().make_network()
         CombinedNetwork.add_significance_source(self)
-
+        return self._network
