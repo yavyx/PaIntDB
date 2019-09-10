@@ -39,6 +39,8 @@ app.layout = html.Div([
         value='PAO1'
     ),
 
+    html.Br(),
+
     html.Div('Select the network order:'),
     dcc.RadioItems(
         id='order',
@@ -48,6 +50,8 @@ app.layout = html.Div([
         ],
         value=0
     ),
+
+    html.Br(),
 
     html.Div('Select the interaction detection method:'),
     dcc.RadioItems(
@@ -66,15 +70,12 @@ app.layout = html.Div([
     dcc.Checklist(
         id='metabolites',
         options=[
-            {'label': 'Include metabolites', 'value': 0}
+            {'label': 'Include metabolites', 'value': 1}
         ],
-        value=[0]
+        value=[]
     ),
 
     html.Br(),
-
-    html.Button(id='make-network',
-                children='Make Network'),
 
     html.Div(id='make-network-output'),
 
@@ -119,24 +120,20 @@ def update_upload(contents, filename):
 
 @app.callback(
     Output('make-network-output', 'children'),
-    [Input('make-network', 'n_clicks'),
-     Input('strain', 'value'),
+    [Input('strain', 'value'),
      Input('order', 'value'),
      Input('detection-method', 'value'),
      Input('metabolites', 'value'),
      Input('gene-list-upload', 'contents')],
     [State('gene-list-upload', 'filename')]
 )
-def make_network(n_clicks, strain, order, detection_method, metabolites, contents, filename):
-    """Generates a network """
-    if n_clicks != 0:
+def make_network(strain, order, detection_method, metabolites, contents, filename):
+    """Generates a network after a file is uploaded."""
+    if contents is not None:
         children, df = parse_gene_list(contents, filename)
         df = df.rename(columns={df.columns[0]: 'gene'})
         genes = list(df.gene)
-        if metabolites == 0:
-            metabolites = False
-        else:
-            metabolites = True
+        metabolites = True if metabolites else False
 
         bio_network = ng.BioNetwork(gene_list=genes,
                                     strain=strain,
@@ -144,7 +141,8 @@ def make_network(n_clicks, strain, order, detection_method, metabolites, content
                                     detection_method=detection_method,
                                     metabolites=metabolites)
         network = bio_network.get_network()
-        return html.Div('{} genes were mapped out of {} genes in your list.'.format(len(network), len(df.index)))
+        return html.Div('{} genes were mapped to the network out of {} genes in your list.'.format(len(network),
+                                                                                                   len(df.index)))
 
 
 if __name__ == '__main__':

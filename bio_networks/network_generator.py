@@ -179,11 +179,9 @@ class BioNetwork:
                                         if interactors[0] in self._genes_of_interest
                                         and interactors[1] in self._genes_of_interest]
             if self._metabolites is True:
-                metabolites_of_interest = list()
                 mapped_metabolites = BioNetwork.map_metabolites(interaction_edges)
-                for protein, metabolites in mapped_metabolites.items():
-                    if protein in self._genes_of_interest:
-                        metabolites_of_interest.append(metabolites)
+                metabolites_of_interest = [metabolites for protein, metabolites in mapped_metabolites.items()
+                                           if protein in self._genes_of_interest]
                 # Unnest metabolite list
                 metabolites_of_interest = [metabolite for sublist in metabolites_of_interest for metabolite in sublist]
 
