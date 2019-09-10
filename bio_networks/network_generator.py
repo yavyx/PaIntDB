@@ -13,12 +13,12 @@ DB_PATH = '/home/javier/PycharmProjects/PaIntDB/PaIntDB.db'
 class BioNetwork:
     """Creates NetworkX networks with additional biological attributes for use with PaintDB."""
 
-    def __init__(self, gene_list_path, strain, order, detection_method, metabolites=False):
+    def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
         self._strain = strain
         self._order = order
         self._detection_method = detection_method
         self._metabolites = metabolites
-        self._genes_of_interest = helpers.get_genes(gene_list_path)
+        self._genes_of_interest = gene_list
         self._raw_info = dict()
         self._interactions_of_interest = []
         self._network = BioNetwork.make_network(self)
