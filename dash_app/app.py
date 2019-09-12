@@ -1,5 +1,6 @@
 import base64
 import io
+import sys
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -17,18 +18,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('PaIntDB'),
-
     dcc.Upload(
         id='gene-list-upload',
         children=html.Button(
             id='upload-button',
             children='Upload Gene List')
     ),
-
     html.Div(id='data-upload-output'),
-
     html.Hr(),
-
     html.Div('Select the strain:'),
     dcc.RadioItems(
         id='strain',
@@ -38,9 +35,7 @@ app.layout = html.Div([
         ],
         value='PAO1'
     ),
-
     html.Br(),
-
     html.Div('Select the network order:'),
     dcc.RadioItems(
         id='order',
@@ -50,9 +45,7 @@ app.layout = html.Div([
         ],
         value=0
     ),
-
     html.Br(),
-
     html.Div('Select the interaction detection method:'),
     dcc.RadioItems(
         id='detection-method',
@@ -64,9 +57,7 @@ app.layout = html.Div([
         ],
         value='all'
     ),
-
     html.Br(),
-
     dcc.Checklist(
         id='metabolites',
         options=[
@@ -74,14 +65,13 @@ app.layout = html.Div([
         ],
         value=[]
     ),
-
     html.Br(),
-
-    html.Div(id='make-network-output'),
-
+    dcc.Loading(id='loading', children=html.Div(id='make-network-output'), type='dot'),
     html.Hr(),
-
-    html.Button('Download network (.graphml)')
+    html.A(html.Button('Download network (.graphml)'),
+           id='download-link',
+           download='network.graphml'
+           )
 ])
 
 
@@ -91,12 +81,13 @@ def parse_gene_list(contents, filename):
     decoded = base64.b64decode(content_string)
     try:
         df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        small_df = df.head()
     except pd.errors.ParserError:
         return 'There was a problem uploading your file. Check that it is the correct format.'
 
+    small_df = df.head()
     children = html.Div([
         html.Div('Your list was uploaded successfully!'),
+        html.Br(),
         html.Div(filename),
         dash_table.DataTable(
             data=small_df.to_dict('records'),
@@ -114,8 +105,11 @@ def parse_gene_list(contents, filename):
 def update_upload(contents, filename):
     """Returns a successful message after file was uploaded."""
     if contents is not None:
-        children, df = parse_gene_list(contents, filename)
-        return children
+        try:
+            children, df = parse_gene_list(contents, filename)
+            return children
+        except ValueError:
+            return html.Div('There was a problem uploading your file. Check that it is the correct format.')
 
 
 @app.callback(
@@ -134,15 +128,24 @@ def make_network(strain, order, detection_method, metabolites, contents, filenam
         df = df.rename(columns={df.columns[0]: 'gene'})
         genes = list(df.gene)
         metabolites = True if metabolites else False
-
         bio_network = ng.BioNetwork(gene_list=genes,
                                     strain=strain,
                                     order=order,
                                     detection_method=detection_method,
                                     metabolites=metabolites)
-        network = bio_network.get_network()
-        return html.Div('{} genes were mapped to the network out of {} genes in your list.'.format(len(network),
-                                                                                                   len(df.index)))
+        if metabolites:
+            return html.Div('''{} genes were mapped to the network out of {} genes in your 
+                               list.\n\n{} metabolites were mapped to these genes.'''
+                            .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
+                                    len(df.index),
+                                    len(ng.BioNetwork.get_mapped_metabolites(bio_network))
+                                    )
+                            )
+        else:
+            return html.Div('{} genes were mapped to the network out of {} genes in your list.'
+                            .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
+                                    len(df.index))
+                            )
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
+from collections import defaultdict
 import os
 import sqlite3
-from collections import defaultdict
 
 import networkx as nx
 import pandas as pd
@@ -22,9 +22,17 @@ class BioNetwork:
         self._raw_info = dict()
         self._interactions_of_interest = []
         self._network = BioNetwork.make_network(self)
+        self._mapped_genes = [node for node, attr in self._network.nodes(data=True) if attr['type'] == 'p']
+        self._mapped_metabolites = [node for node, attr in self._network.nodes(data=True) if attr['type'] == 'm']
 
-    def get_genes(self):
+    def get_all_genes(self):
         return self._genes_of_interest
+
+    def get_mapped_genes(self):
+        return self._mapped_genes
+
+    def get_mapped_metabolites(self):
+        return self._mapped_metabolites
 
     def get_network(self):
         return self._network
