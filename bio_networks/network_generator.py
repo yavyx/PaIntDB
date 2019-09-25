@@ -70,14 +70,15 @@ class BioNetwork:
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
                 # Edge info (dataFrame to merge with the edge list dataFrame)
+
                 self._raw_info['sources'] = pd.read_sql_query("""SELECT is_experimental, interaction_id
-                                                                 FROM interaction_source 
-                                                                 INNER JOIN interaction_sources
-                                                                 ON interaction_source.id = 
-                                                                 interaction_sources.data_source
-                                                                 WHERE is_experimental = ?""",
-                                                              con=db_connection,
-                                                              params=[detection_methods[self._detection_method]])
+                                                  FROM interaction_source 
+                                                  INNER JOIN interaction_sources
+                                                  ON interaction_source.id = 
+                                                  interaction_sources.data_source
+                                                  WHERE is_experimental = ?""",
+                                               con=db_connection,
+                                               params=[detection_methods[self._detection_method]])
 
             elif detection_methods[self._detection_method] == 3:
                 # Node info (lists to generate node attribute dictionaries later)
@@ -111,9 +112,13 @@ class BioNetwork:
                               INNER JOIN protein_localizations
                               ON id = localization_id""")
             self._raw_info['localization'] = cursor.fetchall()
+
+        # Remove underscores from attribute names (don't work well with GraphML)
+        self._raw_info['sources'].rename(columns={'is_experimental': 'experimental', 'interaction_id': 'id'},
+                                         inplace=True)
         # Change sources ID's to numeric
-        self._raw_info['sources'].interaction_id = pd.to_numeric(self._raw_info['sources'].interaction_id,
-                                                                 downcast='integer')
+        self._raw_info['sources'].id = pd.to_numeric(self._raw_info['sources'].id,
+                                                     downcast='integer')
 
     def format_attribute_dictionaries(self):
         """Returns nested dictionaries of node attributes that can be added directly to a NetworkX graph."""
@@ -123,7 +128,7 @@ class BioNetwork:
         node_protein_info = dict()
         for protein in proteins:
             node_protein_info[protein[0]] = dict(description=protein[1],
-                                                 ncbi_acc=protein[2],
+                                                 ncbi=protein[2],
                                                  uniprotkb=protein[3])
         for key, value in node_protein_info.items():
             node_protein_info[key] = helpers.remove_nones(value)
@@ -138,7 +143,7 @@ class BioNetwork:
         names = self._raw_info['short_names']
         short_names = dict()
         for name in names:
-            short_names[name[0]] = dict(short_name=name[1],
+            short_names[name[0]] = dict(shortName=name[1],
                                         type=name[2])
         for key, value in short_names.items():
             short_names[key] = helpers.remove_nones(value)
@@ -214,15 +219,15 @@ class BioNetwork:
 
         edge_list_df = (pd.DataFrame.from_dict(interaction_edges, orient='index',
                                                columns=['interactor1', 'interactor2', 'type'])
-                        .merge(self._raw_info['sources'], how='left', left_index=True, right_on='interaction_id')
-                        .query('interaction_id in @interactions_of_interest')  # Filter interactions
+                        .merge(self._raw_info['sources'], how='left', left_index=True, right_on='id')
+                        .query('id in @interactions_of_interest')  # Filter interactions
                         )
         return edge_list_df
 
     def build_network(self, edge_list_df, db_tidy_info):
         """Creates a network from a edge list DataFrame, adds node attributes."""
         self._network = nx.convert_matrix.from_pandas_edgelist(edge_list_df, source='interactor1', target='interactor2',
-                                                               edge_attr=['is_experimental', 'interaction_id'])
+                                                               edge_attr=['experimental', 'id'])
         nx.set_node_attributes(self._network, db_tidy_info['proteins'])
         nx.set_node_attributes(self._network, db_tidy_info['short_names'])
         nx.set_node_attributes(self._network, db_tidy_info['localization'], name='localization')
@@ -243,8 +248,8 @@ class BioNetwork:
     def add_locus_tags(self):
         """Replace 'NA' strings in the short names attribute with their corresponding locus tag."""
         for node in self._network.nodes:
-            if self._network.node[node]['short_name'] == 'NA':
-                self._network.node[node]['short_name'] = node
+            if self._network.node[node]['shortName'] == 'NA':
+                self._network.node[node]['shortName'] = node
 
     def make_network(self):
         """Generates a PPI network from a list of genes."""

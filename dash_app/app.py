@@ -1,5 +1,5 @@
 import base64
-import io
+from io import StringIO
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -82,11 +82,11 @@ def parse_gene_list(contents, filename):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     try:
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        gene_list = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     except pd.errors.ParserError:
         return 'There was a problem uploading your file. Check that it is the correct format.'
 
-    small_df = df.head()
+    small_df = gene_list.head()
     children = html.Div([
         html.Div('Your list was uploaded successfully!'),
         html.Br(),
@@ -96,14 +96,14 @@ def parse_gene_list(contents, filename):
             columns=[{'name': i, 'id': i} for i in small_df.columns]
         )
     ])
-    return children, df
+    return children, gene_list
 
 
 def make_network(strain, order, detection_method, metabolites, contents, filename):
     """Generates a network."""
-    upload_msg, df = parse_gene_list(contents, filename)
-    df = df.rename(columns={df.columns[0]: 'gene'})
-    genes = list(df.gene)
+    upload_msg, gene_list = parse_gene_list(contents, filename)
+    gene_list = gene_list.rename(columns={gene_list.columns[0]: 'gene'})
+    genes = list(gene_list.gene)
     metabolites = True if metabolites else False
     bio_network = ng.BioNetwork(gene_list=genes,
                                 strain=strain,
@@ -114,7 +114,7 @@ def make_network(strain, order, detection_method, metabolites, contents, filenam
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
                                    metabolites were mapped to these genes.'''
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
-                                       len(df.index),
+                                       len(gene_list.index),
                                        len(ng.BioNetwork.get_mapped_metabolites(bio_network))
                                        )
                                )
@@ -123,7 +123,7 @@ def make_network(strain, order, detection_method, metabolites, contents, filenam
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
-                                       len(df.index))
+                                       len(gene_list.index))
                                )
         return bio_network, mapping_msg
 
@@ -168,18 +168,23 @@ def network_message(strain, order, detection_method, metabolites, contents, file
      Input('gene-list-upload', 'contents')],
     [State('gene-list-upload', 'filename')]
 )
-def update_link(strain, order, detection_method, metabolites, contents):
+def update_link(strain, order, detection_method, metabolites, contents, filename):
     if contents is not None:
-        return '/dash/urlToDownload?value={}'.format(strain)
+        return '/dash/urlToDownload?value={}'.format(filename)
 
 
-@app.server.route('dash/urlToDownload')
+@app.server.route('/dash/urlToDownload')
 def download_graphml(strain, order, detection_method, metabolites, contents, filename):
-    value = flask.request.args.get('value')
-    str_io = io.StringIO()
+    #value = flask.request.args.get('value')
+    str_io = StringIO.StringIO()
     network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
-    str_io.write()
+    gml_string = (''.join(nx.generate_gml(network)))
+    str_io.write(gml_string)
     str_io.seek(0)
+    return flask.send_file(str_io,
+                           mimetype='application/graphml+xml',
+                           attachment_filename='network.graphml',
+                           as_attachment=True)
 
 
 if __name__ == '__main__':
