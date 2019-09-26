@@ -39,6 +39,7 @@ class BioNetwork:
 
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
+
         detection_methods = {'computational': 0, 'mixed': 1, 'experimental': 2, 'all': 3}
 
         with sqlite3.connect(DB_PATH) as db_connection:
@@ -51,11 +52,11 @@ class BioNetwork:
                 interaction_type = ['p-p']
 
             # Parameters for safe SQL querying
-            params = [self._strain, detection_methods[self._detection_method]] + interaction_type
+            params = [self._strain, self._detection_method] + interaction_type
             params_all = [self._strain] + interaction_type
 
-            if detection_methods[self._detection_method] in [0, 1, 2]:
-                # Node info (lists to generate noe attribute dictionaries later)
+            if self._detection_method in [0, 1, 2]:
+                # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
                                   FROM interaction_participants
                                   INNER JOIN interaction_sources
@@ -77,10 +78,10 @@ class BioNetwork:
                                                   ON interaction_source.id = 
                                                   interaction_sources.data_source
                                                   WHERE is_experimental = ?""",
-                                               con=db_connection,
-                                               params=[detection_methods[self._detection_method]])
+                                                              con=db_connection,
+                                                              params=[self._detection_method])
 
-            elif detection_methods[self._detection_method] == 3:
+            elif self._detection_method == 3:
                 # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction_id, type
                                   FROM interaction_participants 
@@ -97,7 +98,6 @@ class BioNetwork:
                                                                  ON interaction_source.id = 
                                                                  interaction_sources.data_source""",
                                                               con=db_connection)
-
             cursor.execute("""SELECT id, product_name, ncbi_acc, uniprotkb 
                               FROM protein
                               WHERE strain = ?""",

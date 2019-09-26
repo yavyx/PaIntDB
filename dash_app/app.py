@@ -1,5 +1,7 @@
 import base64
-from io import StringIO
+import io
+import logging
+import sys
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -10,7 +12,7 @@ import flask
 import networkx as nx
 import pandas as pd
 import pandas.errors
-import io
+
 
 import bio_networks.network_generator as ng
 
@@ -52,12 +54,12 @@ app.layout = html.Div([
     dcc.RadioItems(
         id='detection-method',
         options=[
-            {'label': 'All', 'value': 'all'},
-            {'label': 'Experimental', 'value': 'experimental'},
-            {'label': 'Mixed', 'value': 'mixed'},
-            {'label': 'Computational', 'value': 'computational'},
+            {'label': 'All', 'value': 3},
+            {'label': 'Experimental', 'value': 2},
+            {'label': 'Mixed', 'value': 1},
+            {'label': 'Computational', 'value': 0},
         ],
-        value='all'
+        value=3
     ),
     html.Br(),
     dcc.Checklist(
@@ -70,9 +72,8 @@ app.layout = html.Div([
     html.Br(),
     dcc.Loading(id='loading', children=html.Div(id='make-network-output'), type='dot'),
     html.Hr(),
-    html.A(html.Button('Download network (.graphml)'),
-           id='download-link',
-           download='network.graphml'
+    html.A('Download Network(GraphML)',
+           id='download-link'
            )
 ])
 
@@ -153,7 +154,7 @@ def upload_message(contents, filename):
     [State('gene-list-upload', 'filename')]
 )
 def network_message(strain, order, detection_method, metabolites, contents, filename):
-    """Returns mapping message after file was uploaded or network parameters changed."""
+    """Returns mapping message after file is uploaded or network parameters changed."""
     if contents is not None:
         network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
         return mapping_msg
@@ -170,22 +171,42 @@ def network_message(strain, order, detection_method, metabolites, contents, file
 )
 def update_link(strain, order, detection_method, metabolites, contents, filename):
     if contents is not None:
-        return '/dash/urlToDownload?value={}'.format(filename)
+        return ('/dash/urlToDownload?strain={}&order={}&detection_method={}'
+                '&metabolites={}&contents={}&filename={}').format(strain,
+                                                                    order,
+                                                                    detection_method,
+                                                                    metabolites,
+                                                                    contents,
+                                                                    filename)
 
 
 @app.server.route('/dash/urlToDownload')
-def download_graphml(strain, order, detection_method, metabolites, contents, filename):
-    #value = flask.request.args.get('value')
-    str_io = StringIO.StringIO()
-    network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
-    gml_string = (''.join(nx.generate_gml(network)))
+def download_graphml():
+    params = ['strain', 'order', 'detection_method', 'metabolites', 'contents', 'filename']
+    args = [flask.request.args.get(param) for param in params]
+    args[1] = int(args[1])
+    args[2] = int(args[2])
+    args[3] = True if args[3] else False
+    bio_network, mapping_msg = make_network(*args)
+    network = bio_network.get_network()
+    str_io = io.StringIO()
+    print('miculo')
+    gml_string = ('\n'.join(nx.generate_graphml(network)))
     str_io.write(gml_string)
-    str_io.seek(0)
-    return flask.send_file(str_io,
-                           mimetype='application/graphml+xml',
+    mem = io.BytesIO()
+    mem.write(str_io.getvalue().encode('utf-8'))
+    mem.seek(0)
+    return flask.send_file(mem,
+                           mimetype='application/xml',
                            attachment_filename='network.graphml',
                            as_attachment=True)
 
+# @app.route('/print')
+# def printMsg():
+#     app.logger.warning('testing warning log')
+#     app.logger.error('testing error log')
+#     app.logger.info('testing info log')
+#     return "Check your console"
 
 if __name__ == '__main__':
     app.run_server(debug=True)
