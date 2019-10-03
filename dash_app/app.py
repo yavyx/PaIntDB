@@ -1,7 +1,5 @@
 import base64
 import io
-import logging
-import sys
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -13,7 +11,6 @@ import networkx as nx
 import pandas as pd
 import pandas.errors
 
-
 import bio_networks.network_generator as ng
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -22,13 +19,19 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('PaIntDB'),
-    dcc.Upload(
-        id='gene-list-upload',
-        children=html.Button(
-            id='upload-button',
-            children='Upload Gene List')
+    html.Div([
+        html.P('Your genes must be in the first column of a CSV file.'),
+        dcc.Upload(
+            id='gene-list-upload',
+            children=html.Button(
+                id='upload-button',
+                children='Upload Gene List')
+        )],
+        style={'width': '29%', 'display': 'inline-block'}
     ),
-    html.Div(id='data-upload-output'),
+
+    html.Div(id='data-upload-output',
+             style={'width': '69%', 'display': 'inline-block'}),
     html.Hr(),
     html.Div('Select the strain:'),
     dcc.RadioItems(
@@ -66,15 +69,15 @@ app.layout = html.Div([
         id='metabolites',
         options=[
             {'label': 'Include metabolites', 'value': 1}
-        ],
-        value=[]
+        ]
     ),
     html.Br(),
     dcc.Loading(id='loading', children=html.Div(id='make-network-output'), type='dot'),
     html.Hr(),
-    html.A('Download Network(GraphML)',
-           id='download-link'
-           )
+    html.Button(html.A('Download Network(GraphML)',
+                       id='download-link'
+                       )
+                )
 ])
 
 
@@ -119,14 +122,12 @@ def make_network(strain, order, detection_method, metabolites, contents, filenam
                                        len(ng.BioNetwork.get_mapped_metabolites(bio_network))
                                        )
                                )
-        return bio_network, mapping_msg
-
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
                                        len(gene_list.index))
                                )
-        return bio_network, mapping_msg
+    return bio_network, mapping_msg
 
 
 @app.callback(
@@ -154,7 +155,7 @@ def upload_message(contents, filename):
     [State('gene-list-upload', 'filename')]
 )
 def network_message(strain, order, detection_method, metabolites, contents, filename):
-    """Returns mapping message after file is uploaded or network parameters changed."""
+    """Returns mapping message after file is uploaded or network parameters are changed."""
     if contents is not None:
         network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
         return mapping_msg
@@ -173,24 +174,23 @@ def update_link(strain, order, detection_method, metabolites, contents, filename
     if contents is not None:
         return ('/dash/urlToDownload?strain={}&order={}&detection_method={}'
                 '&metabolites={}&contents={}&filename={}').format(strain,
-                                                                    order,
-                                                                    detection_method,
-                                                                    metabolites,
-                                                                    contents,
-                                                                    filename)
+                                                                  order,
+                                                                  detection_method,
+                                                                  metabolites,
+                                                                  contents,
+                                                                  filename)
 
 
 @app.server.route('/dash/urlToDownload')
 def download_graphml():
     params = ['strain', 'order', 'detection_method', 'metabolites', 'contents', 'filename']
     args = [flask.request.args.get(param) for param in params]
-    args[1] = int(args[1])
-    args[2] = int(args[2])
-    args[3] = True if args[3] else False
+    args[1] = int(args[1])  # Change order to integer (Flask returns string)
+    args[2] = int(args[2])  # Change detection method to integer (Flask returns string)
+    args[3] = True if args[3] is 1 else False  # Change metabolites to True/False
     bio_network, mapping_msg = make_network(*args)
     network = bio_network.get_network()
     str_io = io.StringIO()
-    print('miculo')
     gml_string = ('\n'.join(nx.generate_graphml(network)))
     str_io.write(gml_string)
     mem = io.BytesIO()
@@ -201,12 +201,6 @@ def download_graphml():
                            attachment_filename='network.graphml',
                            as_attachment=True)
 
-# @app.route('/print')
-# def printMsg():
-#     app.logger.warning('testing warning log')
-#     app.logger.error('testing error log')
-#     app.logger.info('testing info log')
-#     return "Check your console"
 
 if __name__ == '__main__':
     app.run_server(debug=True)
