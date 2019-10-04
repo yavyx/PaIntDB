@@ -33,37 +33,38 @@ app.layout = html.Div([
     html.Div(id='data-upload-output',
              style={'width': '69%', 'display': 'inline-block'}),
     html.Hr(),
-    html.Div('Select the strain:'),
-    dcc.RadioItems(
-        id='strain',
-        options=[
-            {'label': 'PAO1', 'value': 'PAO1'},
-            {'label': 'PA14', 'value': 'PA14'},
-        ],
-        value='PAO1'
-    ),
-    html.Br(),
-    html.Div('Select the network order:'),
-    dcc.RadioItems(
-        id='order',
-        options=[
-            {'label': 'Zero-order', 'value': 0},
-            {'label': 'First-order', 'value': 1},
-        ],
-        value=0
-    ),
-    html.Br(),
-    html.Div('Select the interaction detection method:'),
-    dcc.RadioItems(
-        id='detection-method',
-        options=[
-            {'label': 'All', 'value': 3},
-            {'label': 'Experimental', 'value': 2},
-            {'label': 'Mixed', 'value': 1},
-            {'label': 'Computational', 'value': 0},
-        ],
-        value=3
-    ),
+    html.Div(['Select the strain:',
+              dcc.RadioItems(
+                  id='strain',
+                  options=[
+                      {'label': 'PAO1', 'value': 'PAO1'},
+                      {'label': 'PA14', 'value': 'PA14'},
+                  ],
+                  value='PAO1'
+              )],
+             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
+    html.Div(['Select the network order:',
+              dcc.RadioItems(
+                  id='order',
+                  options=[
+                      {'label': 'Zero-order', 'value': 0},
+                      {'label': 'First-order', 'value': 1},
+                  ],
+                  value=0
+              )],
+             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
+    html.Div(['Select the interaction detection method:',
+              dcc.RadioItems(
+                  id='detection-method',
+                  options=[
+                      {'label': 'All', 'value': 3},
+                      {'label': 'Experimental', 'value': 2},
+                      {'label': 'Mixed', 'value': 1},
+                      {'label': 'Computational', 'value': 0},
+                  ],
+                  value=3
+              )],
+             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
     html.Br(),
     dcc.Checklist(
         id='metabolites',
@@ -72,7 +73,7 @@ app.layout = html.Div([
         ]
     ),
     html.Br(),
-    dcc.Loading(id='loading', children=html.Div(id='make-network-output'), type='dot'),
+    dcc.Loading(id='loading', children=html.Div(id='make-network-message'), type='dot'),
     html.Hr(),
     html.Button(html.A('Download Network(GraphML)',
                        id='download-link'
@@ -146,23 +147,8 @@ def upload_message(contents, filename):
 
 
 @app.callback(
-    Output('make-network-output', 'children'),
-    [Input('strain', 'value'),
-     Input('order', 'value'),
-     Input('detection-method', 'value'),
-     Input('metabolites', 'value'),
-     Input('gene-list-upload', 'contents')],
-    [State('gene-list-upload', 'filename')]
-)
-def network_message(strain, order, detection_method, metabolites, contents, filename):
-    """Returns mapping message after file is uploaded or network parameters are changed."""
-    if contents is not None:
-        network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
-        return mapping_msg
-
-
-@app.callback(
-    Output('download-link', 'href'),
+    [Output('make-network-message', 'children'),
+     Output('download-link', 'href')],
     [Input('strain', 'value'),
      Input('order', 'value'),
      Input('detection-method', 'value'),
@@ -171,27 +157,28 @@ def network_message(strain, order, detection_method, metabolites, contents, file
     [State('gene-list-upload', 'filename')]
 )
 def update_link(strain, order, detection_method, metabolites, contents, filename):
+    """Generates a network and updates the download link every time parameters are changed."""
     if contents is not None:
-        return ('/dash/urlToDownload?strain={}&order={}&detection_method={}'
-                '&metabolites={}&contents={}&filename={}').format(strain,
-                                                                  order,
-                                                                  detection_method,
-                                                                  metabolites,
-                                                                  contents,
-                                                                  filename)
+        bio_network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
+        nx_network = bio_network.get_network()
+        gml_string = ('\n'.join(nx.generate_graphml(nx_network)))
+        download_url = ('/dash/download?gml={}').format(gml_string)
+        #download_url = '/download/<{}>'.format(network)
+    else:
+        mapping_msg, download_url = [None, None]  # Workaround for now (Callback State not functioning properly)
+    return mapping_msg, download_url
 
 
-@app.server.route('/dash/urlToDownload')
+@app.server.route('/dash/download')
 def download_graphml():
-    params = ['strain', 'order', 'detection_method', 'metabolites', 'contents', 'filename']
-    args = [flask.request.args.get(param) for param in params]
-    args[1] = int(args[1])  # Change order to integer (Flask returns string)
-    args[2] = int(args[2])  # Change detection method to integer (Flask returns string)
-    args[3] = True if args[3] is 1 else False  # Change metabolites to True/False
-    bio_network, mapping_msg = make_network(*args)
-    network = bio_network.get_network()
+    # params = ['strain', 'order', 'detection_method', 'metabolites', 'contents', 'filename']
+    # args = [flask.request.args.get(param) for param in params]
+    # args[1] = int(args[1])  # Change order to integer (Flask returns string)
+    # args[2] = int(args[2])  # Change detection method to integer (Flask returns string)
+    # args[3] = True if args[3] is 1 else False  # Change metabolites to True/False
+    # bio_network, mapping_msg = make_network(*args)
+    gml_string = flask.request.args.get('gml')
     str_io = io.StringIO()
-    gml_string = ('\n'.join(nx.generate_graphml(network)))
     str_io.write(gml_string)
     mem = io.BytesIO()
     mem.write(str_io.getvalue().encode('utf-8'))
