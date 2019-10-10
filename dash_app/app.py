@@ -19,6 +19,16 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('PaIntDB'),
+    html.Div(['Select the network type:',
+              dcc.RadioItems(
+                  id='network-type',
+                  options=[
+                      {'label': 'No experimental info', 'value': 'basic'},
+                      {'label': 'Differential Expression', 'value': 'DE'},
+                  ],
+                  value='basic'
+              )]),
+    html.Br(),
     html.Div([
         html.P('Your genes must be in the first column of a CSV file.'),
         dcc.Upload(
@@ -87,12 +97,12 @@ def parse_gene_list(contents, filename):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     try:
-        gene_list = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     except pd.errors.ParserError:
         return 'There was a problem uploading your file. Check that it is the correct format.'
 
-    small_df = gene_list.head()
-    children = html.Div([
+    small_df = genes_df.head()
+    small_table = html.Div([
         html.Div('Your list was uploaded successfully!'),
         html.Br(),
         html.Div(filename),
@@ -101,32 +111,43 @@ def parse_gene_list(contents, filename):
             columns=[{'name': i, 'id': i} for i in small_df.columns]
         )
     ])
-    return children, gene_list
+    return small_table, genes_df
 
 
-def make_network(strain, order, detection_method, metabolites, contents, filename):
+def make_network(network_type, strain, order, detection_method, metabolites, contents, filename):
     """Generates a network."""
-    upload_msg, gene_list = parse_gene_list(contents, filename)
-    gene_list = gene_list.rename(columns={gene_list.columns[0]: 'gene'})
-    genes = list(gene_list.gene)
+    upload_msg, genes_df = parse_gene_list(contents, filename)
+    genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
+    gene_list = list(genes_df.gene)
     metabolites = True if metabolites else False
-    bio_network = ng.BioNetwork(gene_list=genes,
-                                strain=strain,
-                                order=order,
-                                detection_method=detection_method,
-                                metabolites=metabolites)
+    if network_type == 'basic':
+        bio_network = ng.BioNetwork(gene_list=gene_list,
+                                    strain=strain,
+                                    order=order,
+                                    detection_method=detection_method,
+                                    metabolites=metabolites)
+    elif network_type == 'DE':
+        bio_network = ng.DENetwork(gene_list=gene_list,
+                                   strain=strain,
+                                   order=order,
+                                   detection_method=detection_method,
+                                   metabolites=metabolites,
+                                   genes_df=genes_df)
+    else:
+        bio_network = 'miguebo'
+
     if metabolites:
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
                                    metabolites were mapped to these genes.'''
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
-                                       len(gene_list.index),
+                                       len(gene_list),
                                        len(ng.BioNetwork.get_mapped_metabolites(bio_network))
                                        )
                                )
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
-                                       len(gene_list.index))
+                                       len(gene_list))
                                )
     return bio_network, mapping_msg
 
@@ -140,8 +161,8 @@ def upload_message(contents, filename):
     """Returns a successful message after file was uploaded."""
     if contents is not None:
         try:
-            children, df = parse_gene_list(contents, filename)
-            return children
+            small_table, genes_df = parse_gene_list(contents, filename)
+            return small_table
         except ValueError:
             return html.Div('There was a problem uploading your file. Check that it is the correct format.')
 
@@ -149,20 +170,22 @@ def upload_message(contents, filename):
 @app.callback(
     [Output('make-network-message', 'children'),
      Output('download-link', 'href')],
-    [Input('strain', 'value'),
+    [Input('network-type', 'value'),
+     Input('strain', 'value'),
      Input('order', 'value'),
      Input('detection-method', 'value'),
      Input('metabolites', 'value'),
      Input('gene-list-upload', 'contents')],
     [State('gene-list-upload', 'filename')]
 )
-def update_link(strain, order, detection_method, metabolites, contents, filename):
+def update_link(network_type, strain, order, detection_method, metabolites, contents, filename):
     """Generates a network and updates the download link every time parameters are changed."""
     if contents is not None:
-        bio_network, mapping_msg = make_network(strain, order, detection_method, metabolites, contents, filename)
+        bio_network, mapping_msg = make_network(network_type, strain, order, detection_method, metabolites, contents,
+                                                filename)
         nx_network = bio_network.get_network()
         gml_string = ('\n'.join(nx.generate_graphml(nx_network)))
-        download_url = ('/dash/download?gml={}').format(gml_string)
+        download_url = '/dash/download?gml={}'.format(gml_string)
         #download_url = '/download/<{}>'.format(network)
     else:
         mapping_msg, download_url = [None, None]  # Workaround for now (Callback State not functioning properly)

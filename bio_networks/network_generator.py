@@ -5,7 +5,7 @@ import sqlite3
 import networkx as nx
 import pandas as pd
 
-import bio_networks.helpers as helpers
+import bio_networks.helpers as h
 
 DB_PATH = '/home/javier/PycharmProjects/PaIntDB/PaIntDB.db'
 
@@ -39,8 +39,6 @@ class BioNetwork:
 
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
-
-        detection_methods = {'computational': 0, 'mixed': 1, 'experimental': 2, 'all': 3}
 
         with sqlite3.connect(DB_PATH) as db_connection:
             cursor = db_connection.cursor()
@@ -131,7 +129,7 @@ class BioNetwork:
                                                  ncbi=protein[2],
                                                  uniprotkb=protein[3])
         for key, value in node_protein_info.items():
-            node_protein_info[key] = helpers.remove_nones(value)
+            node_protein_info[key] = h.remove_nones(value)
         db_tidy_info['proteins'] = node_protein_info
 
         localizations = self._raw_info['localization']
@@ -146,7 +144,7 @@ class BioNetwork:
             short_names[name[0]] = dict(shortName=name[1],
                                         type=name[2])
         for key, value in short_names.items():
-            short_names[key] = helpers.remove_nones(value)
+            short_names[key] = h.remove_nones(value)
         db_tidy_info['short_names'] = short_names
 
         if self._metabolites is True:
@@ -159,7 +157,7 @@ class BioNetwork:
                                                            chebi=metabolite[4],
                                                            ecocyc=metabolite[5])
             for key, value in metabolite_node_info.items():
-                metabolite_node_info[key] = helpers.remove_nones(value)
+                metabolite_node_info[key] = h.remove_nones(value)
             db_tidy_info['metabolites'] = metabolite_node_info
 
         return db_tidy_info
@@ -268,19 +266,19 @@ class BioNetwork:
 class DENetwork(BioNetwork):
     """BioNetwork subclass with additional differential expression (DE)-related methods."""
 
-    def __init__(self, gene_list_path, strain, order, detection_method, metabolites=False):
-        super().__init__(gene_list_path, strain, order, detection_method, metabolites)
-        self._genes_of_interest = helpers.get_genes(gene_list_path)
-        self._de_info = DENetwork.process_de_genes_list(gene_list_path)
+    def __init__(self, gene_list, genes_df, strain, order, detection_method, metabolites):
+        super().__init__(gene_list, strain, order, detection_method, metabolites)
+        self._genes_df = genes_df
+        self._genes_of_interest = gene_list
+        self._network = DENetwork.make_network(self)
 
     @staticmethod
-    def process_de_genes_list(gene_list_path):
+    def process_de_genes_list(genes_df):
         """Reads in a DESeq2 output gene list and returns a dictionary with differential expression information
         to use as node attributes. """
-        de_genes = pd.read_csv(gene_list_path)
-        de_genes = de_genes.rename(columns={de_genes.columns[0]: 'gene'})  # Rename first column (usually unnamed)
+        genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)  # Rename first column (usually unnamed)
         de_info = dict()
-        raw_de_info = de_genes[['gene', 'log2FoldChange', 'padj']].to_dict(orient='index')
+        raw_de_info = genes_df[['gene', 'log2FoldChange', 'padj']].to_dict(orient='index')
         # Format dictionary to use as input for networkX node attributes
         for key, value in raw_de_info.items():
             de_info[value['gene']] = dict(log2FoldChange=value['log2FoldChange'],
@@ -289,17 +287,17 @@ class DENetwork(BioNetwork):
 
     def make_network(self):
         super().make_network()
-        nx.set_node_attributes(self._network, self._de_info)
+        nx.set_node_attributes(self._network, DENetwork.process_de_genes_list(self._genes_df))
         return self._network
 
 
 class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
 
-    def __init__(self, de_genes_path, tnseq_genes_path, strain, order, detection_method, metabolites=False):
+    def __init__(self, de_genes_path, tnseq_genes_path, strain, order, detection_method, metabolites):
         super().__init__(de_genes_path, strain, order, detection_method, metabolites)
-        self._de_genes = helpers.get_genes(de_genes_path)
-        self._tnseq_genes = helpers.get_genes(tnseq_genes_path)
+        self._de_genes = h.get_genes(de_genes_path)
+        self._tnseq_genes = h.get_genes(tnseq_genes_path)
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
 
     def get_de_genes(self):
