@@ -19,12 +19,13 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('PaIntDB'),
-    html.Div(['Select the network type:',
+    html.Div(['Select your input data: ',
+              html.Abbr("?", title='Basic: No experimental info\nDifferential Expression: '),
               dcc.RadioItems(
                   id='network-type',
                   options=[
-                      {'label': 'No experimental info', 'value': 'basic'},
-                      {'label': 'Differential Expression', 'value': 'DE'},
+                      {'label': 'Gene List', 'value': 'basic'},
+                      {'label': 'Differential Expression Gene List', 'value': 'DE'},
                   ],
                   value='basic'
               )]),
@@ -53,7 +54,12 @@ app.layout = html.Div([
                   value='PAO1'
               )],
              style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
-    html.Div(['Select the network order:',
+    html.Div(['Select the network order: ',
+              html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
+                                    'Recommended for long lists.\n'
+                                    'First-order: Uses your queried genes as "seed" genes and finds any interaction '
+                                    'between them and the other genes in the database. '
+                                    'Recommended for short lists. (<500 genes)')),
               dcc.RadioItems(
                   id='order',
                   options=[
@@ -63,7 +69,11 @@ app.layout = html.Div([
                   value=0
               )],
              style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
-    html.Div(['Select the interaction detection method:',
+    html.Div(['Select the interaction detection method: ',
+              html.Abbr("?", title=('Choose which interactions you want to use to generate the network. '
+                                    'Experimentally-verified interactions have the highest confidence, but '
+                                    'result in smaller networks. '
+                                    'Mixed the detection method is ambiguous.')),
               dcc.RadioItems(
                   id='detection-method',
                   options=[
@@ -83,7 +93,9 @@ app.layout = html.Div([
         ]
     ),
     html.Br(),
-    dcc.Loading(id='loading', children=html.Div(id='make-network-message'), type='dot'),
+    dcc.Loading(id='loading',
+                children=html.Div(id='make-network-message'),
+                type='dot'),
     html.Hr(),
     html.Button(html.A('Download Network(GraphML)',
                        id='download-link'
