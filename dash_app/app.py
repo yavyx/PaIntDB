@@ -20,29 +20,25 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div([
     html.H1('PaIntDB'),
     html.Div(['Select your input data: ',
-              html.Abbr("?", title='Basic: No experimental info\nDifferential Expression: '),
               dcc.RadioItems(
                   id='network-type',
                   options=[
                       {'label': 'Gene List', 'value': 'basic'},
-                      {'label': 'Differential Expression Gene List', 'value': 'DE'},
+                      {'label': 'Differential Expression Gene List', 'value': 'DE'}
                   ],
-                  value='basic'
-              )]),
-    html.Br(),
-    html.Div([
-        html.P('Your genes must be in the first column of a CSV file.'),
-        dcc.Upload(
-            id='gene-list-upload',
-            children=html.Button(
-                id='upload-button',
-                children='Upload Gene List')
-        )],
-        style={'width': '29%', 'display': 'inline-block'}
-    ),
-
+                  value='basic'),
+             html.Br(),
+             html.P('Your genes must be in the first column of a CSV file.'),
+             dcc.Upload(
+                 id='gene-list-upload',
+                 children=html.Button(
+                     id='upload-button',
+                     children='Upload Gene List'))
+              ],
+             style={'width': '25%', 'display': 'inline-block'},
+             ),
     html.Div(id='data-upload-output',
-             style={'width': '69%', 'display': 'inline-block'}),
+             style={'height': '250px', 'width': '5%', 'display': 'inline-block', 'vertical-align': 'top'}),
     html.Hr(),
     html.Div(['Select the strain:',
               dcc.RadioItems(
@@ -56,10 +52,10 @@ app.layout = html.Div([
              style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
     html.Div(['Select the network order: ',
               html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
-                                    'Recommended for long lists.\n'
+                                    'Recommended for long lists (>200 genes).\n\n'
                                     'First-order: Uses your queried genes as "seed" genes and finds any interaction '
                                     'between them and the other genes in the database. '
-                                    'Recommended for short lists. (<500 genes)')),
+                                    'Recommended for short lists (<200 genes).')),
               dcc.RadioItems(
                   id='order',
                   options=[
@@ -70,10 +66,10 @@ app.layout = html.Div([
               )],
              style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
     html.Div(['Select the interaction detection method: ',
-              html.Abbr("?", title=('Choose which interactions you want to use to generate the network. '
+              html.Abbr("?", title=('Choose which interactions you want to use to generate the network.\n\n'
                                     'Experimentally-verified interactions have the highest confidence, but '
-                                    'result in smaller networks. '
-                                    'Mixed the detection method is ambiguous.')),
+                                    'result in smaller networks.\n\n '
+                                    'If mixed, the detection method is ambiguous.')),
               dcc.RadioItems(
                   id='detection-method',
                   options=[
