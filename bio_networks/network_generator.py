@@ -266,19 +266,20 @@ class BioNetwork:
 class DENetwork(BioNetwork):
     """BioNetwork subclass with additional differential expression (DE)-related methods."""
 
-    def __init__(self, gene_list, genes_df, strain, order, detection_method, metabolites):
+    def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites):
         super().__init__(gene_list, strain, order, detection_method, metabolites)
-        self._genes_df = genes_df
+        self._de_genes_df = de_genes_df
         self._genes_of_interest = gene_list
         self._network = DENetwork.make_network(self)
 
     @staticmethod
-    def process_de_genes_list(genes_df):
+    def process_de_genes_list(de_genes_df):
         """Reads in a DESeq2 output gene list and returns a dictionary with differential expression information
         to use as node attributes. """
-        genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)  # Rename first column (usually unnamed)
+        de_genes_df.rename(columns={de_genes_df.columns[0]: 'gene'},
+                           inplace=True)  # Rename first column (usually unnamed)
         de_info = dict()
-        raw_de_info = genes_df[['gene', 'log2FoldChange', 'padj']].to_dict(orient='index')
+        raw_de_info = de_genes_df[['gene', 'log2FoldChange', 'padj']].to_dict(orient='index')
         # Format dictionary to use as input for networkX node attributes
         for key, value in raw_de_info.items():
             de_info[value['gene']] = dict(log2FoldChange=value['log2FoldChange'],
@@ -287,17 +288,17 @@ class DENetwork(BioNetwork):
 
     def make_network(self):
         super().make_network()
-        nx.set_node_attributes(self._network, DENetwork.process_de_genes_list(self._genes_df))
+        nx.set_node_attributes(self._network, DENetwork.process_de_genes_list(self._de_genes_df))
         return self._network
 
 
 class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
 
-    def __init__(self, de_genes_path, tnseq_genes_path, strain, order, detection_method, metabolites):
-        super().__init__(de_genes_path, strain, order, detection_method, metabolites)
-        self._de_genes = h.get_genes(de_genes_path)
-        self._tnseq_genes = h.get_genes(tnseq_genes_path)
+    def __init__(self, de_gene_list, tnseq_gene_list, strain, order, detection_method, metabolites):
+        super().__init__(de_gene_list, strain, order, detection_method, metabolites)
+        self._de_genes = de_gene_list
+        self._tnseq_genes = tnseq_gene_list
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
 
     def get_de_genes(self):
@@ -324,3 +325,11 @@ class CombinedNetwork(DENetwork):
         super().make_network()
         CombinedNetwork.add_significance_source(self)
         return self._network
+
+
+# if __name__ == '__main__':
+#     BioNetwork(h.get_genes('/home/javier/Documents/Daniel/DE_relAspoTvsPAO1_planktonic_original.csv'),
+#                strain='PAO1',
+#                order=0,
+#                detection_method=0,
+#                metabolites=True)

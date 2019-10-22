@@ -1,5 +1,7 @@
 import base64
 import io
+import urllib.parse
+from datetime import datetime
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -17,6 +19,10 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+radio_buttons_style = {'width': '20%',
+                       'display': 'inline-block',
+                       'verticalAlign': 'top'}
+
 app.layout = html.Div([
     html.H1('PaIntDB'),
     html.Div(['Select your input data: ',
@@ -24,7 +30,8 @@ app.layout = html.Div([
                   id='network-type',
                   options=[
                       {'label': 'Gene List', 'value': 'basic'},
-                      {'label': 'Differential Expression Gene List', 'value': 'DE'}
+                      {'label': 'Differential Expression Gene List', 'value': 'DE'},
+                      {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
                   ],
                   value='basic'),
              html.Br(),
@@ -38,7 +45,9 @@ app.layout = html.Div([
              style={'width': '25%', 'display': 'inline-block'},
              ),
     html.Div(id='data-upload-output',
-             style={'height': '250px', 'width': '5%', 'display': 'inline-block', 'vertical-align': 'top'}),
+             style={'height': '30vh',
+                    'display': 'inline-block',
+                    'verticalAlign': 'top'}),
     html.Hr(),
     html.Div(['Select the strain:',
               dcc.RadioItems(
@@ -49,7 +58,7 @@ app.layout = html.Div([
                   ],
                   value='PAO1'
               )],
-             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
+             style=radio_buttons_style),
     html.Div(['Select the network order: ',
               html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
                                     'Recommended for long lists (>200 genes).\n\n'
@@ -64,7 +73,7 @@ app.layout = html.Div([
                   ],
                   value=0
               )],
-             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
+             style=radio_buttons_style),
     html.Div(['Select the interaction detection method: ',
               html.Abbr("?", title=('Choose which interactions you want to use to generate the network.\n\n'
                                     'Experimentally-verified interactions have the highest confidence, but '
@@ -80,7 +89,7 @@ app.layout = html.Div([
                   ],
                   value=3
               )],
-             style={'width': '20%', 'display': 'inline-block', 'vertical-align': 'top'}),
+             style=radio_buttons_style),
     html.Br(),
     dcc.Checklist(
         id='metabolites',
@@ -93,10 +102,9 @@ app.layout = html.Div([
                 children=html.Div(id='make-network-message'),
                 type='dot'),
     html.Hr(),
-    html.Button(html.A('Download Network(GraphML)',
-                       id='download-link'
-                       )
-                )
+    html.A('Download Network(GraphML)',
+           id='download-link'
+           )
 ])
 
 
@@ -110,24 +118,25 @@ def parse_gene_list(contents, filename):
         return 'There was a problem uploading your file. Check that it is the correct format.'
 
     small_df = genes_df.head()
-    small_table = html.Div([
-        html.Div('Your list was uploaded successfully!'),
+    children = [
+        html.P('Your list was uploaded successfully!'),
         html.Br(),
-        html.Div(filename),
+        html.P(filename),
         dash_table.DataTable(
             data=small_df.to_dict('records'),
             columns=[{'name': i, 'id': i} for i in small_df.columns]
-        )
-    ])
-    return small_table, genes_df
+        )]
+    return children, genes_df
 
 
 def make_network(network_type, strain, order, detection_method, metabolites, contents, filename):
-    """Generates a network."""
+    """Generates a BioNetwork."""
+    start_time = datetime.now()
     upload_msg, genes_df = parse_gene_list(contents, filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = list(genes_df.gene)
     metabolites = True if metabolites else False
+    bio_network = None
     if network_type == 'basic':
         bio_network = ng.BioNetwork(gene_list=gene_list,
                                     strain=strain,
@@ -140,9 +149,11 @@ def make_network(network_type, strain, order, detection_method, metabolites, con
                                    order=order,
                                    detection_method=detection_method,
                                    metabolites=metabolites,
-                                   genes_df=genes_df)
+                                   de_genes_df=genes_df)
+    # elif network_type == 'combined':
+    #     bio_network = ng.CombinedNetwork()
     else:
-        bio_network = 'miguebo'
+        bio_network = ''
 
     if metabolites:
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
@@ -157,6 +168,12 @@ def make_network(network_type, strain, order, detection_method, metabolites, con
                                .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
                                        len(gene_list))
                                )
+    end_time = datetime.now()
+    # with open('performance.txt', 'a') as f:
+    #     f.write("order = {}, detection_method = {}, metabolites = {}\n".format(order, detection_method, str(metabolites)))
+    #     f.write('{}\n\n'.format(end_time - start_time))
+    print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
+    print(end_time - start_time)
     return bio_network, mapping_msg
 
 
@@ -186,28 +203,20 @@ def upload_message(contents, filename):
      Input('gene-list-upload', 'contents')],
     [State('gene-list-upload', 'filename')]
 )
-def update_link(network_type, strain, order, detection_method, metabolites, contents, filename):
-    """Generates a network and updates the download link every time parameters are changed."""
+def update_download_link(network_type, strain, order, detection_method, metabolites, contents, filename):
+    """Generates a network every time parameters are changed."""
     if contents is not None:
         bio_network, mapping_msg = make_network(network_type, strain, order, detection_method, metabolites, contents,
                                                 filename)
         nx_network = bio_network.get_network()
-        gml_string = ('\n'.join(nx.generate_graphml(nx_network)))
-        download_url = '/dash/download?gml={}'.format(gml_string)
-        #download_url = '/download/<{}>'.format(network)
+        url = '/dash/download?gml={}'.format(('\n'.join(nx.generate_graphml(nx_network))))  # Create URL string
     else:
-        mapping_msg, download_url = [None, None]  # Workaround for now (Callback State not functioning properly)
-    return mapping_msg, download_url
+        mapping_msg, url = [None, None]  # Workaround for now (Callback State not functioning properly)
+    return mapping_msg, url
 
 
 @app.server.route('/dash/download')
 def download_graphml():
-    # params = ['strain', 'order', 'detection_method', 'metabolites', 'contents', 'filename']
-    # args = [flask.request.args.get(param) for param in params]
-    # args[1] = int(args[1])  # Change order to integer (Flask returns string)
-    # args[2] = int(args[2])  # Change detection method to integer (Flask returns string)
-    # args[3] = True if args[3] is 1 else False  # Change metabolites to True/False
-    # bio_network, mapping_msg = make_network(*args)
     gml_string = flask.request.args.get('gml')
     str_io = io.StringIO()
     str_io.write(gml_string)
