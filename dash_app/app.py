@@ -1,10 +1,9 @@
 import base64
 import io
-import urllib.parse
 from datetime import datetime
 
 import dash
-from dash.dependencies import Output, Input, State
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
@@ -12,100 +11,227 @@ import flask
 import networkx as nx
 import pandas as pd
 import pandas.errors
+from dash.dependencies import Output, Input, State
 
 import bio_networks.network_generator as ng
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 radio_buttons_style = {'width': '20%',
                        'display': 'inline-block',
                        'verticalAlign': 'top'}
 
-app.layout = html.Div([
-    html.H1('PaIntDB'),
-    html.Div(['Select your input data: ',
-              dcc.RadioItems(
-                  id='network-type',
-                  options=[
-                      {'label': 'Gene List', 'value': 'basic'},
-                      {'label': 'Differential Expression Gene List', 'value': 'DE'},
-                      {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
-                  ],
-                  value='basic'),
-             html.Br(),
-             html.P('Your genes must be in the first column of a CSV file.'),
-             dcc.Upload(
-                 id='gene-list-upload',
-                 children=html.Button(
-                     id='upload-button',
-                     children='Upload Gene List'))
-              ],
-             style={'width': '25%', 'display': 'inline-block'},
-             ),
-    html.Div(id='data-upload-output',
-             style={'height': '30vh',
-                    'display': 'inline-block',
-                    'verticalAlign': 'top'}),
-    html.Hr(),
-    html.Div(['Select the strain:',
-              dcc.RadioItems(
-                  id='strain',
-                  options=[
-                      {'label': 'PAO1', 'value': 'PAO1'},
-                      {'label': 'PA14', 'value': 'PA14'},
-                  ],
-                  value='PAO1'
-              )],
-             style=radio_buttons_style),
-    html.Div(['Select the network order: ',
-              html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
-                                    'Recommended for long lists (>200 genes).\n\n'
-                                    'First-order: Uses your queried genes as "seed" genes and finds any interaction '
-                                    'between them and the other genes in the database. '
-                                    'Recommended for short lists (<200 genes).')),
-              dcc.RadioItems(
-                  id='order',
-                  options=[
-                      {'label': 'Zero-order', 'value': 0},
-                      {'label': 'First-order', 'value': 1},
-                  ],
-                  value=0
-              )],
-             style=radio_buttons_style),
-    html.Div(['Select the interaction detection method: ',
-              html.Abbr("?", title=('Choose which interactions you want to use to generate the network.\n\n'
-                                    'Experimentally-verified interactions have the highest confidence, but '
-                                    'result in smaller networks.\n\n '
-                                    'If mixed, the detection method is ambiguous.')),
-              dcc.RadioItems(
-                  id='detection-method',
-                  options=[
-                      {'label': 'All', 'value': 3},
-                      {'label': 'Experimental', 'value': 2},
-                      {'label': 'Mixed', 'value': 1},
-                      {'label': 'Computational', 'value': 0},
-                  ],
-                  value=3
-              )],
-             style=radio_buttons_style),
-    html.Br(),
-    dcc.Checklist(
-        id='metabolites',
-        options=[
-            {'label': 'Include metabolites', 'value': 1}
-        ]
-    ),
-    html.Br(),
-    dcc.Loading(id='loading',
-                children=html.Div(id='make-network-message'),
-                type='dot'),
-    html.Hr(),
-    html.A('Download Network(GraphML)',
-           id='download-link'
-           )
-])
+app.layout = dbc.Container(
+    [
+        dbc.Row(dbc.Col(html.Div(html.H1('PaIntDB')))),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        'Select your input data: ',
+                        dbc.RadioItems(
+                            id='network-type',
+                            options=[
+                                {'label': 'Gene List', 'value': 'basic'},
+                                {'label': 'Differential Expression Gene List', 'value': 'DE'},
+                                {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
+                            ],
+                            value='basic'),
+                        html.Br(),
+                        html.P('Your genes must be in the first column of a CSV file.'),
+                        dcc.Upload(
+                            id='gene-list-upload',
+                            children=html.Button(
+                                id='upload-button',
+                                children='Upload Gene List'))
+
+                    ],
+                    width=4
+                ),
+                dbc.Col(html.Div(id='data-upload-output'), width=3),
+            ]
+        ),
+        html.Hr(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        html.Div(
+                            ['Select the strain:',
+                             dbc.RadioItems(
+                                 id='strain',
+                                 options=[
+                                     {'label': 'PAO1', 'value': 'PAO1'},
+                                     {'label': 'PA14', 'value': 'PA14'},
+                                 ],
+                                 value='PAO1'
+                             )]
+                        ),
+                    ],
+                    width=2
+                ),
+                dbc.Col(
+                    [
+                        html.Div(
+                            ['Select the network order: ',
+                             html.Abbr("?",
+                                       title=('Zero-order: Maps direct interactions between your queried genes. '
+                                              'Recommended for long lists (>200 genes).\n\n'
+                                              'First-order: Uses your queried genes as "seed" genes and finds any'
+                                              'interaction between them and the other genes in the database. '
+                                              'Recommended for short lists (<200 genes).')),
+                             dbc.RadioItems(
+                                 id='order',
+                                 options=[
+                                     {'label': 'Zero-order', 'value': 0},
+                                     {'label': 'First-order', 'value': 1},
+                                 ],
+                                 value=0
+                             )]
+                        )
+                    ],
+                    width=2
+                ),
+                dbc.Col(
+                    [
+                        html.Div(
+                            [
+                                'Select the interaction detection method: ',
+                                html.Abbr("?",
+                                          title=('Choose which interactions you want to use to generate the '
+                                                 'network.\n\n'
+                                                 'Experimentally-verified interactions have the highest confidence, '
+                                                 'but result in smaller networks.\n\n '
+                                                 'If mixed, the detection method is ambiguous.')),
+                                dbc.RadioItems(
+                                    id='detection-method',
+                                    options=[
+                                        {'label': 'All', 'value': 3},
+                                        {'label': 'Experimental', 'value': 2},
+                                        {'label': 'Mixed', 'value': 1},
+                                        {'label': 'Computational', 'value': 0},
+                                    ],
+                                    value=3
+                                )
+                            ])
+                    ],
+                    width=2
+                )
+            ]
+        ),
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    dbc.Checklist(
+                        id='metabolites',
+                        options=[
+                            {'label': 'Include metabolites', 'value': 1}
+                        ]
+                    )
+                )
+            )
+        ),
+        html.Br(),
+        dcc.Loading(id='loading',
+                    children=html.Div(id='make-network-message'),
+                    type='dot'),
+        html.A('Download Network(GraphML)',
+               id='download-link'
+               )
+    ],
+    fluid=True
+)
+
+
+
+# app.layout = html.Div([
+#     html.H1('PaIntDB'),
+#     html.Div(['Select your input data: ',
+#               dcc.RadioItems(
+#                   id='network-type',
+#                   options=[
+#                       {'label': 'Gene List', 'value': 'basic'},
+#                       {'label': 'Differential Expression Gene List', 'value': 'DE'},
+#                       {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
+#                   ],
+#                   value='basic'),
+#              html.Br(),
+#              html.P('Your genes must be in the first column of a CSV file.'),
+#              dcc.Upload(
+#                  id='gene-list-upload',
+#                  children=html.Button(
+#                      id='upload-button',
+#                      children='Upload Gene List'))
+#               ],
+#              style={'width': '25%', 'display': 'inline-block'},
+#              ),
+#     html.Div(['lol'
+#
+#     ]),
+#     html.Div(id='data-upload-output',
+#              style={'height': '30vh',
+#                     'display': 'inline-block',
+#                     'verticalAlign': 'top'}),
+#     html.Hr(),
+#     html.Div(['Select the strain:',
+#               dcc.RadioItems(
+#                   id='strain',
+#                   options=[
+#                       {'label': 'PAO1', 'value': 'PAO1'},
+#                       {'label': 'PA14', 'value': 'PA14'},
+#                   ],
+#                   value='PAO1'
+#               )],
+#              style=radio_buttons_style),
+#     html.Div(['Select the network order: ',
+#               html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
+#                                     'Recommended for long lists (>200 genes).\n\n'
+#                                     'First-order: Uses your queried genes as "seed" genes and finds any interaction '
+#                                     'between them and the other genes in the database. '
+#                                     'Recommended for short lists (<200 genes).')),
+#               dcc.RadioItems(
+#                   id='order',
+#                   options=[
+#                       {'label': 'Zero-order', 'value': 0},
+#                       {'label': 'First-order', 'value': 1},
+#                   ],
+#                   value=0
+#               )],
+#              style=radio_buttons_style),
+#     html.Div(['Select the interaction detection method: ',
+#               html.Abbr("?", title=('Choose which interactions you want to use to generate the network.\n\n'
+#                                     'Experimentally-verified interactions have the highest confidence, but '
+#                                     'result in smaller networks.\n\n '
+#                                     'If mixed, the detection method is ambiguous.')),
+#               dcc.RadioItems(
+#                   id='detection-method',
+#                   options=[
+#                       {'label': 'All', 'value': 3},
+#                       {'label': 'Experimental', 'value': 2},
+#                       {'label': 'Mixed', 'value': 1},
+#                       {'label': 'Computational', 'value': 0},
+#                   ],
+#                   value=3
+#               )],
+#              style=radio_buttons_style),
+#     html.Br(),
+#     dcc.Checklist(
+#         id='metabolites',
+#         options=[
+#             {'label': 'Include metabolites', 'value': 1}
+#         ]
+#     ),
+#     html.Br(),
+#     dcc.Loading(id='loading',
+#                 children=html.Div(id='make-network-message'),
+#                 type='dot'),
+#     html.Hr(),
+#     html.A('Download Network(GraphML)',
+#            id='download-link'
+#            )
+# ])
 
 
 def parse_gene_list(contents, filename):
@@ -118,14 +244,14 @@ def parse_gene_list(contents, filename):
         return 'There was a problem uploading your file. Check that it is the correct format.'
 
     small_df = genes_df.head()
-    children = [
-        html.P('Your list was uploaded successfully!'),
-        html.Br(),
-        html.P(filename),
-        dash_table.DataTable(
-            data=small_df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in small_df.columns]
-        )]
+    children = html.Div(
+        [
+            html.P('Your list was uploaded successfully!'),
+            html.Br(),
+            html.P(filename),
+            dbc.Table.from_dataframe(small_df)
+        ]
+    )
     return children, genes_df
 
 
@@ -136,7 +262,7 @@ def make_network(network_type, strain, order, detection_method, metabolites, con
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = list(genes_df.gene)
     metabolites = True if metabolites else False
-    bio_network = None
+    #bio_network = None
     if network_type == 'basic':
         bio_network = ng.BioNetwork(gene_list=gene_list,
                                     strain=strain,

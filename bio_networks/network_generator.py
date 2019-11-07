@@ -300,6 +300,7 @@ class CombinedNetwork(DENetwork):
         self._de_genes = de_gene_list
         self._tnseq_genes = tnseq_gene_list
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
+        self._network = CombinedNetwork.make_network(self)
 
     def get_de_genes(self):
         """Returns the Differentially Expressed genes in the network."""
