@@ -6,7 +6,6 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_table
 import flask
 import networkx as nx
 import pandas as pd
@@ -15,13 +14,7 @@ from dash.dependencies import Output, Input, State
 
 import bio_networks.network_generator as ng
 
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-radio_buttons_style = {'width': '20%',
-                       'display': 'inline-block',
-                       'verticalAlign': 'top'}
 
 app.layout = dbc.Container(
     [
@@ -45,7 +38,16 @@ app.layout = dbc.Container(
                             id='gene-list-upload',
                             children=html.Button(
                                 id='upload-button',
-                                children='Upload Gene List'))
+                                children='Upload Gene List')),
+                        html.Br(),
+                        html.Div([
+                            dcc.Upload(
+                                id='tnseq-gene-list-upload',
+                                children=html.Button(
+                                    id='tnseq_upload-button',
+                                    children='Upload TnSeq Gene List'))
+                        ],
+                        )
 
                     ],
                     width=4
@@ -145,124 +147,45 @@ app.layout = dbc.Container(
 )
 
 
-
-# app.layout = html.Div([
-#     html.H1('PaIntDB'),
-#     html.Div(['Select your input data: ',
-#               dcc.RadioItems(
-#                   id='network-type',
-#                   options=[
-#                       {'label': 'Gene List', 'value': 'basic'},
-#                       {'label': 'Differential Expression Gene List', 'value': 'DE'},
-#                       {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
-#                   ],
-#                   value='basic'),
-#              html.Br(),
-#              html.P('Your genes must be in the first column of a CSV file.'),
-#              dcc.Upload(
-#                  id='gene-list-upload',
-#                  children=html.Button(
-#                      id='upload-button',
-#                      children='Upload Gene List'))
-#               ],
-#              style={'width': '25%', 'display': 'inline-block'},
-#              ),
-#     html.Div(['lol'
-#
-#     ]),
-#     html.Div(id='data-upload-output',
-#              style={'height': '30vh',
-#                     'display': 'inline-block',
-#                     'verticalAlign': 'top'}),
-#     html.Hr(),
-#     html.Div(['Select the strain:',
-#               dcc.RadioItems(
-#                   id='strain',
-#                   options=[
-#                       {'label': 'PAO1', 'value': 'PAO1'},
-#                       {'label': 'PA14', 'value': 'PA14'},
-#                   ],
-#                   value='PAO1'
-#               )],
-#              style=radio_buttons_style),
-#     html.Div(['Select the network order: ',
-#               html.Abbr("?", title=('Zero-order: Maps direct interactions between your queried genes. '
-#                                     'Recommended for long lists (>200 genes).\n\n'
-#                                     'First-order: Uses your queried genes as "seed" genes and finds any interaction '
-#                                     'between them and the other genes in the database. '
-#                                     'Recommended for short lists (<200 genes).')),
-#               dcc.RadioItems(
-#                   id='order',
-#                   options=[
-#                       {'label': 'Zero-order', 'value': 0},
-#                       {'label': 'First-order', 'value': 1},
-#                   ],
-#                   value=0
-#               )],
-#              style=radio_buttons_style),
-#     html.Div(['Select the interaction detection method: ',
-#               html.Abbr("?", title=('Choose which interactions you want to use to generate the network.\n\n'
-#                                     'Experimentally-verified interactions have the highest confidence, but '
-#                                     'result in smaller networks.\n\n '
-#                                     'If mixed, the detection method is ambiguous.')),
-#               dcc.RadioItems(
-#                   id='detection-method',
-#                   options=[
-#                       {'label': 'All', 'value': 3},
-#                       {'label': 'Experimental', 'value': 2},
-#                       {'label': 'Mixed', 'value': 1},
-#                       {'label': 'Computational', 'value': 0},
-#                   ],
-#                   value=3
-#               )],
-#              style=radio_buttons_style),
-#     html.Br(),
-#     dcc.Checklist(
-#         id='metabolites',
-#         options=[
-#             {'label': 'Include metabolites', 'value': 1}
-#         ]
-#     ),
-#     html.Br(),
-#     dcc.Loading(id='loading',
-#                 children=html.Div(id='make-network-message'),
-#                 type='dot'),
-#     html.Hr(),
-#     html.A('Download Network(GraphML)',
-#            id='download-link'
-#            )
-# ])
-
-
 def parse_gene_list(contents, filename):
-    """Parses the uploaded gene list, returns a Dash table and a Pandas DataFrame."""
+    """Parses the uploaded gene list, returns a Bootstrap table and a Pandas DataFrame."""
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
-    try:
-        genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    except pd.errors.ParserError:
-        return 'There was a problem uploading your file. Check that it is the correct format.'
-
-    small_df = genes_df.head()
-    children = html.Div(
+    genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+    small_df = genes_df.head().round(2)  # smaller df to display on app
+    upload_contents = html.Div(
         [
             html.P('Your list was uploaded successfully!'),
             html.Br(),
             html.P(filename),
-            dbc.Table.from_dataframe(small_df)
+            dbc.Table.from_dataframe(small_df, size='sm')
         ]
     )
-    return children, genes_df
+    return upload_contents, genes_df
 
 
-def make_network(network_type, strain, order, detection_method, metabolites, contents, filename):
+def parse_tnseq_list(contents, filename):
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+    tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+    tnseq_genes = tnseq_df.iloc[:, 0]
+    upload_msg = html.Div(['Your TnSeq genes were uploaded succesfully!',
+                           filename])
+    return upload_msg, tnseq_genes
+
+
+def make_network(network_type,
+                 strain,
+                 order,
+                 detection_method,
+                 metabolites, contents,
+                 filename):
     """Generates a BioNetwork."""
     start_time = datetime.now()
     upload_msg, genes_df = parse_gene_list(contents, filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
-    gene_list = list(genes_df.gene)
+    gene_list = genes_df.gene.tolist()
     metabolites = True if metabolites else False
-    #bio_network = None
     if network_type == 'basic':
         bio_network = ng.BioNetwork(gene_list=gene_list,
                                     strain=strain,
@@ -276,10 +199,17 @@ def make_network(network_type, strain, order, detection_method, metabolites, con
                                    detection_method=detection_method,
                                    metabolites=metabolites,
                                    de_genes_df=genes_df)
-    # elif network_type == 'combined':
-    #     bio_network = ng.CombinedNetwork()
+    elif network_type == 'combined':
+        upload_msg, tnseq_genes = parse_tnseq_list(contents, filename)
+        bio_network = ng.CombinedNetwork(gene_list=gene_list,
+                                         strain=strain,
+                                         order=order,
+                                         detection_method=detection_method,
+                                         metabolites=metabolites,
+                                         de_genes_df=genes_df,
+                                         tnseq_gene_list=tnseq_genes)
     else:
-        bio_network = ''
+        bio_network = None
 
     if metabolites:
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
@@ -301,6 +231,17 @@ def make_network(network_type, strain, order, detection_method, metabolites, con
     print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
     print(end_time - start_time)
     return bio_network, mapping_msg
+
+
+@app.callback(
+    Output('tnseq-gene-list-upload', 'style'),
+    [Input('network-type', 'value')]
+)
+def show_tnseq_upload(network_type):
+    if network_type == 'combined':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
 
 
 @app.callback(

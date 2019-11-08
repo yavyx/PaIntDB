@@ -10,8 +10,8 @@
 - New function to extract all db information from the selected interaction(s). Important for when the Dash application is running.
 - Come up with first-order interaction algortihms. Need to think more about this algorithm.
 - Double lists when extracting study items.
-- Fix GO enrichment. Run GO enrichment on network or on full list (not all original genes are mapped) ?
-
+- Fix GO enrichment. Run GO enrichment on network or on full list (not all original genes are mapped) ? Both
+- Use decorators? to modify network generating functions.
 
 ### Dash GUI
 - How to handle exceptions

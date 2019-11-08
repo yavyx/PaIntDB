@@ -295,9 +295,9 @@ class DENetwork(BioNetwork):
 class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
 
-    def __init__(self, de_gene_list, tnseq_gene_list, strain, order, detection_method, metabolites):
-        super().__init__(de_gene_list, strain, order, detection_method, metabolites)
-        self._de_genes = de_gene_list
+    def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
+        super().__init__(gene_list, de_genes_df, strain, order, detection_method, metabolites)
+        self._de_genes = de_genes_df.gene
         self._tnseq_genes = tnseq_gene_list
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
         self._network = CombinedNetwork.make_network(self)
