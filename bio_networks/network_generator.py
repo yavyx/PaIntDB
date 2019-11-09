@@ -7,7 +7,7 @@ import pandas as pd
 
 import bio_networks.helpers as h
 
-DB_PATH = '/home/javier/PycharmProjects/PaIntDB/PaIntDB.db'
+DB_PATH = os.path.join('/home', 'javier', 'PycharmProjects', 'PaIntDB', 'PaIntDB.db')
 
 
 class BioNetwork:
@@ -258,9 +258,9 @@ class BioNetwork:
         BioNetwork.add_locus_tags(self)
         return self._network
 
-    def write_gml(self, file_name):
+    def write_gml(self, path):
         """Export the network as a GraphML file."""
-        nx.write_graphml(self._network, '/'.join([os.getcwd(), file_name]))
+        nx.write_graphml(self._network, path)
 
 
 class DENetwork(BioNetwork):

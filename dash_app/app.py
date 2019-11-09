@@ -1,15 +1,14 @@
 import base64
 import io
 from datetime import datetime
+import os
 
 import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import flask
-import networkx as nx
 import pandas as pd
-import pandas.errors
 from dash.dependencies import Output, Input, State
 
 import bio_networks.network_generator as ng
@@ -28,7 +27,7 @@ app.layout = dbc.Container(
                             id='network-type',
                             options=[
                                 {'label': 'Gene List', 'value': 'basic'},
-                                {'label': 'Differential Expression Gene List', 'value': 'DE'},
+                                {'label': 'Differentially-Expressed (DE) Gene List', 'value': 'DE'},
                                 {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
                             ],
                             value='basic'),
@@ -39,20 +38,22 @@ app.layout = dbc.Container(
                             children=html.Button(
                                 id='upload-button',
                                 children='Upload Gene List')),
-                        html.Br(),
                         html.Div([
                             dcc.Upload(
                                 id='tnseq-gene-list-upload',
                                 children=html.Button(
                                     id='tnseq_upload-button',
                                     children='Upload TnSeq Gene List'))
-                        ],
+                        ], style={'marginTop': '1vh'}
                         )
 
                     ],
                     width=4
                 ),
-                dbc.Col(html.Div(id='data-upload-output'), width=3),
+                dbc.Col(
+                    html.Div(id='data-upload-output', style={'height': '30vh'}),
+                    width=5
+                ),
             ]
         ),
         html.Hr(),
@@ -79,11 +80,12 @@ app.layout = dbc.Container(
                         html.Div(
                             ['Select the network order: ',
                              html.Abbr("?",
-                                       title=('Zero-order: Maps direct interactions between your queried genes. '
+                                       title=('Zero-order: Maps direct interactions between your queried genes.\n'
                                               'Recommended for long lists (>200 genes).\n\n'
-                                              'First-order: Uses your queried genes as "seed" genes and finds any'
-                                              'interaction between them and the other genes in the database. '
-                                              'Recommended for short lists (<200 genes).')),
+                                              'First-order: Uses your queried genes as "seed" genes and finds any\n'
+                                              'interaction between them and the other genes in the database.\n'
+                                              'Recommended for short lists (<200 genes).')
+                                       ),
                              dbc.RadioItems(
                                  id='order',
                                  options=[
@@ -103,42 +105,46 @@ app.layout = dbc.Container(
                                 'Select the interaction detection method: ',
                                 html.Abbr("?",
                                           title=('Choose which interactions you want to use to generate the '
-                                                 'network.\n\n'
-                                                 'Experimentally-verified interactions have the highest confidence, '
-                                                 'but result in smaller networks.\n\n '
-                                                 'If mixed, the detection method is ambiguous.')),
+                                                 'network.\n\nAll includes interactions predicted computationally.\n\n'
+                                                 'Experimentally-verified interactions have the highest confidence,\n '
+                                                 'but result in smaller networks.\n\n ')
+                                          ),
                                 dbc.RadioItems(
                                     id='detection-method',
                                     options=[
                                         {'label': 'All', 'value': 3},
                                         {'label': 'Experimental', 'value': 2},
-                                        {'label': 'Mixed', 'value': 1},
-                                        {'label': 'Computational', 'value': 0},
                                     ],
                                     value=3
                                 )
                             ])
                     ],
-                    width=2
+                    width=3
                 )
             ]
         ),
         dbc.Row(
             dbc.Col(
                 html.Div(
-                    dbc.Checklist(
-                        id='metabolites',
-                        options=[
-                            {'label': 'Include metabolites', 'value': 1}
-                        ]
-                    )
+                    [
+                        html.Br(),
+                        dbc.Checklist(
+                            id='metabolites',
+                            options=[
+                                {'label': 'Include metabolites', 'value': 1}
+                            ]
+                        )
+                    ]
                 )
             )
         ),
         html.Br(),
+        html.Button('Make Network', id='make-network'),
+        html.Br(),
         dcc.Loading(id='loading',
                     children=html.Div(id='make-network-message'),
                     type='dot'),
+        html.Hr(),
         html.A('Download Network(GraphML)',
                id='download-link'
                )
@@ -152,25 +158,34 @@ def parse_gene_list(contents, filename):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    small_df = genes_df.head().round(2)  # smaller df to display on app
+    print(genes_df.head())
+    # Formatting DF
+    genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
+    genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
+    genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
+    small_df = genes_df.head()  # smaller df to display on app
+    cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]
+    small_df[cols] = small_df[cols].round(2)
+
     upload_contents = html.Div(
         [
             html.P('Your list was uploaded successfully!'),
-            html.Br(),
             html.P(filename),
-            dbc.Table.from_dataframe(small_df, size='sm')
+            dbc.Table.from_dataframe(small_df, size='sm', bordered=True)
         ]
     )
     return upload_contents, genes_df
 
 
 def parse_tnseq_list(contents, filename):
+    """Parses the uploaded TnSeq gene list"""
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     tnseq_genes = tnseq_df.iloc[:, 0]
     upload_msg = html.Div(['Your TnSeq genes were uploaded succesfully!',
                            filename])
+    print(len(tnseq_genes))
     return upload_msg, tnseq_genes
 
 
@@ -178,11 +193,14 @@ def make_network(network_type,
                  strain,
                  order,
                  detection_method,
-                 metabolites, contents,
-                 filename):
+                 metabolites,
+                 rnaseq_filename,
+                 rnaseq_contents,
+                 tnseq_filename=None,
+                 tnseq_contents=None,):
     """Generates a BioNetwork."""
     start_time = datetime.now()
-    upload_msg, genes_df = parse_gene_list(contents, filename)
+    upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = genes_df.gene.tolist()
     metabolites = True if metabolites else False
@@ -200,7 +218,8 @@ def make_network(network_type,
                                    metabolites=metabolites,
                                    de_genes_df=genes_df)
     elif network_type == 'combined':
-        upload_msg, tnseq_genes = parse_tnseq_list(contents, filename)
+        upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
+        print(tnseq_genes)
         bio_network = ng.CombinedNetwork(gene_list=gene_list,
                                          strain=strain,
                                          order=order,
@@ -214,7 +233,7 @@ def make_network(network_type,
     if metabolites:
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
                                    metabolites were mapped to these genes.'''
-                               .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
+                               .format(len(bio_network.get_mapped_genes()),
                                        len(gene_list),
                                        len(ng.BioNetwork.get_mapped_metabolites(bio_network))
                                        )
@@ -251,7 +270,7 @@ def show_tnseq_upload(network_type):
 )
 def upload_message(contents, filename):
     """Returns a successful message after file was uploaded."""
-    if contents is not None:
+    if contents:
         try:
             small_table, genes_df = parse_gene_list(contents, filename)
             return small_table
@@ -262,39 +281,53 @@ def upload_message(contents, filename):
 @app.callback(
     [Output('make-network-message', 'children'),
      Output('download-link', 'href')],
-    [Input('network-type', 'value'),
-     Input('strain', 'value'),
-     Input('order', 'value'),
-     Input('detection-method', 'value'),
-     Input('metabolites', 'value'),
-     Input('gene-list-upload', 'contents')],
-    [State('gene-list-upload', 'filename')]
+    [Input('make-network', 'n_clicks')],
+    [State('network-type', 'value'),
+     State('strain', 'value'),
+     State('order', 'value'),
+     State('detection-method', 'value'),
+     State('metabolites', 'value'),
+     State('gene-list-upload', 'contents'),
+     State('tnseq-gene-list-upload', 'contents'),
+     State('gene-list-upload', 'filename'),
+     State('tnseq-gene-list-upload', 'filename')]
 )
-def update_download_link(network_type, strain, order, detection_method, metabolites, contents, filename):
-    """Generates a network every time parameters are changed."""
-    if contents is not None:
-        bio_network, mapping_msg = make_network(network_type, strain, order, detection_method, metabolites, contents,
-                                                filename)
-        nx_network = bio_network.get_network()
-        url = '/dash/download?gml={}'.format(('\n'.join(nx.generate_graphml(nx_network))))  # Create URL string
+def update_download_link(
+        n_clicks,
+        network_type,
+        strain,
+        order,
+        detection_method,
+        metabolites,
+        rnaseq_contents,
+        tnseq_contents,
+        rnaseq_filename,
+        tnseq_filename):
+    """Generates a network every time the button is clicked."""
+    if n_clicks:
+        bio_network, mapping_msg = make_network(network_type,
+                                                strain,
+                                                order,
+                                                detection_method,
+                                                metabolites,
+                                                rnaseq_contents,
+                                                tnseq_contents,
+                                                rnaseq_filename,
+                                                tnseq_filename)
+        rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
+        abs_filename = os.path.join(os.getcwd(), rel_filename)
+        bio_network.write_gml(abs_filename)
     else:
-        mapping_msg, url = [None, None]  # Workaround for now (Callback State not functioning properly)
-    return mapping_msg, url
+        mapping_msg, rel_filename = [None, None]  # Workaround for now (Callback State not functioning properly)
+    return mapping_msg, '/{}'.format(rel_filename)
 
 
-@app.server.route('/dash/download')
-def download_graphml():
-    gml_string = flask.request.args.get('gml')
-    str_io = io.StringIO()
-    str_io.write(gml_string)
-    mem = io.BytesIO()
-    mem.write(str_io.getvalue().encode('utf-8'))
-    mem.seek(0)
-    return flask.send_file(mem,
-                           mimetype='application/xml',
-                           attachment_filename='network.graphml',
-                           as_attachment=True)
-
+@app.server.route('/downloads/<path:path>')
+def download_graphml(path):
+    root_dir = os.getcwd()
+    return flask.send_from_directory(
+        os.path.join(root_dir, 'downloads'), path
+    )
 
 if __name__ == '__main__':
     app.run_server(debug=True)
