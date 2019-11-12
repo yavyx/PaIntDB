@@ -297,8 +297,8 @@ class CombinedNetwork(DENetwork):
 
     def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
         super().__init__(gene_list, de_genes_df, strain, order, detection_method, metabolites)
-        self._de_genes = de_genes_df.gene
-        self._tnseq_genes = tnseq_gene_list
+        self._de_genes = de_genes_df.gene.tolist()
+        self._tnseq_genes = tnseq_gene_list.tolist()
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
         self._network = CombinedNetwork.make_network(self)
 

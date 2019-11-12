@@ -158,7 +158,6 @@ def parse_gene_list(contents, filename):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    print(genes_df.head())
     # Formatting DF
     genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
     genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
@@ -185,7 +184,6 @@ def parse_tnseq_list(contents, filename):
     tnseq_genes = tnseq_df.iloc[:, 0]
     upload_msg = html.Div(['Your TnSeq genes were uploaded succesfully!',
                            filename])
-    print(len(tnseq_genes))
     return upload_msg, tnseq_genes
 
 
@@ -219,7 +217,6 @@ def make_network(network_type,
                                    de_genes_df=genes_df)
     elif network_type == 'combined':
         upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
-        print(tnseq_genes)
         bio_network = ng.CombinedNetwork(gene_list=gene_list,
                                          strain=strain,
                                          order=order,
@@ -227,6 +224,8 @@ def make_network(network_type,
                                          metabolites=metabolites,
                                          de_genes_df=genes_df,
                                          tnseq_gene_list=tnseq_genes)
+        print(type(bio_network.get_tnseq_genes()))
+
     else:
         bio_network = None
 
@@ -235,12 +234,12 @@ def make_network(network_type,
                                    metabolites were mapped to these genes.'''
                                .format(len(bio_network.get_mapped_genes()),
                                        len(gene_list),
-                                       len(ng.BioNetwork.get_mapped_metabolites(bio_network))
+                                       len(bio_network.get_mapped_metabolites())
                                        )
                                )
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
-                               .format(len(ng.BioNetwork.get_mapped_genes(bio_network)),
+                               .format(len(bio_network.get_mapped_genes()),
                                        len(gene_list))
                                )
     end_time = datetime.now()
@@ -257,6 +256,7 @@ def make_network(network_type,
     [Input('network-type', 'value')]
 )
 def show_tnseq_upload(network_type):
+    """Show TnSeq upload button when combined networks are selected."""
     if network_type == 'combined':
         return {'display': 'block'}
     else:
@@ -310,10 +310,10 @@ def update_download_link(
                                                 order,
                                                 detection_method,
                                                 metabolites,
-                                                rnaseq_contents,
-                                                tnseq_contents,
                                                 rnaseq_filename,
-                                                tnseq_filename)
+                                                rnaseq_contents,
+                                                tnseq_filename,
+                                                tnseq_contents)
         rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
         abs_filename = os.path.join(os.getcwd(), rel_filename)
         bio_network.write_gml(abs_filename)
@@ -326,8 +326,10 @@ def update_download_link(
 def download_graphml(path):
     root_dir = os.getcwd()
     return flask.send_from_directory(
-        os.path.join(root_dir, 'downloads'), path
+        os.path.join(root_dir, 'downloads'), path,
+        cache_timeout=-1
     )
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
