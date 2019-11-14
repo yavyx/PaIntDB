@@ -7,6 +7,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table
 import flask
 import pandas as pd
 from dash.dependencies import Output, Input, State
@@ -145,9 +146,11 @@ app.layout = dbc.Container(
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
-        html.A('Download Network(GraphML)',
-               id='download-link'
-               )
+        html.Button(
+            html.A('Download Network(GraphML)',
+                   id='download-link'
+                   )
+        )
     ],
     fluid=True
 )
@@ -165,12 +168,19 @@ def parse_gene_list(contents, filename):
     small_df = genes_df.head()  # smaller df to display on app
     cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]
     small_df[cols] = small_df[cols].round(2)
+    table = dash_table.DataTable(
+        data=small_df.to_dict('records'),
+        columns=[{"name": i, "id": i} for i in small_df.columns],
+        style_table={
+            'maxHeight': '20vh',
+        }
+    )
 
     upload_contents = html.Div(
         [
             html.P('Your list was uploaded successfully!'),
             html.P(filename),
-            dbc.Table.from_dataframe(small_df, size='sm', bordered=True)
+            table
         ]
     )
     return upload_contents, genes_df
