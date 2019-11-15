@@ -22,7 +22,12 @@ class BioNetwork:
         self._raw_info = dict()
         self._interactions_of_interest = []
         self._network = BioNetwork.make_network(self)
-        self._mapped_genes = [node for node, attr in self._network.nodes(data=True) if attr['type'] == 'p']
+        if order == 0:
+            self._mapped_genes = [node for node, attr in self._network.nodes(data=True)
+                                             if attr['type'] == 'p']
+        if order == 1:
+            self._mapped_genes = [node for node, attr in self._network.nodes(data=True)
+                                             if attr['type'] == 'p' and attr['seed'] == 1]
         self._mapped_metabolites = [node for node, attr in self._network.nodes(data=True) if attr['type'] == 'm']
 
     def get_all_genes(self):
@@ -136,6 +141,9 @@ class BioNetwork:
         node_localizations = dict()
         for localization in localizations:
             node_localizations[localization[0]] = localization[1]
+        for key, value in node_localizations.items():
+            if value is None:
+                value = 'NA'
         db_tidy_info['localization'] = node_localizations
 
         names = self._raw_info['short_names']
@@ -298,7 +306,7 @@ class CombinedNetwork(DENetwork):
     def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
         super().__init__(gene_list, de_genes_df, strain, order, detection_method, metabolites)
         self._de_genes = de_genes_df.gene.tolist()
-        self._tnseq_genes = tnseq_gene_list.tolist()
+        self._tnseq_genes = tnseq_gene_list
         self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
         self._network = CombinedNetwork.make_network(self)
 

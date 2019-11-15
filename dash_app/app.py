@@ -4,17 +4,20 @@ from datetime import datetime
 import os
 
 import dash
+from dash.dependencies import Output, Input, State
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 import flask
 import pandas as pd
-from dash.dependencies import Output, Input, State
+
 
 import bio_networks.network_generator as ng
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+server = app.server
 
 app.layout = dbc.Container(
     [
@@ -166,8 +169,8 @@ def parse_gene_list(contents, filename):
     genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
     genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
     small_df = genes_df.head()  # smaller df to display on app
-    cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]
-    small_df[cols] = small_df[cols].round(2)
+    cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
+    small_df.loc[:, cols] = small_df[cols].round(2)
     table = dash_table.DataTable(
         data=small_df.to_dict('records'),
         columns=[{"name": i, "id": i} for i in small_df.columns],
@@ -191,7 +194,7 @@ def parse_tnseq_list(contents, filename):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    tnseq_genes = tnseq_df.iloc[:, 0]
+    tnseq_genes = tnseq_df.iloc[:, 0].tolist()
     upload_msg = html.Div(['Your TnSeq genes were uploaded succesfully!',
                            filename])
     return upload_msg, tnseq_genes
@@ -211,7 +214,6 @@ def make_network(network_type,
     upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = genes_df.gene.tolist()
-    metabolites = True if metabolites else False
     if network_type == 'basic':
         bio_network = ng.BioNetwork(gene_list=gene_list,
                                     strain=strain,
@@ -234,7 +236,6 @@ def make_network(network_type,
                                          metabolites=metabolites,
                                          de_genes_df=genes_df,
                                          tnseq_gene_list=tnseq_genes)
-        print(type(bio_network.get_tnseq_genes()))
 
     else:
         bio_network = None
@@ -337,7 +338,7 @@ def download_graphml(path):
     root_dir = os.getcwd()
     return flask.send_from_directory(
         os.path.join(root_dir, 'downloads'), path,
-        cache_timeout=-1
+        cache_timeout=-1  # Prevent browser from caching previous file
     )
 
 
