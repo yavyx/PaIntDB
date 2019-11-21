@@ -15,32 +15,22 @@ class BioNetwork:
 
     def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
         self._strain = strain
-        self._order = order
+        self.order = order
         self._detection_method = detection_method
         self._metabolites = metabolites
-        self._genes_of_interest = gene_list
+        self.genes_of_interest = gene_list
         self._raw_info = dict()
         self._interactions_of_interest = []
-        self._network = BioNetwork.make_network(self)
+        self.network = BioNetwork.make_network(self)
+
         if order == 0:
-            self._mapped_genes = [node for node, attr in self._network.nodes(data=True)
-                                             if attr['type'] == 'p']
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p']
         if order == 1:
-            self._mapped_genes = [node for node, attr in self._network.nodes(data=True)
-                                             if attr['type'] == 'p' and attr['seed'] == 1]
-        self._mapped_metabolites = [node for node, attr in self._network.nodes(data=True) if attr['type'] == 'm']
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p' and attr['seed'] == 1]
 
-    def get_all_genes(self):
-        return self._genes_of_interest
-
-    def get_mapped_genes(self):
-        return self._mapped_genes
-
-    def get_mapped_metabolites(self):
-        return self._mapped_metabolites
-
-    def get_network(self):
-        return self._network
+        self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
 
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
@@ -193,33 +183,33 @@ class BioNetwork:
             interaction_edges[interaction_participants[i][1]] = (interaction_participants[i][0],
                                                                  interaction_participants[i+1][0],
                                                                  interaction_participants[i][2])
-        if self._order == 0:
+        if self.order == 0:
             interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
-                                        if interactors[0] in self._genes_of_interest
-                                        and interactors[1] in self._genes_of_interest]
+                                        if interactors[0] in self.genes_of_interest
+                                        and interactors[1] in self.genes_of_interest]
             if self._metabolites is True:
                 mapped_metabolites = BioNetwork.map_metabolites(interaction_edges)
                 metabolites_of_interest = [metabolites for protein, metabolites in mapped_metabolites.items()
-                                           if protein in self._genes_of_interest]
+                                           if protein in self.genes_of_interest]
                 # Unnest metabolite list
                 metabolites_of_interest = [metabolite for sublist in metabolites_of_interest for metabolite in sublist]
 
             # Check which genes/metabolites combinations are of interest.
                 interactions_of_interest = [
                     interactionID for interactionID, interactors in interaction_edges.items()
-                    if (interactors[0] in self._genes_of_interest or interactors[0] in metabolites_of_interest)
-                    and (interactors[1] in self._genes_of_interest or interactors[1] in metabolites_of_interest)
+                    if (interactors[0] in self.genes_of_interest or interactors[0] in metabolites_of_interest)
+                    and (interactors[1] in self.genes_of_interest or interactors[1] in metabolites_of_interest)
                 ]
 
-        elif self._order == 1:
+        elif self.order == 1:
             if self._metabolites is True:
                 interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
-                                            if interactors[0] in self._genes_of_interest
-                                            or interactors[1] in self._genes_of_interest]
+                                            if interactors[0] in self.genes_of_interest
+                                            or interactors[1] in self.genes_of_interest]
             else:
                 interactions_of_interest = [interactionID for interactionID, genes in interaction_edges.items()
-                                            if (genes[0] in self._genes_of_interest
-                                            or genes[1] in self._genes_of_interest)
+                                            if (genes[0] in self.genes_of_interest
+                                            or genes[1] in self.genes_of_interest)
                                             and genes[2] == 'p-p']
         self._interactions_of_interest = interactions_of_interest
 
@@ -232,30 +222,30 @@ class BioNetwork:
 
     def build_network(self, edge_list_df, db_tidy_info):
         """Creates a network from a edge list DataFrame, adds node attributes."""
-        self._network = nx.convert_matrix.from_pandas_edgelist(edge_list_df, source='interactor1', target='interactor2',
+        self.network = nx.convert_matrix.from_pandas_edgelist(edge_list_df, source='interactor1', target='interactor2',
                                                                edge_attr=['experimental', 'id'])
-        nx.set_node_attributes(self._network, db_tidy_info['proteins'])
-        nx.set_node_attributes(self._network, db_tidy_info['short_names'])
-        nx.set_node_attributes(self._network, db_tidy_info['localization'], name='localization')
+        nx.set_node_attributes(self.network, db_tidy_info['proteins'])
+        nx.set_node_attributes(self.network, db_tidy_info['short_names'])
+        nx.set_node_attributes(self.network, db_tidy_info['localization'], name='localization')
         if self._metabolites is True:
-            nx.set_node_attributes(self._network, db_tidy_info['metabolites'])
+            nx.set_node_attributes(self.network, db_tidy_info['metabolites'])
 
         # Label seed proteins in first-order networks.
-        if self._order == 1:
-            for node in self._network.nodes():
-                if node in self._genes_of_interest:
-                    self._network.node[node]['seed'] = 1
+        if self.order == 1:
+            for node in self.network.nodes():
+                if node in self.genes_of_interest:
+                    self.network.node[node]['seed'] = 1
                 else:
-                    self._network.node[node]['seed'] = 0
+                    self.network.node[node]['seed'] = 0
         # Remove orphan nodes and self-loop edges.
-        self._network.remove_edges_from(self._network.selfloop_edges())
-        self._network.remove_nodes_from(list(nx.isolates(self._network)))
+        self.network.remove_edges_from(nx.selfloop_edges(self.network))
+        self.network.remove_nodes_from(list(nx.isolates(self.network)))
 
     def add_locus_tags(self):
         """Replace 'NA' strings in the short names attribute with their corresponding locus tag."""
-        for node in self._network.nodes:
-            if self._network.node[node]['shortName'] == 'NA':
-                self._network.node[node]['shortName'] = node
+        for node in self.network.nodes:
+            if self.network.nodes[node]['shortName'] == 'NA':
+                self.network.nodes[node]['shortName'] = node
 
     def make_network(self):
         """Generates a PPI network from a list of genes."""
@@ -264,11 +254,11 @@ class BioNetwork:
         network_data = BioNetwork.make_edge_list(self)
         BioNetwork.build_network(self, network_data, tidy_db_info)
         BioNetwork.add_locus_tags(self)
-        return self._network
+        return self.network
 
     def write_gml(self, path):
         """Export the network as a GraphML file."""
-        nx.write_graphml(self._network, path)
+        nx.write_graphml(self.network, path)
 
 
 class DENetwork(BioNetwork):
@@ -276,9 +266,9 @@ class DENetwork(BioNetwork):
 
     def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites):
         super().__init__(gene_list, strain, order, detection_method, metabolites)
-        self._de_genes_df = de_genes_df
-        self._genes_of_interest = gene_list
-        self._network = DENetwork.make_network(self)
+        self.de_genes_df = de_genes_df
+        self.genes_of_interest = gene_list
+        self.network = DENetwork.make_network(self)
 
     @staticmethod
     def process_de_genes_list(de_genes_df):
@@ -296,8 +286,8 @@ class DENetwork(BioNetwork):
 
     def make_network(self):
         super().make_network()
-        nx.set_node_attributes(self._network, DENetwork.process_de_genes_list(self._de_genes_df))
-        return self._network
+        nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
+        return self.network
 
 
 class CombinedNetwork(DENetwork):
@@ -305,40 +295,34 @@ class CombinedNetwork(DENetwork):
 
     def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
         super().__init__(gene_list, de_genes_df, strain, order, detection_method, metabolites)
-        self._de_genes = de_genes_df.gene.tolist()
-        self._tnseq_genes = tnseq_gene_list
-        self._genes_of_interest = list(set(self._de_genes).union(set(self._tnseq_genes)))
-        self._network = CombinedNetwork.make_network(self)
-
-    def get_de_genes(self):
-        """Returns the Differentially Expressed genes in the network."""
-        return self._de_genes
-
-    def get_tnseq_genes(self):
-        """Returns the TnSeq genes in the network."""
-        return self._tnseq_genes
+        self.de_genes = de_genes_df.gene.tolist()
+        self.tnseq_genes = tnseq_gene_list
+        self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
+        self.network = CombinedNetwork.make_network(self)
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
-        for node in self._network.nodes():
-            if (node in self._de_genes) and (node in self._tnseq_genes):
-                self._network.node[node]['significance_source'] = 'both'
-            elif node in self._de_genes:
-                self._network.node[node]['significance_source'] = 'transcriptional'
-            elif node in self._tnseq_genes:
-                self._network.node[node]['significance_source'] = 'phenotypical'
+        for node in self.network.nodes():
+            if (node in self.de_genes) and (node in self.tnseq_genes):
+                self.network.nodes[node]['significanceSource'] = 'both'
+            elif node in self.de_genes:
+                self.network.nodes[node]['significanceSource'] = 'RNASeq'
+            elif node in self.tnseq_genes:
+                self.network.nodes[node]['significanceSource'] = 'TnSeq'
             else:
-                self._network.node[node]['significance_source'] = 'none'
+                self.network.nodes[node]['significanceSource'] = 'none'
 
     def make_network(self):
         super().make_network()
         CombinedNetwork.add_significance_source(self)
-        return self._network
+        return self.network
 
 
-# if __name__ == '__main__':
-#     BioNetwork(h.get_genes('/home/javier/Documents/Daniel/DE_relAspoTvsPAO1_planktonic_original.csv'),
-#                strain='PAO1',
-#                order=0,
-#                detection_method=0,
-#                metabolites=True)
+#  Corries combined network for testing:
+CombinedNetwork(h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
+                pd.read_csv('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
+                h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/TnSeq/in-vitro/essential/finalEss_noTrue_RPMI_AZMvsunt_20190715.csv'),
+                'PAO1',
+                0,
+                3,
+                False)

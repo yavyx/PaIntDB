@@ -1,39 +1,58 @@
-import re
+from math import sqrt
 
 import dash
-from dash.dependencies import Output, Input, State
+from dash.dependencies import Output, Input  # State
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 import dash_html_components as html
 import networkx as nx
+import pandas as pd
 
+import bio_networks.network_generator as ng
+import bio_networks.helpers as h
+import dash_app.cytoscape_stylesheets as stylesheets
+
+print(stylesheets.combined)
 
 def make_cyto_elements(network):
-    """Takes a networkx network and outputs cyto elements that can be visualized with Dash."""
-    cytoscape_elements = []
+    """Takes a BioNetwork and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
+    classes according to the attributes and the layout coordinates."""
 
-    for node in network.nodes():
-        node_info = network.nodes(data=True)[node]
-        cyto_node = {'data': {
-            'id': node,
-            'label': node_info['shortName']},
-            'classes': '{} {}'.format(node_info['type'], node_info['localization'])
-        }
-        cytoscape_elements.append(cyto_node)
+    # Get nodes of the largest component and generate sub-network
+    main_component_nodes = [component for component in nx.connected_components(temp_network)][0]
+    network = network.subgraph(main_component_nodes)
 
-    for edge in nx.generate_edgelist(network):
-        edge = re.sub(r'\s\{.*?\}', '', edge)  # Only keep node names
-        node1, node2 = edge.split(' ')
-        cyto_edge = {'data': {'source': node1,
-                              'target': node2,
-                              'label': '{} to {}'.format(node1, node2)}}
-        cytoscape_elements.append(cyto_edge)
+    # Convert nx network to cytoscape JSON
+    json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
+    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[500, 500])
+    # layout = nx.spring_layout(network)
 
-    return cytoscape_elements
+    nodes = json_elements['nodes']
+    for node in nodes:
+        node['data']['label'] = node['data']['shortName']  # Use short name as node label
+
+        pos = layout[node['data']['id']]  # Extract positions from layout dict
+        node['position'] = {'x': pos[0], 'y': pos[1]}
+        #node['position'] = {'x': pos[0] * 1000 + 500, 'y': pos[1] * 1000 + 500}
+
+    elements = nodes + json_elements['edges']
+
+    return elements
 
 
-temp_network = nx.read_graphml('/home/javier/PycharmProjects/PaIntDB/temp_data/azm_vs_control_network.graphml')
+# temp_bionetwork = ng.CombinedNetwork(h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
+#                                      pd.read_csv('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
+#                                      h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/TnSeq/in-vitro/essential/finalEss_noTrue_RPMI_AZMvsunt_20190715.csv'),
+#                                      'PAO1',
+#                                      0,
+#                                      3,
+#                                      False)
+#
+# temp_network = temp_bionetwork.network
+# nx.write_graphml(temp_network, 'corries_AZM_combined.graphml')
+temp_network = nx.read_graphml('corries_AZM_combined.graphml')
 cyto_elements = make_cyto_elements(temp_network)
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -45,6 +64,15 @@ app.layout = html.Div(
                     dbc.Col(
                         html.Div(
                             [
+                                dbc.Label('Color Mapping'),
+                                dbc.RadioItems(
+                                    options=[
+                                        {'label': 'Significance Source', 'value': 'ss'},
+                                        {'label': 'Differential Expression', 'value': 'de'}
+                                    ],
+                                    value='ss',
+                                    id='color-map',
+                                    ),
                                 html.H5('Select nodes:'),
                                 html.Details(
                                     [
@@ -61,7 +89,6 @@ app.layout = html.Div(
                                     ],
                                 ),
                                 html.Br(),
-                                #dbc.Label('By mniguebo'),
                                 dbc.Button(id='reset-view',
                                            children='Reset View')
                             ],
@@ -74,11 +101,9 @@ app.layout = html.Div(
                         [
                             cyto.Cytoscape(
                                 id='cyto-network',
-                                layout={'name': 'grid'},
                                 style={'width': '100%',
                                        'height': '80vh',
-                                       'line-color': 'red',
-                                       'backgroundColor': '#7FDBFF',
+                                       'line-color': 'red'
                                        },
                                 elements=cyto_elements,
                                 zoom=1,
@@ -92,6 +117,7 @@ app.layout = html.Div(
                                 style={'height': '20vh'}
                             )
                         ],
+                        width=8
                     ),
                 ]
             )
@@ -108,6 +134,17 @@ app.layout = html.Div(
 )
 def reset_layout(n_clicks):
     return [1, cyto_elements]
+
+
+@app.callback(
+    [Output('cyto-network', 'stylesheet')],
+    [Input('color-map', 'value')]
+)
+def change_color_map(value):
+    if value == 'ss':
+        return [stylesheets.combined]
+    else:
+        return [stylesheets.fold_change]
 
 
 if __name__ == "__main__":

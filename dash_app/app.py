@@ -243,14 +243,14 @@ def make_network(network_type,
     if metabolites:
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
                                    metabolites were mapped to these genes.'''
-                               .format(len(bio_network.get_mapped_genes()),
+                               .format(len(bio_network.mapped_genes()),
                                        len(gene_list),
-                                       len(bio_network.get_mapped_metabolites())
+                                       len(bio_network.mapped_metabolites())
                                        )
                                )
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
-                               .format(len(bio_network.get_mapped_genes()),
+                               .format(len(bio_network.mapped_genes()),
                                        len(gene_list))
                                )
     end_time = datetime.now()

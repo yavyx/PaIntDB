@@ -12,13 +12,16 @@
 - Double lists when extracting study items.
 - Fix GO enrichment. Run GO enrichment on network or on full list (not all original genes are mapped) ? Both
 - Use decorators? to modify network generating functions.
+- Change gene_list to genes_df for all networks
+- Fix mapped genes in combined networks
 
 ### Dash GUI
 - How to handle exceptions
 - State not working in update_download_link
 - React errors
-- Download button not working properly.
 
+## Vis module
+- Reset view button not working
 
 ### DONE!
 - Make DB path a constant.
@@ -28,6 +31,7 @@
 - Add metabolite info to the networks.
 - Removed metabolites from gene count.
 - Metabolites are not added in computational networks. Not a bug! (There are no computational p-m interactions)
+- Download button not working properly.
 
 
 ### Separate
