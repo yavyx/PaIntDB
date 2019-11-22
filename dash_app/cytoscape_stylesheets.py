@@ -5,7 +5,8 @@ combined = [
             'content': 'data(label)',
             'border-width': 1,
             'border-color': 'black',
-            'min-zoomed-font-size': 3
+            'min-zoomed-font-size': 3,
+            'min-zoomed-font-size': 10
         }
     },
     {
@@ -35,8 +36,25 @@ fold_change = [
             'content': 'data(label)',
             'border-width': 1,
             'border-color': 'black',
-            'background-color': 'mapData(log2FoldChange, -4, 4, red, blue)',
-            'min-zoomed-font-size': 3
+            'min-zoomed-font-size': 10
         }
-    }
+    },
+    {
+        'selector': '[significanceSource = "TnSeq"]',
+        'style': {
+            'background-color': 'green'
+        }
+    },
+    {
+        'selector': '[log2FoldChange < 0]',
+        'style': {
+            'background-color': 'red'
+        }
+    },
+    {
+        'selector': '[log2FoldChange > 0]',
+        'style': {
+            'background-color': 'blue'
+        }
+    },
 ]

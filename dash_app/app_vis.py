@@ -3,8 +3,10 @@ from math import sqrt
 import dash
 from dash.dependencies import Output, Input  # State
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
 import dash_cytoscape as cyto
 import dash_html_components as html
+import dash_table
 import networkx as nx
 import pandas as pd
 
@@ -12,10 +14,17 @@ import bio_networks.network_generator as ng
 import bio_networks.helpers as h
 import dash_app.cytoscape_stylesheets as stylesheets
 
-print(stylesheets.combined)
+
+def make_network_df(network):
+    """Takes a network and outputs a DataFrame of every node with its attributes."""
+    data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
+    index = [i[0] for i in network.nodes(data=True)]  # Use node id's as index
+    df = pd.DataFrame(data, index)
+    return df
+
 
 def make_cyto_elements(network):
-    """Takes a BioNetwork and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
+    """Takes a network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
     classes according to the attributes and the layout coordinates."""
 
     # Get nodes of the largest component and generate sub-network
@@ -24,8 +33,7 @@ def make_cyto_elements(network):
 
     # Convert nx network to cytoscape JSON
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
-    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[500, 500])
-    # layout = nx.spring_layout(network)
+    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[450, 450])
 
     nodes = json_elements['nodes']
     for node in nodes:
@@ -33,7 +41,6 @@ def make_cyto_elements(network):
 
         pos = layout[node['data']['id']]  # Extract positions from layout dict
         node['position'] = {'x': pos[0], 'y': pos[1]}
-        #node['position'] = {'x': pos[0] * 1000 + 500, 'y': pos[1] * 1000 + 500}
 
     elements = nodes + json_elements['edges']
 
@@ -51,6 +58,7 @@ def make_cyto_elements(network):
 # temp_network = temp_bionetwork.network
 # nx.write_graphml(temp_network, 'corries_AZM_combined.graphml')
 temp_network = nx.read_graphml('corries_AZM_combined.graphml')
+network_df = make_network_df(temp_network)
 cyto_elements = make_cyto_elements(temp_network)
 
 
@@ -89,8 +97,6 @@ app.layout = html.Div(
                                     ],
                                 ),
                                 html.Br(),
-                                dbc.Button(id='reset-view',
-                                           children='Reset View')
                             ],
                             style={'margin': '2vh'}
                         ),
@@ -100,19 +106,21 @@ app.layout = html.Div(
                     dbc.Col(
                         [
                             cyto.Cytoscape(
-                                id='cyto-network',
-                                style={'width': '100%',
-                                       'height': '80vh',
-                                       'line-color': 'red'
-                                       },
+                                id='cytoscape',
+                                style={
+                                    'width': '100%',
+                                    'height': '80vh'
+                                },
                                 elements=cyto_elements,
-                                zoom=1,
                                 maxZoom=5,
-                                minZoom=0.3
+                                minZoom=0.3,
+                                zoom=1,
+                                layout={'name': 'preset'}
                             ),
                             html.Div(
                                 [
-                                    html.H5('Selected Node Details')
+                                    html.H5('Selected Node Details'),
+                                    html.Div(id='node-details')
                                 ],
                                 style={'height': '20vh'}
                             )
@@ -128,23 +136,34 @@ app.layout = html.Div(
 
 
 @app.callback(
-    [Output('cyto-network', 'zoom'),
-     Output('cyto-network', 'elements')],
-    [Input('reset-view', 'n_clicks')],
-)
-def reset_layout(n_clicks):
-    return [1, cyto_elements]
-
-
-@app.callback(
-    [Output('cyto-network', 'stylesheet')],
+    Output('cytoscape', 'stylesheet'),
     [Input('color-map', 'value')]
 )
 def change_color_map(value):
     if value == 'ss':
-        return [stylesheets.combined]
+        return stylesheets.combined
     else:
-        return [stylesheets.fold_change]
+        return stylesheets.fold_change
+
+@app.callback(
+    Output('node-details', 'children'),
+   [Input('cytoscape', 'selectedNodeData')]
+)
+def show_node_details(node_data):
+    """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
+    if node_data:
+        node_ids = [node['label'] for node in node_data]
+        filtered_df = network_df.loc[network_df.shortName.isin(node_ids), ['description', 'log2FoldChange', 'padj']]
+        filtered_df['padj'] = filtered_df['padj'].map('{:.3g}'.format)
+        filtered_df['padj'] = filtered_df['padj'].astype(float)
+        table = dash_table.DataTable(
+            data=filtered_df.to_dict('records'),
+            columns=[{"name": i, "id": i} for i in filtered_df.columns],
+            style_table={
+                'maxHeight': '20vh',
+            }
+        )
+        return table
 
 
 if __name__ == "__main__":

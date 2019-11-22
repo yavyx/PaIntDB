@@ -2,6 +2,7 @@
 
 
 ### Back-end
+- Make queries into dataframes instead of dictionaries
 - Write tests! (check parameters in all main (user input) functions.
 - Adding metabolites is too slow, need to check why.
 - Use JSON to save useful dictionaries that only need to be created once (PAO1/PA14 mapping, gene/metabolite mapping, edge list dictionary, GO enrichment dictionary). Will probably improve perfomance dramatically.
