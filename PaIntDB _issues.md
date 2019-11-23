@@ -22,7 +22,9 @@
 - React errors
 
 ## Vis module
-- Reset view button not working
+- Reset view button not working(Removed for now)
+- Chained callbacks for vis layout depending on network type 
+- Padj decimal issues
 
 ### DONE!
 - Make DB path a constant.

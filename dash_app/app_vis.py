@@ -1,7 +1,7 @@
 from math import sqrt
 
 import dash
-from dash.dependencies import Output, Input  # State
+from dash.dependencies import Output, Input, State
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
@@ -10,16 +10,19 @@ import dash_table
 import networkx as nx
 import pandas as pd
 
-import bio_networks.network_generator as ng
-import bio_networks.helpers as h
 import dash_app.cytoscape_stylesheets as stylesheets
 
 
 def make_network_df(network):
     """Takes a network and outputs a DataFrame of every node with its attributes."""
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
-    index = [i[0] for i in network.nodes(data=True)]  # Use node id's as index
+    index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
+
+    # format fields
+    df['log2FoldChange'] = df['log2FoldChange'].round(2)
+    df['padj'] = df['padj'].map('{:.3g}'.format)
+    df['padj'] = df['padj'].astype(float)
     return df
 
 
@@ -33,8 +36,9 @@ def make_cyto_elements(network):
 
     # Convert nx network to cytoscape JSON
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
-    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[450, 450])
 
+    # Make layout (much faster than default Cytoscape layouts)
+    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[450, 450])
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -42,24 +46,15 @@ def make_cyto_elements(network):
         pos = layout[node['data']['id']]  # Extract positions from layout dict
         node['position'] = {'x': pos[0], 'y': pos[1]}
 
-    elements = nodes + json_elements['edges']
+    edges = json_elements['edges']
+    elements = nodes + edges
 
-    return elements
+    return elements, nodes, edges
 
 
-# temp_bionetwork = ng.CombinedNetwork(h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
-#                                      pd.read_csv('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
-#                                      h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/TnSeq/in-vitro/essential/finalEss_noTrue_RPMI_AZMvsunt_20190715.csv'),
-#                                      'PAO1',
-#                                      0,
-#                                      3,
-#                                      False)
-#
-# temp_network = temp_bionetwork.network
-# nx.write_graphml(temp_network, 'corries_AZM_combined.graphml')
 temp_network = nx.read_graphml('corries_AZM_combined.graphml')
 network_df = make_network_df(temp_network)
-cyto_elements = make_cyto_elements(temp_network)
+cyto_elements, cyto_nodes, cyto_edges = make_cyto_elements(temp_network)
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -72,7 +67,7 @@ app.layout = html.Div(
                     dbc.Col(
                         html.Div(
                             [
-                                dbc.Label('Color Mapping'),
+                                html.H5('Color Mapping'),
                                 dbc.RadioItems(
                                     options=[
                                         {'label': 'Significance Source', 'value': 'ss'},
@@ -81,18 +76,19 @@ app.layout = html.Div(
                                     value='ss',
                                     id='color-map',
                                     ),
-                                html.H5('Select nodes:'),
+                                html.Hr(),
+                                html.H5('Select nodes'),
                                 html.Details(
                                     [
-                                        html.Summary('By source of interest: '),
-                                        dbc.RadioItems(
+                                        html.Summary('By source of interest '),
+                                        dbc.Checklist(
                                             id='source-selection',
                                             options=[
-                                                {'label': 'RNASeq', 'value': 'transcriptional'},
-                                                {'label': 'TnSeq', 'value': 'phenotypical'},
+                                                {'label': 'RNASeq', 'value': 'RNASeq'},
+                                                {'label': 'TnSeq', 'value': 'TnSeq'},
                                                 {'label': 'Both', 'value': 'both'}
                                             ],
-                                            value='transcriptional'
+                                            value=['RNASeq', 'TnSeq', 'both']
                                         )
                                     ],
                                 ),
@@ -100,7 +96,7 @@ app.layout = html.Div(
                             ],
                             style={'margin': '2vh'}
                         ),
-                        width=3,
+                        width=2,
                         style={'backgroundColor': '#7FDBFF', 'padding': '5px'}
                     ),
                     dbc.Col(
@@ -109,20 +105,20 @@ app.layout = html.Div(
                                 id='cytoscape',
                                 style={
                                     'width': '100%',
-                                    'height': '80vh'
+                                    'height': '75vh'
                                 },
                                 elements=cyto_elements,
                                 maxZoom=5,
                                 minZoom=0.3,
                                 zoom=1,
-                                layout={'name': 'preset'}
+                                layout={'name': 'preset'},
                             ),
                             html.Div(
                                 [
                                     html.H5('Selected Node Details'),
                                     html.Div(id='node-details')
                                 ],
-                                style={'height': '20vh'}
+                                style={'height': '25vh'}
                             )
                         ],
                         width=8
@@ -137,30 +133,65 @@ app.layout = html.Div(
 
 @app.callback(
     Output('cytoscape', 'stylesheet'),
-    [Input('color-map', 'value')]
+    [Input('color-map', 'value'),
+     Input('source-selection', 'value')]
 )
-def change_color_map(value):
+def change_color_map(value, elements):
     if value == 'ss':
         return stylesheets.combined
     else:
         return stylesheets.fold_change
 
+
+@app.callback(
+    Output('cytoscape', 'elements'),
+     #Output('cytoscape', 'stylesheet')],
+    [Input('source-selection', 'value')],
+    #[State('cytoscape', 'stylesheet')]
+)
+def select_by_source(value):
+    """Select nodes according to significance source."""
+    nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
+    if value:
+        for node in nodes:
+            if node['data']['significanceSource'] in value:
+                node['data']['selected'] = True
+            else:
+                node['data']['selected'] = False
+        print(value)
+        print(nodes[-1]['data'], '\n')
+        return nodes + cyto_edges
+
+
 @app.callback(
     Output('node-details', 'children'),
-   [Input('cytoscape', 'selectedNodeData')]
+    [Input('cytoscape', 'selectedNodeData')]
 )
 def show_node_details(node_data):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
+        # Columns to display
+        cols = ['shortName', 'description', 'log2FoldChange', 'padj', 'ncbi', 'uniprotkb']
         node_ids = [node['label'] for node in node_data]
-        filtered_df = network_df.loc[network_df.shortName.isin(node_ids), ['description', 'log2FoldChange', 'padj']]
-        filtered_df['padj'] = filtered_df['padj'].map('{:.3g}'.format)
-        filtered_df['padj'] = filtered_df['padj'].astype(float)
+        filtered_df = network_df.loc[network_df.shortName.isin(node_ids), cols]
+
         table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
+            fixed_rows={'headers': True, 'data': 0},
             style_table={
                 'maxHeight': '20vh',
+                'overflowY': 'auto'
+            },
+            style_data={'whiteSpace': 'normal',
+                        'height': 'auto'
+                        },
+            style_cell={
+                'height': 'auto',
+                # all three widths are needed
+                'minWidth': '150px', 'width': '150px', 'maxWidth': '150px',
+                'whiteSpace': 'normal',
+                'textAlign': 'left'
             }
         )
         return table
