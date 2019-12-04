@@ -15,8 +15,14 @@ default = [
             'border-color': 'black',
             'border-opacity': 1,
             'opacity': 1,
-            'font-size': 12,
+            'font-size': 14,
             'z-index': 9999
+        }
+    },
+    {
+        'selector': 'edge',
+        'style': {
+            'width': '2'
         }
     }
 ]
@@ -32,13 +38,13 @@ fold_change = default + \
         {
             'selector': '[log2FoldChange < 0]',
             'style': {
-                'background-color': 'red'
+                'background-color': '#1c2fff'  # blue
             }
         },
         {
             'selector': '[log2FoldChange > 0]',
             'style': {
-                'background-color': '#1c2fff'  # blue
+                'background-color': 'red'
             }
         },
     ]

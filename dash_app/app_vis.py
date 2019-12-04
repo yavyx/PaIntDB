@@ -18,11 +18,12 @@ def make_network_df(network):
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
     index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
-
+    print(df.head())
     # format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     df['padj'] = df['padj'].map('{:.3g}'.format)
-    df['padj'] = df['padj'].astype(float)
+    # df['padj'] = df['padj'].astype(float)
+    print(df.head())
     return df
 
 
@@ -38,7 +39,7 @@ def make_cyto_elements(network):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000, center=[450, 450])
+    layout = nx.spring_layout(network, k=5 / sqrt(len(network)), scale=1000, center=[450, 450])
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -52,6 +53,8 @@ def make_cyto_elements(network):
     return elements, nodes, edges
 
 
+# temp_network = nx.read_graphml('temp_data/Biofilm_DJK6_vs_Biofilm_network.graphml')
+# temp_network = nx.read_graphml('temp_data/Biofilm_DJK5_vs_Biofilm_network (1).graphml')
 temp_network = nx.read_graphml('corries_AZM_combined.graphml')
 network_df = make_network_df(temp_network)
 cyto_elements, cyto_nodes, cyto_edges = make_cyto_elements(temp_network)
@@ -88,7 +91,7 @@ app.layout = html.Div(
                                                 {'label': 'TnSeq', 'value': 'TnSeq'},
                                                 {'label': 'Both', 'value': 'both'}
                                             ],
-                                            value=['RNASeq', 'TnSeq', 'both']
+                                            value=['RNASeq', 'TnSeq', 'both'],
                                         )
                                     ],
                                 ),
@@ -133,10 +136,9 @@ app.layout = html.Div(
 
 @app.callback(
     Output('cytoscape', 'stylesheet'),
-    [Input('color-map', 'value'),
-     Input('source-selection', 'value')]
+    [Input('color-map', 'value')]
 )
-def change_color_map(value, elements):
+def change_color_map(value):
     if value == 'ss':
         return stylesheets.combined
     else:
@@ -145,21 +147,17 @@ def change_color_map(value, elements):
 
 @app.callback(
     Output('cytoscape', 'elements'),
-     #Output('cytoscape', 'stylesheet')],
-    [Input('source-selection', 'value')],
-    #[State('cytoscape', 'stylesheet')]
+    [Input('source-selection', 'value')]
 )
-def select_by_source(value):
+def select_by_source(significance_source):
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
-    if value:
-        for node in nodes:
-            if node['data']['significanceSource'] in value:
-                node['data']['selected'] = True
+    if significance_source is not []:
+        for node in cyto_nodes:
+            if node['data']['significanceSource'] in significance_source:
+                node['selected'] = True
             else:
-                node['data']['selected'] = False
-        print(value)
-        print(nodes[-1]['data'], '\n')
+                node['selected'] = False
         return nodes + cyto_edges
 
 
