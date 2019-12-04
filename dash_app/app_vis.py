@@ -18,12 +18,10 @@ def make_network_df(network):
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
     index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
-    print(df.head())
     # format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     df['padj'] = df['padj'].map('{:.3g}'.format)
-    # df['padj'] = df['padj'].astype(float)
-    print(df.head())
+    df['padj'] = df['padj'].astype(float)
     return df
 
 
@@ -95,6 +93,25 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
+                                html.Details(
+                                    [
+                                        html.Summary('By localization '),
+                                        dbc.Checklist(
+                                            id='location-selection',
+                                            options=[
+                                                dict(label=location, value=location)
+                                                for location in network_df['localization'].unique()
+                                            ],
+                                            value=[],
+                                        )
+                                    ],
+                                ),
+                                html.Br(),
+                                html.Div(
+                                    html.Button('Make Selection',
+                                                id='make-selection',
+                                                style={'display': 'inline-block'}),
+                                    style={'text-align': 'center'}),
                                 html.Br(),
                             ],
                             style={'margin': '2vh'}
@@ -124,7 +141,7 @@ app.layout = html.Div(
                                 style={'height': '25vh'}
                             )
                         ],
-                        width=8
+                        width=10
                     ),
                 ]
             )
@@ -147,18 +164,38 @@ def change_color_map(value):
 
 @app.callback(
     Output('cytoscape', 'elements'),
-    [Input('source-selection', 'value')]
+    [Input('make-selection', 'n_clicks')],
+    [State('source-selection', 'value'),
+     State('location-selection', 'value')]
 )
-def select_by_source(significance_source):
+def select_nodes(n_clicks, significance_source, location):
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
-    if significance_source is not []:
-        for node in cyto_nodes:
-            if node['data']['significanceSource'] in significance_source:
-                node['selected'] = True
-            else:
-                node['selected'] = False
-        return nodes + cyto_edges
+
+    print('significance', significance_source)
+    print('location', location)
+
+    query = []  # query to filter nodes
+    print(query)
+    if significance_source:
+        query.append('significanceSource in @significance_source')
+    if location:
+        query.append('localization in @location')
+    print(query)
+    query_str = ' & '.join(query)
+    if query_str:
+        queried_nodes = list(network_df.query(query_str).index)
+    else:
+        queried_nodes = nodes
+    print('# nodes', len(queried_nodes))
+
+    for node in nodes:
+        if node['data']['id'] in queried_nodes:
+            node['selected'] = True
+        else:
+            node['selected'] = False
+
+    return nodes + cyto_edges
 
 
 @app.callback(
@@ -171,7 +208,10 @@ def show_node_details(node_data):
         # Columns to display
         cols = ['shortName', 'description', 'log2FoldChange', 'padj', 'ncbi', 'uniprotkb']
         node_ids = [node['label'] for node in node_data]
-        filtered_df = network_df.loc[network_df.shortName.isin(node_ids), cols]
+        filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
+                       .reset_index()
+                       .rename(columns={'index': 'Locus Tag'})
+                       )
 
         table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
