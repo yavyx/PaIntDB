@@ -213,7 +213,6 @@ def make_network(network_type,
     start_time = datetime.now()
     upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
-    print(genes_df.head())
     gene_list = genes_df.gene.tolist()
     if network_type == 'basic':
         bio_network = ng.BioNetwork(gene_list=gene_list,
@@ -327,7 +326,6 @@ def update_download_link(
                                                 rnaseq_contents,
                                                 tnseq_filename,
                                                 tnseq_contents)
-        print(bio_network.network.nodes(data=True))
         rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
         abs_filename = os.path.join(os.getcwd(), rel_filename)
         bio_network.write_gml(abs_filename)

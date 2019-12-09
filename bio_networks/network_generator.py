@@ -7,7 +7,7 @@ import pandas as pd
 
 import bio_networks.helpers as h
 
-DB_PATH = os.path.join('/home', 'javier', 'PycharmProjects', 'PaIntDB', 'PaIntDB.db')
+DB_PATH = 'PaIntDB.db'
 
 
 class BioNetwork:

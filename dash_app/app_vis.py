@@ -11,6 +11,7 @@ import networkx as nx
 import pandas as pd
 
 import dash_app.cytoscape_stylesheets as stylesheets
+import go_enrichment.go_enrichment as goe
 
 
 def make_network_df(network):
@@ -22,6 +23,9 @@ def make_network_df(network):
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     df['padj'] = df['padj'].map('{:.3g}'.format)
     df['padj'] = df['padj'].astype(float)
+    df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
+    df['regulation'] = [None if sig == 'TnSeq'else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
+    print(df.head())
     return df
 
 
@@ -37,7 +41,7 @@ def make_cyto_elements(network):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=5 / sqrt(len(network)), scale=1000, center=[450, 450])
+    layout = nx.spring_layout(network, k=1 / sqrt(len(network)), scale=1000, center=[450, 450])
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -48,14 +52,17 @@ def make_cyto_elements(network):
     edges = json_elements['edges']
     elements = nodes + edges
 
-    return elements, nodes, edges
+    return elements, nodes, edges, network
 
 
 # temp_network = nx.read_graphml('temp_data/Biofilm_DJK6_vs_Biofilm_network.graphml')
 # temp_network = nx.read_graphml('temp_data/Biofilm_DJK5_vs_Biofilm_network (1).graphml')
-temp_network = nx.read_graphml('corries_AZM_combined.graphml')
-network_df = make_network_df(temp_network)
-cyto_elements, cyto_nodes, cyto_edges = make_cyto_elements(temp_network)
+# network_path = 'corries_AZM_combined.graphml'
+network_path = '/home/javier/PycharmProjects/PaIntDB/temp_data/mediarpmi.treatmentazm_exp_network.graphml'
+temp_network = nx.read_graphml(network_path)
+cyto_elements, cyto_nodes, cyto_edges, network = make_cyto_elements(temp_network)
+network_df = make_network_df(network)
+
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -86,10 +93,9 @@ app.layout = html.Div(
                                             id='source-selection',
                                             options=[
                                                 {'label': 'RNASeq', 'value': 'RNASeq'},
-                                                {'label': 'TnSeq', 'value': 'TnSeq'},
-                                                {'label': 'Both', 'value': 'both'}
+                                                {'label': 'TnSeq', 'value': 'TnSeq'}
                                             ],
-                                            value=['RNASeq', 'TnSeq', 'both'],
+                                            value=[],
                                         )
                                     ],
                                 ),
@@ -106,13 +112,43 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
+                                html.Details(
+                                    [
+                                        html.Summary('By differential expression'),
+                                        dbc.Checklist(
+                                            id='diff-exp-selection',
+                                            options=[
+                                                {'label': 'Up-Regulated', 'value': 'up'},
+                                                {'label': 'Down-Regulated', 'value': 'down'}
+                                            ],
+                                            value=[],
+                                        )
+                                    ],
+                                ),
+html.Details(
+                                    [
+                                        html.Summary('By enriched GO term'),
+                                        dbc.Input(
+                                            id='enrichment-selection',
+                                            placeholder='Type a GO term...',
+                                            type='text'
+                                        )
+                                    ],
+                                ),
                                 html.Br(),
                                 html.Div(
-                                    html.Button('Make Selection',
-                                                id='make-selection',
-                                                style={'display': 'inline-block'}),
-                                    style={'text-align': 'center'}),
-                                html.Br(),
+                                    [
+                                        html.Button('Make Selection',
+                                                    id='make-selection',
+                                                    style={'display': 'inline-block'}),
+                                        html.P(id='num-selected-nodes'),
+                                        html.Br(),
+                                        html.Button('Run GO Term Enrichment',
+                                                    id='run-enrichment',
+                                                    style={'display': 'inline-block'}),
+                                        html.Div(id='enrichment-results', style={'display': 'none'})
+                                    ],
+                                    style={'text-align': 'center'})
                             ],
                             style={'margin': '2vh'}
                         ),
@@ -163,12 +199,14 @@ def change_color_map(value):
 
 
 @app.callback(
-    Output('cytoscape', 'elements'),
+    [Output('cytoscape', 'elements'),
+     Output('num-selected-nodes', 'children')],
     [Input('make-selection', 'n_clicks')],
     [State('source-selection', 'value'),
-     State('location-selection', 'value')]
+     State('location-selection', 'value'),
+     State('diff-exp-selection', 'value')]
 )
-def select_nodes(n_clicks, significance_source, location):
+def select_nodes(n_clicks, significance_source, location, regulation):
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
 
@@ -176,26 +214,31 @@ def select_nodes(n_clicks, significance_source, location):
     print('location', location)
 
     query = []  # query to filter nodes
-    print(query)
     if significance_source:
+        significance_source.append('both')
         query.append('significanceSource in @significance_source')
+
     if location:
         query.append('localization in @location')
+
+    if regulation:
+        query.append('regulation in @regulation')
+
     print(query)
     query_str = ' & '.join(query)
+    print(query_str)
     if query_str:
         queried_nodes = list(network_df.query(query_str).index)
+        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
     else:
         queried_nodes = nodes
+        selected_msg = ''
     print('# nodes', len(queried_nodes))
 
     for node in nodes:
-        if node['data']['id'] in queried_nodes:
-            node['selected'] = True
-        else:
-            node['selected'] = False
+        node['selected'] = True if node['data']['id'] in queried_nodes else False
 
-    return nodes + cyto_edges
+    return [nodes + cyto_edges, selected_msg]
 
 
 @app.callback(
@@ -233,6 +276,34 @@ def show_node_details(node_data):
             }
         )
         return table
+
+
+@app.callback(
+    Output('enrichment-selection', 'list'),
+    [Input('run-enrichment', 'n_clicks'),
+     Input('enrichment-results', 'children')]
+)
+def create_enrichment_options(n_clicks, results):
+    if n_clicks:
+        results_df = pd.read_json(results)
+        options = html.Datalist(id='enriched-terms', children=[html.Option(value=name) for name in results_df['name']])
+    else:
+        options = None
+    return options
+
+
+@app.callback(
+    Output('enrichment-results', 'children'),
+    [Input('run-enrichment', 'n_clicks')]
+)
+def run_enrichment(n_clicks):
+    if n_clicks:
+        enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
+        print(enrichment_results.head())
+        table = enrichment_results.to_json()
+    else:
+        table = ""
+    return table
 
 
 if __name__ == "__main__":

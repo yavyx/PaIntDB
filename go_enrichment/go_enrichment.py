@@ -1,5 +1,6 @@
 import pandas as pd
 import csv
+import os
 
 from goatools.base import download_go_basic_obo
 from goatools.obo_parser import GODag
@@ -16,9 +17,13 @@ def make_go_association_dict(path):
                   'CC': 'cellular_component',
                   'MF': 'molecular_function'}
 
+    go_associations = pd.read_csv(path)
+    #locus_tag, go_id, namespace = [list(go_associations[col]) for col in ['Locus Tag', 'Accession', 'Namespace']]
+    #print(locus_tag)
+
     for domain_short, domain in go_domains.items():
         with open(path) as go_associations:
-            go_associations_reader = csv.reader(go_associations, delimiter='\t')
+            go_associations_reader = csv.reader(go_associations)
             pseudomonas_go_associations[domain_short] = dict()
             for row in go_associations_reader:
                 locus_tag, go_id, namespace = row[0], row[4], row[6]
@@ -93,10 +98,10 @@ def map_pa14_genes(gene_list):
     return pao1_genes
 
 
-def run_go_enrichment(go_terms_path, background_genes_path, strain, genes_of_interest, significant=True, cutoff=0.05,
+def run_go_enrichment(strain, genes_of_interest, significant=True, cutoff=0.05,
                       use_parent_terms=True):
-    go_association = make_go_association_dict(go_terms_path)
-    background_genes = get_genes(background_genes_path)
+    go_association = make_go_association_dict(os.path.join('data', 'PAO1_gene_ontology.csv'))
+    background_genes = get_genes(os.path.join('data', 'PAO1_all_genes.csv'))
     obo_go_fname = download_go_basic_obo()
     obo_dag = GODag('go-basic.obo')
     # genes_of_interest = list(network.nodes)
@@ -112,7 +117,7 @@ def run_go_enrichment(go_terms_path, background_genes_path, strain, genes_of_int
     goea_results = goea_obj.run_study(genes_of_interest)
 
     if significant is True:
-       goea_results = [result for result in goea_results if result.p_fdr_bh < cutoff]
+        goea_results = [result for result in goea_results if result.p_fdr_bh < cutoff]
 
     enrichment_results = get_enrichment_results(goea_results)
     return [enrichment_results, goea_results]
