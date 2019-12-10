@@ -50,7 +50,7 @@ def get_enrichment_results(enrichment_results):
               'study_items']
     enrichment_results = [go_term.get_field_values(fldnames=fields) for go_term in enrichment_results]
     enrichment_results_df = pd.DataFrame.from_records(enrichment_results, columns=fields)
-    enrichment_results_df.study_items = enrichment_results_df.study_items.str.split(", ")
+    # enrichment_results_df.study_items = enrichment_results_df.study_items.str.split(", ")
     return enrichment_results_df
 
 

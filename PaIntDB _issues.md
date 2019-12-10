@@ -26,6 +26,7 @@
 - Reset view button not working (Removed for now)
 - Chained callbacks for vis layout depending on network type 
 - Padj decimal issues
+- Change node selection to node ids, not node labels
 
 ### DONE!
 - Make DB path a constant.
