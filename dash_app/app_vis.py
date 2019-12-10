@@ -25,7 +25,7 @@ def make_network_df(network):
     df['padj'] = df['padj'].map('{:.3g}'.format)
     df['padj'] = df['padj'].astype(float)
     df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
-    df['regulation'] = [None if sig == 'TnSeq'else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
+    df['regulation'] = [None if sig == 'TnSeq' else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
     return df
 
 
@@ -36,12 +36,13 @@ def make_cyto_elements(network):
     # Get nodes of the largest component and generate sub-network
     main_component_nodes = [component for component in nx.connected_components(temp_network)][0]
     network = network.subgraph(main_component_nodes)
+    nx.set_node_attributes(network, dict(network.degree()), 'degree')
 
     # Convert nx network to cytoscape JSON
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=1 / sqrt(len(network)), scale=1000)
+    layout = nx.spring_layout(network, k=2 / sqrt(len(network)), scale=1000)
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -55,13 +56,11 @@ def make_cyto_elements(network):
     return elements, nodes, edges, network
 
 
-# temp_network = nx.read_graphml('temp_data/Biofilm_DJK6_vs_Biofilm_network.graphml')
-# temp_network = nx.read_graphml('temp_data/Biofilm_DJK5_vs_Biofilm_network (1).graphml')
 # network_path = 'corries_AZM_combined.graphml'
 network_path = os.path.join('temp_data', 'mediarpmi.treatmentazm_exp_network.graphml')
 temp_network = nx.read_graphml(network_path)
-cyto_elements, cyto_nodes, cyto_edges, network = make_cyto_elements(temp_network)
-network_df = make_network_df(network)
+cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
+network_df = make_network_df(network_main_comp)
 enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
 
 
@@ -81,17 +80,22 @@ app.layout = html.Div(
             html.H5('Color Mapping'),
             dbc.RadioItems(
                 options=[
-                    {'label': 'Significance Source', 'value': 'ss'},
+                    {'label': 'Experiment', 'value': 'ss'},
                     {'label': 'Differential Expression', 'value': 'de'}
                 ],
                 value='ss',
                 id='color-map',
             ),
+            html.Div(style={'padding': '10px'},
+                     children=html.Img(
+                         id='legend',
+                         width=100)
+                     ),
             html.Hr(),
             html.H5('Select nodes'),
             html.Details(
                 children=[
-                    html.Summary('By source of interest '),
+                    html.Summary('By experiment '),
                     dbc.Checklist(
                         id='source-selection',
                         options=[
@@ -150,17 +154,16 @@ app.layout = html.Div(
                                 id='make-selection',
                                 style={'display': 'inline-block'}),
                     html.P(id='num-selected-nodes'),
-                    html.Br(),
+                    # html.Br(),
                     html.Button('Make Sub-Network',
                                 id='make-subnetwork',
                                 style={'display': 'inline-block'})
-                    #html.Button('Run GO Term Enrichment',
+                    # html.Button('Run GO Term Enrichment',
                     #            id='run-enrichment',
                     #            style={'display': 'inline-block'}),
-                    #html.Div(id='enrichment-results', style={'display': 'none'})
+                    # html.Div(id='enrichment-results', style={'display': 'none'})
                 ]
             )
-            #style={'text-align': 'center'})
         ],
     ),
         html.Div(
@@ -182,7 +185,7 @@ app.layout = html.Div(
                                         id='cytoscape',
                                         style={
                                             'width': '100%',
-                                            'height': '75vh'
+                                            'height': '65vh'
                                         },
                                         elements=cyto_elements,
                                         maxZoom=5,
@@ -198,16 +201,17 @@ app.layout = html.Div(
                                 children=[
                                     html.H5('Sub-network View'),
                                     cyto.Cytoscape(
-                                        id='cytoscape2',
+                                        id='sub_cytoscape',
                                         style={
                                             'width': '100%',
-                                            'height': '75vh'
+                                            'height': '65vh'
                                         },
                                         elements=cyto_elements,
                                         maxZoom=5,
                                         minZoom=0.3,
                                         zoom=1,
                                         layout={'name': 'preset'},
+                                        boxSelectionEnabled=True
                                     )
                                 ]
                             )
@@ -220,7 +224,7 @@ app.layout = html.Div(
                                     html.H5('Selected Node Details'),
                                     html.Div(id='node-details')
                                 ],
-                                style={'height': '25vh'}
+                                style={'height': '30vh'}
                             )
                         )
                     )
@@ -232,14 +236,17 @@ app.layout = html.Div(
 
 @app.callback(
     [Output('cytoscape', 'stylesheet'),
-     Output('cytoscape2', 'stylesheet')],
+     Output('sub_cytoscape', 'stylesheet'),
+     Output('legend', 'src')],
     [Input('color-map', 'value')]
 )
 def change_color_map(value):
     if value == 'ss':
-        return stylesheets.combined, stylesheets.combined
+        source = app.get_asset_url('sig_source_legend.svg')
+        return stylesheets.combined, stylesheets.combined, source
     else:
-        return stylesheets.fold_change, stylesheets.fold_change
+        source = app.get_asset_url('de_legend.svg')
+        return stylesheets.fold_change, stylesheets.fold_change, source
 
 
 @app.callback(
@@ -255,7 +262,7 @@ def select_nodes(n_clicks, significance_source, location, regulation, enriched_t
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
 
-    query = []  # query to filter nodes
+    query = []  # Query to filter nodes
     if significance_source:
         significance_source.append('both')
         query.append('significanceSource in @significance_source')
@@ -269,14 +276,12 @@ def select_nodes(n_clicks, significance_source, location, regulation, enriched_t
     if enriched_terms:
         # Get genes associated with selected GO term(s)
         genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-        total_genes = [cut for term in genes_in_term for cut in term.split(', ')]
-        # total_genes = []
-        # for term in genes_in_term:
-        #     total_genes.extend(term.split(', '))
+        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
         query.append('index in @total_genes')
 
     query_str = ' & '.join(query)
 
+    # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
         selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
@@ -293,7 +298,7 @@ def select_nodes(n_clicks, significance_source, location, regulation, enriched_t
 @app.callback(
     Output('node-details', 'children'),
     [Input('cytoscape', 'selectedNodeData'),
-     Input('cytoscape2', 'selectedNodeData')]
+     Input('sub_cytoscape', 'selectedNodeData')]
 )
 def show_node_details(node_data, sub_node_data):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
@@ -330,7 +335,7 @@ def show_node_details(node_data, sub_node_data):
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
             fixed_rows={'headers': True, 'data': 0},
             style_table={
-                'maxHeight': '20vh',
+                'maxHeight': '25vh',
                 'overflowY': 'auto'
             },
             style_data={'whiteSpace': 'normal',
@@ -348,25 +353,20 @@ def show_node_details(node_data, sub_node_data):
 
 
 @app.callback(
-    Output('cytoscape2', 'elements'),
+    Output('sub_cytoscape', 'elements'),
     [Input('make-subnetwork', 'n_clicks')],
     [State('cytoscape', 'selectedNodeData')]
 )
 def make_subnetwork(n_clicks, node_data):
     if n_clicks and node_data:
         node_ids = [node['id'] for node in node_data]
-        print(len(node_ids))
-        print(node_ids[0])
-        sub_network = nx.Graph(network)
-        for node in network.nodes():
+        sub_network = nx.Graph(network_main_comp)
+
+        for node in network_main_comp.nodes():
             if node not in node_ids:
                 sub_network.remove_node(node)
-        #sub_network.add_nodes_from((n, network.nodes(data=True)[n]) for n in node_ids)
-        list(sub_network.nodes(data=True))[0]
-        #sub_network.add_edges_from((n, nbr, d) for n, nbrs in network.adj.items() for nbr, d in nbrs.items())
-        print(len(sub_network))
+
         cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network)
-        print(len(sub_cyto_nodes))
         return cyto_sub_network
     else:
         return []
@@ -399,4 +399,4 @@ def make_subnetwork(n_clicks, node_data):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)

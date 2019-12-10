@@ -3,7 +3,10 @@ default = [
         'selector': 'node',
         'style': {
             'border-width': 1,
-            'border-color': 'black'
+            'border-color': 'black',
+            'min-zoomed-font-size': 10,
+            'width': 'mapData(degree, 1, 31, 20, 70)',
+            'height': 'mapData(degree, 1, 31, 20, 70)'
         }
     },
     {
@@ -14,8 +17,8 @@ default = [
             'border-color': 'black',
             'border-opacity': 1,
             'opacity': 1,
-            'font-size': 18,
-            'z-index': 9999
+            'font-size': 26,
+            'z-index': 9999  # bring nodes to front
         }
     },
     {
@@ -31,23 +34,22 @@ fold_change = default + \
         {
             'selector': '[significanceSource = "TnSeq"]',
             'style': {
-                'background-color': 'gray'
+                'background-color': '#a6a6a6'  # gray
             }
         },
         {
             'selector': '[log2FoldChange < 0]',
             'style': {
-                'background-color': '#459cff'  # blue
+                'background-color': '#0037ff'  # blue
             }
         },
         {
             'selector': '[log2FoldChange > 0]',
             'style': {
-                'background-color': 'red'
+                'background-color': '#ff0000'  # red
             }
         },
     ]
-
 
 combined = default + \
     [
@@ -60,14 +62,15 @@ combined = default + \
         {
             'selector': '[significanceSource = "TnSeq"]',
             'style': {
-                'background-color': '#459cff'  # blue
+                'background-color': '#ff931f'  # orange
             }
         },
         {
             'selector': '[significanceSource = "both"]',
             'style': {
-                'background-color': 'red'
+                'background-color': '#a01cff'  # purple
             }
         }
     ]
+
 
