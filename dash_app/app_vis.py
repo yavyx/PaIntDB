@@ -1,4 +1,5 @@
 from math import sqrt
+import os
 
 import dash
 from dash.dependencies import Output, Input, State
@@ -58,7 +59,7 @@ def make_cyto_elements(network):
 # temp_network = nx.read_graphml('temp_data/Biofilm_DJK6_vs_Biofilm_network.graphml')
 # temp_network = nx.read_graphml('temp_data/Biofilm_DJK5_vs_Biofilm_network (1).graphml')
 # network_path = 'corries_AZM_combined.graphml'
-network_path = '/home/javier/PycharmProjects/PaIntDB/temp_data/mediarpmi.treatmentazm_exp_network.graphml'
+network_path = os.path.join('temp_data', 'mediarpmi.treatmentazm_exp_network.graphml')
 temp_network = nx.read_graphml(network_path)
 cyto_elements, cyto_nodes, cyto_edges, network = make_cyto_elements(temp_network)
 network_df = make_network_df(network)

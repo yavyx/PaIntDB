@@ -1,0 +1,2009 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="id" attr.type="long" for="edge" id="d9" />
+  <key attr.name="experimental" attr.type="long" for="edge" id="d8" />
+  <key attr.name="padj" attr.type="double" for="node" id="d7" />
+  <key attr.name="log2FoldChange" attr.type="double" for="node" id="d6" />
+  <key attr.name="localization" attr.type="string" for="node" id="d5" />
+  <key attr.name="type" attr.type="string" for="node" id="d4" />
+  <key attr.name="shortName" attr.type="string" for="node" id="d3" />
+  <key attr.name="uniprotkb" attr.type="string" for="node" id="d2" />
+  <key attr.name="ncbi" attr.type="string" for="node" id="d1" />
+  <key attr.name="description" attr.type="string" for="node" id="d0" />
+  <graph edgedefault="undirected">
+    <node id="PA4432">
+      <data key="d0">30S ribosomal protein S9</data>
+      <data key="d1">NP_253122.1</data>
+      <data key="d2">Q9HVY3</data>
+      <data key="d3">rpsI</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">-0.5959816421891391</data>
+      <data key="d7">0.000385</data>
+    </node>
+    <node id="PA0519">
+      <data key="d0">nitrite reductase precursor</data>
+      <data key="d1">NP_249210.1</data>
+      <data key="d2">P24474</data>
+      <data key="d3">nirS</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">1.13580375942428</data>
+      <data key="d7">0.00056</data>
+    </node>
+    <node id="PA5172">
+      <data key="d0">ornithine carbamoyltransferase, catabolic</data>
+      <data key="d1">NP_253859.1</data>
+      <data key="d2">P08308</data>
+      <data key="d3">arcB</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.650793161844402</data>
+      <data key="d7">0.00753</data>
+    </node>
+    <node id="PA2853">
+      <data key="d0">Outer membrane lipoprotein OprI precursor</data>
+      <data key="d1">NP_251543.1</data>
+      <data key="d2">P11221</data>
+      <data key="d3">oprI</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">-0.587165374281317</data>
+      <data key="d7">0.000131</data>
+    </node>
+    <node id="PA4741">
+      <data key="d0">30S ribosomal protein S15</data>
+      <data key="d1">NP_253429.1</data>
+      <data key="d2">Q9HV58</data>
+      <data key="d3">rpsO</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.916995972656496</data>
+      <data key="d7">4.72e-10</data>
+    </node>
+    <node id="PA3068">
+      <data key="d0">NAD-dependent glutamate dehydrogenase</data>
+      <data key="d1">NP_251758.1</data>
+      <data key="d2">Q9HZE0</data>
+      <data key="d3">gdhB</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.7354042579424591</data>
+      <data key="d7">1.17e-05</data>
+    </node>
+    <node id="PA2197">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_250887.1</data>
+      <data key="d2">Q9I1S0</data>
+      <data key="d3">PA2197</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.624516727340141</data>
+      <data key="d7">0.0128</data>
+    </node>
+    <node id="PA4761">
+      <data key="d0">DnaK protein</data>
+      <data key="d1">NP_253449.1</data>
+      <data key="d2">Q9HV43</data>
+      <data key="d3">dnaK</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.7183305041970259</data>
+      <data key="d7">0.0264</data>
+    </node>
+    <node id="PA0587">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_249278.1</data>
+      <data key="d2">Q9I5V0</data>
+      <data key="d3">PA0587</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.708618966838447</data>
+      <data key="d7">9.51e-05</data>
+    </node>
+    <node id="PA0586">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_249277.1</data>
+      <data key="d2">Q9I5V1</data>
+      <data key="d3">PA0586</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.744899466675462</data>
+      <data key="d7">2.62e-05</data>
+    </node>
+    <node id="PA4760">
+      <data key="d0">DnaJ protein</data>
+      <data key="d1">NP_253448.1</data>
+      <data key="d2">Q9HV44</data>
+      <data key="d3">dnaJ</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.669260319820232</data>
+      <data key="d7">0.0251</data>
+    </node>
+    <node id="PA2071">
+      <data key="d0">elongation factor G</data>
+      <data key="d1">NP_250761.1</data>
+      <data key="d2">Q9I244</data>
+      <data key="d3">fusA2</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.7106502733317819</data>
+      <data key="d7">1.61e-05</data>
+    </node>
+    <node id="PA0588">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_249279.1</data>
+      <data key="d2">Q9I5U9</data>
+      <data key="d3">PA0588</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.7748353925291122</data>
+      <data key="d7">0.000975</data>
+    </node>
+    <node id="PA3875">
+      <data key="d0">respiratory nitrate reductase alpha chain</data>
+      <data key="d1">NP_252564.1</data>
+      <data key="d2">G3XCX1</data>
+      <data key="d3">narG</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.755233393030017</data>
+      <data key="d7">0.0132</data>
+    </node>
+    <node id="PA3266">
+      <data key="d0">cold acclimation protein B</data>
+      <data key="d1">NP_251956.1</data>
+      <data key="d2">P95459</data>
+      <data key="d3">capB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.6818217615113759</data>
+      <data key="d7">3.05e-09</data>
+    </node>
+    <node id="PA0456">
+      <data key="d0">probable cold-shock protein</data>
+      <data key="d1">NP_249147.1</data>
+      <data key="d2">Q9I662</data>
+      <data key="d3">PA0456</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.6539134365309539</data>
+      <data key="d7">3.52e-07</data>
+    </node>
+    <node id="PA2970">
+      <data key="d0">50S ribosomal protein L32</data>
+      <data key="d1">NP_251660.1</data>
+      <data key="d2">Q9HZN4</data>
+      <data key="d3">rpmF</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.81708592548859</data>
+      <data key="d7">5.46e-08</data>
+    </node>
+    <node id="PA3443">
+      <data key="d0">probable permease of ABC transporter</data>
+      <data key="d1">NP_252133.1</data>
+      <data key="d2">Q9HYG3</data>
+      <data key="d3">PA3443</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.8294000893106159</data>
+      <data key="d7">0.00962</data>
+    </node>
+    <node id="PA3444">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_252134.1</data>
+      <data key="d2">Q9HYG2</data>
+      <data key="d3">PA3444</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.8864384811028729</data>
+      <data key="d7">0.00647</data>
+    </node>
+    <node id="PA5054">
+      <data key="d0">heat shock protein HslU</data>
+      <data key="d1">NP_253741.1</data>
+      <data key="d2">Q9HUC5</data>
+      <data key="d3">hslU</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.801792187374806</data>
+      <data key="d7">0.0112</data>
+    </node>
+    <node id="PA4776">
+      <data key="d0">PmrA: two-component regulator system response regulator PmrA</data>
+      <data key="d1">NP_253464.1</data>
+      <data key="d2">Q9HV32</data>
+      <data key="d3">pmrA</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.1952130977813</data>
+      <data key="d7">5.37e-18</data>
+    </node>
+    <node id="PA4777">
+      <data key="d0">PmrB: two-component regulator system signal sensor kinase PmrB</data>
+      <data key="d1">NP_253465.1</data>
+      <data key="d2">Q9HV31</data>
+      <data key="d3">pmrB</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.03921596345306</data>
+      <data key="d7">1.29e-08</data>
+    </node>
+    <node id="PA3445">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_252135.1</data>
+      <data key="d2">Q9HYG1</data>
+      <data key="d3">PA3445</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown (This protein may have multiple localization sites)</data>
+      <data key="d6">0.802507458116804</data>
+      <data key="d7">0.0244</data>
+    </node>
+    <node id="PA2527">
+      <data key="d0">MuxB</data>
+      <data key="d1">NP_251217.1</data>
+      <data key="d2">Q9I0V6</data>
+      <data key="d3">muxB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.820155843202741</data>
+      <data key="d7">0.00219</data>
+    </node>
+    <node id="PA2526">
+      <data key="d0">MuxC</data>
+      <data key="d1">NP_251216.1</data>
+      <data key="d2">Q9I0V7</data>
+      <data key="d3">muxC</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.6492421654177309</data>
+      <data key="d7">0.0193</data>
+    </node>
+    <node id="PA0837">
+      <data key="d0">peptidyl-prolyl cis-trans isomerase SlyD</data>
+      <data key="d1">NP_249528.1</data>
+      <data key="d2">Q9I5A3</data>
+      <data key="d3">slyD</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.613750226755842</data>
+      <data key="d7">2.53e-07</data>
+    </node>
+    <node id="PA3553">
+      <data key="d0">ArnC</data>
+      <data key="d1">NP_252243.1</data>
+      <data key="d2">Q9HY64</data>
+      <data key="d3">arnC</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.3391700241761202</data>
+      <data key="d7">7.45e-12</data>
+    </node>
+    <node id="PA3556">
+      <data key="d0">inner membrane L-Ara4N transferase ArnT</data>
+      <data key="d1">NP_252246.1</data>
+      <data key="d2">Q9HY61</data>
+      <data key="d3">arnT</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.21348225324097</data>
+      <data key="d7">2.82e-08</data>
+    </node>
+    <node id="PA0510">
+      <data key="d0">NirE</data>
+      <data key="d1">NP_249201.1</data>
+      <data key="d2">G3XD80</data>
+      <data key="d3">nirE</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.7186923820909309</data>
+      <data key="d7">0.0319</data>
+    </node>
+    <node id="PA0513">
+      <data key="d0">NirG</data>
+      <data key="d1">NP_249204.1</data>
+      <data key="d2">P95414</data>
+      <data key="d3">nirG</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.9309829252370321</data>
+      <data key="d7">0.00247</data>
+    </node>
+    <node id="PA0514">
+      <data key="d0">heme d1 biosynthesis protein NirL</data>
+      <data key="d1">NP_249205.1</data>
+      <data key="d2">P95413</data>
+      <data key="d3">nirL</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.9032504963732259</data>
+      <data key="d7">0.00765</data>
+    </node>
+    <node id="PA0517">
+      <data key="d0">probable c-type cytochrome precursor</data>
+      <data key="d1">NP_249208.1</data>
+      <data key="d2">Q51479</data>
+      <data key="d3">nirC</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">1.2547357466838402</data>
+      <data key="d7">1.45e-05</data>
+    </node>
+    <node id="PA0518">
+      <data key="d0">cytochrome c-551 precursor</data>
+      <data key="d1">NP_249209.1</data>
+      <data key="d2">P00099</data>
+      <data key="d3">nirM</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">1.042698691072</data>
+      <data key="d7">0.00135</data>
+    </node>
+    <node id="PA0511">
+      <data key="d0">heme d1 biosynthesis protein NirJ</data>
+      <data key="d1">NP_249202.1</data>
+      <data key="d2">G3XD10</data>
+      <data key="d3">nirJ</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.8095285660205691</data>
+      <data key="d7">0.0131</data>
+    </node>
+    <node id="PA0516">
+      <data key="d0">heme d1 biosynthesis protein NirF</data>
+      <data key="d1">NP_249207.1</data>
+      <data key="d2">Q51480</data>
+      <data key="d3">nirF</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.8996107553193431</data>
+      <data key="d7">0.00116</data>
+    </node>
+    <node id="PA0520">
+      <data key="d0">regulatory protein NirQ</data>
+      <data key="d1">NP_249211.1</data>
+      <data key="d2">Q51481</data>
+      <data key="d3">nirQ</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.67689469066925</data>
+      <data key="d7">0.0409</data>
+    </node>
+    <node id="PA0521">
+      <data key="d0">probable cytochrome c oxidase subunit</data>
+      <data key="d1">NP_249212.1</data>
+      <data key="d2">G3XD44</data>
+      <data key="d3">PA0521</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.759198150001708</data>
+      <data key="d7">0.0357</data>
+    </node>
+    <node id="PA0523">
+      <data key="d0">nitric-oxide reductase subunit C</data>
+      <data key="d1">NP_249214.1</data>
+      <data key="d2">Q59646</data>
+      <data key="d3">norC</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.638253944722729</data>
+      <data key="d7">0.0234</data>
+    </node>
+    <node id="PA3392">
+      <data key="d0">nitrous-oxide reductase precursor</data>
+      <data key="d1">NP_252082.1</data>
+      <data key="d2">Q9HYL2</data>
+      <data key="d3">nosZ</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">1.16283189100142</data>
+      <data key="d7">0.000666</data>
+    </node>
+    <node id="PA0854">
+      <data key="d0">fumarate hydratase</data>
+      <data key="d1">NP_249545.1</data>
+      <data key="d2">Q9I587</data>
+      <data key="d3">fumC2</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.608090290017724</data>
+      <data key="d7">4.47e-06</data>
+    </node>
+    <node id="PA2508">
+      <data key="d0">muconolactone delta-isomerase</data>
+      <data key="d1">NP_251198.1</data>
+      <data key="d2">Q9I0X4</data>
+      <data key="d3">catC</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-1.04853708151248</data>
+      <data key="d7">0.0187</data>
+    </node>
+    <node id="PA1514">
+      <data key="d0">ureidoglycolate hydrolaseYbbT</data>
+      <data key="d1">NP_250205.1</data>
+      <data key="d2">Q9I3J9</data>
+      <data key="d3">PA1514</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.603782529583194</data>
+      <data key="d7">0.0124</data>
+    </node>
+    <node id="PA1517">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_250208.1</data>
+      <data key="d2">Q9I3J6</data>
+      <data key="d3">PA1517</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.705751960912477</data>
+      <data key="d7">0.0101</data>
+    </node>
+    <node id="PA2110">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250800.1</data>
+      <data key="d2">Q9I205</data>
+      <data key="d3">PA2110</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.970926226448184</data>
+      <data key="d7">0.000124</data>
+    </node>
+    <node id="PA2112">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_250802.1</data>
+      <data key="d2">Q9I203</data>
+      <data key="d3">PA2112</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.759058463514183</data>
+      <data key="d7">0.028</data>
+    </node>
+    <node id="PA2111">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250801.1</data>
+      <data key="d2">Q9I204</data>
+      <data key="d3">PA2111</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.7408519036793191</data>
+      <data key="d7">0.00579</data>
+    </node>
+    <node id="PA2354">
+      <data key="d0">probable transcriptional regulator</data>
+      <data key="d1">NP_251044.1</data>
+      <data key="d2">Q9I1C4</data>
+      <data key="d3">PA2354</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.1962803746456</data>
+      <data key="d7">2.28e-07</data>
+    </node>
+    <node id="PA2355">
+      <data key="d0">probable FMNH2-dependent monooxygenase</data>
+      <data key="d1">NP_251045.1</data>
+      <data key="d2">Q9I1C3</data>
+      <data key="d3">PA2355</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">1.25774509052648</data>
+      <data key="d7">1.68e-06</data>
+    </node>
+    <node id="PA2356">
+      <data key="d0">methanesulfonate sulfonatase MsuD</data>
+      <data key="d1">NP_251046.1</data>
+      <data key="d2">Q9I1C2</data>
+      <data key="d3">msuD</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.1826585808836698</data>
+      <data key="d7">5.55e-06</data>
+    </node>
+    <node id="PA2357">
+      <data key="d0">NADH-dependent FMN reductase MsuE</data>
+      <data key="d1">NP_251047.1</data>
+      <data key="d2">O31038</data>
+      <data key="d3">msuE</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">2.29996270856853</data>
+      <data key="d7">2.88e-19</data>
+    </node>
+    <node id="PA2525">
+      <data key="d0">OpmB</data>
+      <data key="d1">NP_251215.1</data>
+      <data key="d2">Q9I0V8</data>
+      <data key="d3">opmB</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane</data>
+      <data key="d6">0.752778118491317</data>
+      <data key="d7">0.0028</data>
+    </node>
+    <node id="PA2597">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_251287.1</data>
+      <data key="d2">Q9I0P0</data>
+      <data key="d3">PA2597</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.6669971320603311</data>
+      <data key="d7">0.0432</data>
+    </node>
+    <node id="PA2600">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_251290.1</data>
+      <data key="d2">Q9I0N7</data>
+      <data key="d3">PA2600</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.03294764565864</data>
+      <data key="d7">0.00265</data>
+    </node>
+    <node id="PA2619">
+      <data key="d0">initiation factor</data>
+      <data key="d1">NP_251309.1</data>
+      <data key="d2">P65116</data>
+      <data key="d3">infA</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.59909162253876</data>
+      <data key="d7">1.2e-06</data>
+    </node>
+    <node id="PA3393">
+      <data key="d0">NosD protein</data>
+      <data key="d1">NP_252083.1</data>
+      <data key="d2">Q9HYL1</data>
+      <data key="d3">nosD</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">0.8708395816491379</data>
+      <data key="d7">0.0178</data>
+    </node>
+    <node id="PA3516">
+      <data key="d0">probable lyase</data>
+      <data key="d1">NP_252206.1</data>
+      <data key="d2">Q9HY93</data>
+      <data key="d3">PA3516</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.1401030934273502</data>
+      <data key="d7">1.18e-05</data>
+    </node>
+    <node id="PA3518">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_252208.1</data>
+      <data key="d2">Q9HY91</data>
+      <data key="d3">PA3518</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.8952860116752459</data>
+      <data key="d7">4.41e-05</data>
+    </node>
+    <node id="PA3552">
+      <data key="d0">ArnB</data>
+      <data key="d1">NP_252242.1</data>
+      <data key="d2">Q9HY65</data>
+      <data key="d3">arnB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.3890498730911698</data>
+      <data key="d7">2.37e-13</data>
+    </node>
+    <node id="PA3554">
+      <data key="d0">ArnA</data>
+      <data key="d1">NP_252244.1</data>
+      <data key="d2">Q9HY63</data>
+      <data key="d3">arnA</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.5110567770270902</data>
+      <data key="d7">4.89e-18</data>
+    </node>
+    <node id="PA3555">
+      <data key="d0">ArnD</data>
+      <data key="d1">NP_252245.1</data>
+      <data key="d2">Q9HY62</data>
+      <data key="d3">arnD</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.3649514918358303</data>
+      <data key="d7">9.36e-12</data>
+    </node>
+    <node id="PA3557">
+      <data key="d0">ArnE</data>
+      <data key="d1">NP_252247.1</data>
+      <data key="d2">Q9HY60</data>
+      <data key="d3">arnE</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">1.0490390996152</data>
+      <data key="d7">5.02e-05</data>
+    </node>
+    <node id="PA3559">
+      <data key="d0">probable nucleotide sugar dehydrogenase</data>
+      <data key="d1">NP_252249.1</data>
+      <data key="d2">Q9HY58</data>
+      <data key="d3">PA3559</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.48651908958256</data>
+      <data key="d7">8.51e-15</data>
+    </node>
+    <node id="PA3558">
+      <data key="d0">ArnF</data>
+      <data key="d1">NP_252248.1</data>
+      <data key="d2">Q9HY59</data>
+      <data key="d3">arnF</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">1.07174194228513</data>
+      <data key="d7">1.16e-06</data>
+    </node>
+    <node id="PA4542">
+      <data key="d0">ClpB protein</data>
+      <data key="d1">NP_253232.1</data>
+      <data key="d2">Q9HVN5</data>
+      <data key="d3">clpB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.698932978978789</data>
+      <data key="d7">0.0438</data>
+    </node>
+    <node id="PA4768">
+      <data key="d0">SmpB protein</data>
+      <data key="d1">NP_253456.1</data>
+      <data key="d2">Q9HV40</data>
+      <data key="d3">smpB</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.6594701079931771</data>
+      <data key="d7">3.35e-06</data>
+    </node>
+    <node id="PA4598">
+      <data key="d0">Resistance-Nodulation-Cell Division (RND) multidrug efflux transporter MexD</data>
+      <data key="d1">NP_253288.1</data>
+      <data key="d2">Q9HVI9</data>
+      <data key="d3">mexD</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">-1.3590114787989</data>
+      <data key="d7">0.0136</data>
+    </node>
+    <node id="PA4599">
+      <data key="d0">Resistance-Nodulation-Cell Division (RND) multidrug efflux membrane fusion protein MexC precursor</data>
+      <data key="d1">NP_253289.1</data>
+      <data key="d2">G3XD25</data>
+      <data key="d3">mexC</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">-1.42267605385339</data>
+      <data key="d7">0.0253</data>
+    </node>
+    <node id="PA4774">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_253462.1</data>
+      <data key="d2">Q9HV34</data>
+      <data key="d3">PA4774</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.6908255073051202</data>
+      <data key="d7">4.85e-21</data>
+    </node>
+    <node id="PA4775">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_253463.1</data>
+      <data key="d2">Q9HV33</data>
+      <data key="d3">PA4775</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.34513950112113</data>
+      <data key="d7">1.5e-20</data>
+    </node>
+    <node id="PA0524">
+      <data key="d0">nitric-oxide reductase subunit B</data>
+      <data key="d1">NP_249215.1</data>
+      <data key="d2">Q59647</data>
+      <data key="d3">norB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.964241118860417</data>
+      <data key="d7">0.000414</data>
+    </node>
+    <node id="PA3642">
+      <data key="d0">ribonuclease HII</data>
+      <data key="d1">NP_252332.1</data>
+      <data key="d2">Q9HXY9</data>
+      <data key="d3">rnhB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.596807506923644</data>
+      <data key="d7">0.00717</data>
+    </node>
+    <node id="PA2738">
+      <data key="d0">integration host factor, alpha subunit</data>
+      <data key="d1">NP_251428.1</data>
+      <data key="d2">Q51472</data>
+      <data key="d3">himA</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.7107556094619281</data>
+      <data key="d7">0.00348</data>
+    </node>
+    <node id="PA5025">
+      <data key="d0">homocysteine synthase</data>
+      <data key="d1">NP_253712.1</data>
+      <data key="d2">Q9HUE4</data>
+      <data key="d3">metY</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.679898922604121</data>
+      <data key="d7">0.00988</data>
+    </node>
+    <node id="PA2414">
+      <data key="d0">L-sorbosone dehydrogenase</data>
+      <data key="d1">NP_251104.1</data>
+      <data key="d2">Q9I167</data>
+      <data key="d3">PA2414</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.6446865010170579</data>
+      <data key="d7">0.000423</data>
+    </node>
+    <node id="PA2528">
+      <data key="d0">MuxA</data>
+      <data key="d1">NP_251218.1</data>
+      <data key="d2">Q9I0V5</data>
+      <data key="d3">muxA</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.7472809455467578</data>
+      <data key="d7">0.00355</data>
+    </node>
+    <node id="PA5468">
+      <data key="d0">probable citrate transporter</data>
+      <data key="d1">NP_254155.1</data>
+      <data key="d2">Q9HTA2</data>
+      <data key="d3">PA5468</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">-0.677054594674816</data>
+      <data key="d7">0.0161</data>
+    </node>
+    <node id="PA5469">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_254156.1</data>
+      <data key="d2">Q9HTA1</data>
+      <data key="d3">PA5469</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">-0.775729198899456</data>
+      <data key="d7">0.0174</data>
+    </node>
+    <node id="PA0998">
+      <data key="d0">PqsC</data>
+      <data key="d1">NP_249689.1</data>
+      <data key="d2">Q9I4X1</data>
+      <data key="d3">pqsC</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.685436536661971</data>
+      <data key="d7">6.2e-07</data>
+    </node>
+    <node id="PA3650">
+      <data key="d0">1-deoxy-d-xylulose 5-phosphate reductoisomerase</data>
+      <data key="d1">NP_252340.1</data>
+      <data key="d2">Q9KGU6</data>
+      <data key="d3">dxr</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.632548507047287</data>
+      <data key="d7">0.000503</data>
+    </node>
+    <node id="PA5171">
+      <data key="d0">arginine deiminase</data>
+      <data key="d1">NP_253858.1</data>
+      <data key="d2">P13981</data>
+      <data key="d3">arcA</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">0.661670046338408</data>
+      <data key="d7">0.00623</data>
+    </node>
+    <node id="PA2717">
+      <data key="d0">chloroperoxidase precursor</data>
+      <data key="d1">NP_251407.1</data>
+      <data key="d2">Q9I0C5</data>
+      <data key="d3">cpo</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.656514412696386</data>
+      <data key="d7">0.000573</data>
+    </node>
+    <node id="PA0282">
+      <data key="d0">sulfate transport protein CysT</data>
+      <data key="d1">NP_248973.1</data>
+      <data key="d2">Q9I6K8</data>
+      <data key="d3">cysT</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.643501523690713</data>
+      <data key="d7">6.9e-05</data>
+    </node>
+    <node id="PA5377">
+      <data key="d0">CbcW</data>
+      <data key="d1">NP_254064.1</data>
+      <data key="d2">Q9HTI7</data>
+      <data key="d3">cbcW</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.726013596540976</data>
+      <data key="d7">2.62e-06</data>
+    </node>
+    <node id="PA0615">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_249306.1</data>
+      <data key="d2">G3XD82</data>
+      <data key="d3">PA0615</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.939442291074455</data>
+      <data key="d7">0.000646</data>
+    </node>
+    <node id="PA0616">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_249307.1</data>
+      <data key="d2">G3XCT9</data>
+      <data key="d3">PA0616</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.6364536827884649</data>
+      <data key="d7">0.0223</data>
+    </node>
+    <node id="PA0634">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_249325.1</data>
+      <data key="d2">G3XD68</data>
+      <data key="d3">PA0634</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.6656170502119481</data>
+      <data key="d7">0.0403</data>
+    </node>
+    <node id="PA0635">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_249326.1</data>
+      <data key="d2">G3XD56</data>
+      <data key="d3">PA0635</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.972046163580696</data>
+      <data key="d7">0.00406</data>
+    </node>
+    <node id="PA2509">
+      <data key="d0">muconate cycloisomerase I</data>
+      <data key="d1">NP_251199.1</data>
+      <data key="d2">Q9I0X3</data>
+      <data key="d3">catB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.633519817884736</data>
+      <data key="d7">0.0367</data>
+    </node>
+    <node id="PA2599">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_251289.1</data>
+      <data key="d2">Q9I0N8</data>
+      <data key="d3">PA2599</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.940885297495985</data>
+      <data key="d7">0.00243</data>
+    </node>
+    <node id="PA2598">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_251288.1</data>
+      <data key="d2">Q9I0N9</data>
+      <data key="d3">PA2598</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.9761704935566751</data>
+      <data key="d7">0.00203</data>
+    </node>
+    <node id="PA3515">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_252205.1</data>
+      <data key="d2">Q9HY94</data>
+      <data key="d3">PA3515</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.8796090898291821</data>
+      <data key="d7">0.000169</data>
+    </node>
+    <node id="PA3517">
+      <data key="d0">probable lyase</data>
+      <data key="d1">NP_252207.1</data>
+      <data key="d2">Q9HY92</data>
+      <data key="d3">PA3517</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.634783486074987</data>
+      <data key="d7">0.00963</data>
+    </node>
+    <node id="PA4669">
+      <data key="d0">isopentenyl monophosphate kinase</data>
+      <data key="d1">NP_253358.1</data>
+      <data key="d2">P42805</data>
+      <data key="d3">ipk</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.6183109667735179</data>
+      <data key="d7">0.0229</data>
+    </node>
+    <node id="PA3757">
+      <data key="d0">Transcriptional regulator of N-Acetylglucosamine catabolism operon</data>
+      <data key="d1">NP_252446.1</data>
+      <data key="d2">Q9HXN8</data>
+      <data key="d3">nagR</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.8125339342394731</data>
+      <data key="d7">0.00281</data>
+    </node>
+    <node id="PA3758">
+      <data key="d0">probable N-acetylglucosamine-6-phosphate deacetylase</data>
+      <data key="d1">NP_252447.1</data>
+      <data key="d2">Q9HXN7</data>
+      <data key="d3">PA3758</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.837324958362581</data>
+      <data key="d7">0.00651</data>
+    </node>
+    <node id="PA3759">
+      <data key="d0">probable aminotransferase</data>
+      <data key="d1">NP_252448.1</data>
+      <data key="d2">Q9HXN6</data>
+      <data key="d3">PA3759</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.7542472010846341</data>
+      <data key="d7">0.0131</data>
+    </node>
+    <node id="PA4597">
+      <data key="d0">Multidrug efflux outer membrane protein OprJ precursor</data>
+      <data key="d1">NP_253287.1</data>
+      <data key="d2">Q51397</data>
+      <data key="d3">oprJ</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane</data>
+      <data key="d6">-1.5282380519623</data>
+      <data key="d7">0.00103</data>
+    </node>
+    <node id="PA0580">
+      <data key="d0">O-sialoglycoprotein endopeptidase</data>
+      <data key="d1">NP_249271.1</data>
+      <data key="d2">Q9I5V7</data>
+      <data key="d3">gcp</data>
+      <data key="d4">p</data>
+      <data key="d5">Extracellular</data>
+      <data key="d6">-0.61366556795865</data>
+      <data key="d7">1.02e-05</data>
+    </node>
+    <node id="PA3049">
+      <data key="d0">ribosome modulation factor</data>
+      <data key="d1">NP_251739.1</data>
+      <data key="d2">Q9HZF9</data>
+      <data key="d3">rmf</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.9603317017907779</data>
+      <data key="d7">9.88e-05</data>
+    </node>
+    <node id="PA1513">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250204.1</data>
+      <data key="d2">Q9I3K0</data>
+      <data key="d3">PA1513</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic Membrane</data>
+      <data key="d6">0.6732445568674851</data>
+      <data key="d7">0.00187</data>
+    </node>
+    <node id="PA1516">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250207.1</data>
+      <data key="d2">Q9I3J7</data>
+      <data key="d3">PA1516</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.9068676132435041</data>
+      <data key="d7">0.00072</data>
+    </node>
+    <node id="PA3152">
+      <data key="d0">glutamine amidotransferase</data>
+      <data key="d1">NP_251842.1</data>
+      <data key="d2">P72138</data>
+      <data key="d3">hisH2</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.0673562844355</data>
+      <data key="d7">0.0306</data>
+    </node>
+    <node id="PA2432">
+      <data key="d0">bistable expression regulator, BexR</data>
+      <data key="d1">NP_251122.1</data>
+      <data key="d2">Q9I150</data>
+      <data key="d3">bexR</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.6203413653132459</data>
+      <data key="d7">0.00617</data>
+    </node>
+    <node id="PA1249">
+      <data key="d0">alkaline metalloproteinase precursor</data>
+      <data key="d1">NP_249940.1</data>
+      <data key="d2">Q03023</data>
+      <data key="d3">aprA</data>
+      <data key="d4">p</data>
+      <data key="d5">Extracellular</data>
+      <data key="d6">0.680237390465053</data>
+      <data key="d7">0.000136</data>
+    </node>
+    <node id="PA1559">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250250</data>
+      <data key="d2">Q9I3F8</data>
+      <data key="d3">PA1559</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">2.39239704741696</data>
+      <data key="d7">1.07e-46</data>
+    </node>
+    <node id="PA1560">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_250251</data>
+      <data key="d2">Q9I3F7</data>
+      <data key="d3">PA1560</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">2.25260825272345</data>
+      <data key="d7">1.16e-47</data>
+    </node>
+    <node id="PA4773">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_253461.1</data>
+      <data key="d2">Q9HV35</data>
+      <data key="d3">PA4773</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">1.2824118634458999</data>
+      <data key="d7">5.71e-09</data>
+    </node>
+    <node id="PA4826">
+      <data key="d0">hypothetical protein</data>
+      <data key="d1">NP_253513.1</data>
+      <data key="d2">Q9HUY4</data>
+      <data key="d3">PA4826</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">-0.591401727679753</data>
+      <data key="d7">0.000169</data>
+    </node>
+    <node id="PA0782">
+      <data key="d0">proline dehydrogenase PutA</data>
+      <data key="d1">NP_249473.1</data>
+      <data key="d2">Q9I5F6</data>
+      <data key="d3">putA</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">-0.932474651844643</data>
+      <data key="d7">1.68e-06</data>
+    </node>
+    <node id="PA5445">
+      <data key="d0">probable coenzyme A transferase</data>
+      <data key="d1">NP_254132.1</data>
+      <data key="d2">Q9HTC2</data>
+      <data key="d3">PA5445</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.900590280799788</data>
+      <data key="d7">0.000673</data>
+    </node>
+    <node id="PA1217">
+      <data key="d0">probable 2-isopropylmalate synthase</data>
+      <data key="d1">NP_249908.1</data>
+      <data key="d2">Q9I4C1</data>
+      <data key="d3">PA1217</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.6774789335795981</data>
+      <data key="d7">0.00173</data>
+    </node>
+    <node id="PA4022">
+      <data key="d0">hydrazone dehydrogenase, HdhA</data>
+      <data key="d1">NP_252711.1</data>
+      <data key="d2">Q9HX05</data>
+      <data key="d3">hdhA</data>
+      <data key="d4">p</data>
+      <data key="d5">Outer Membrane Vesicle</data>
+      <data key="d6">-1.00543100477247</data>
+      <data key="d7">0.00197</data>
+    </node>
+    <node id="PA1027">
+      <data key="d0">delta1-Piperideine-6-carboxylate dehydrogenase</data>
+      <data key="d1">NP_249718.1</data>
+      <data key="d2">Q9I4U7</data>
+      <data key="d3">amaB</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.5962292314608989</data>
+      <data key="d7">4.91e-05</data>
+    </node>
+    <node id="PA2595">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_251285.1</data>
+      <data key="d2">Q9I0P2</data>
+      <data key="d3">PA2595</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.8462945109136109</data>
+      <data key="d7">0.00976</data>
+    </node>
+    <node id="PA3179">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_251869.1</data>
+      <data key="d2">Q9HZ55</data>
+      <data key="d3">PA3179</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.737456024168471</data>
+      <data key="d7">0.000305</data>
+    </node>
+    <node id="PA5195">
+      <data key="d0">probable heat shock protein</data>
+      <data key="d1">NP_253882.1</data>
+      <data key="d2">Q9HTZ4</data>
+      <data key="d3">PA5195</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">1.1333469669071101</data>
+      <data key="d7">0.00621</data>
+    </node>
+    <node id="PA4025">
+      <data key="d0">probable ethanolamine ammonia-lyase light chain</data>
+      <data key="d1">NP_252714.1</data>
+      <data key="d2">Q9HX02</data>
+      <data key="d3">PA4025</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.99189905294507</data>
+      <data key="d7">3.58e-10</data>
+    </node>
+    <node id="PA2971">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_251661.1</data>
+      <data key="d2">Q9HZN3</data>
+      <data key="d3">PA2971</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">-0.9358784966797871</data>
+      <data key="d7">1.32e-08</data>
+    </node>
+    <node id="PA4692">
+      <data key="d0">conserved hypothetical protein</data>
+      <data key="d1">NP_253380.1</data>
+      <data key="d2">Q9HVA4</data>
+      <data key="d3">PA4692</data>
+      <data key="d4">p</data>
+      <data key="d5">Unknown</data>
+      <data key="d6">0.7470831052709641</data>
+      <data key="d7">0.000159</data>
+    </node>
+    <node id="PA1175">
+      <data key="d0">NapD protein of periplasmic nitrate reductase</data>
+      <data key="d1">NP_249866.1</data>
+      <data key="d2">Q9I4G2</data>
+      <data key="d3">napD</data>
+      <data key="d4">p</data>
+      <data key="d5">Cytoplasmic</data>
+      <data key="d6">0.880243319077801</data>
+      <data key="d7">8.22e-06</data>
+    </node>
+    <node id="PA0283">
+      <data key="d0">sulfate-binding protein precursor</data>
+      <data key="d1">NP_248974.1</data>
+      <data key="d2">Q9I6K7</data>
+      <data key="d3">sbp</data>
+      <data key="d4">p</data>
+      <data key="d5">Periplasmic</data>
+      <data key="d6">0.6041596327181651</data>
+      <data key="d7">0.000621</data>
+    </node>
+    <edge source="PA4432" target="PA2970">
+      <data key="d8">1</data>
+      <data key="d9">1481</data>
+    </edge>
+    <edge source="PA4432" target="PA2619">
+      <data key="d8">1</data>
+      <data key="d9">7754</data>
+    </edge>
+    <edge source="PA4432" target="PA4741">
+      <data key="d8">0</data>
+      <data key="d9">14588</data>
+    </edge>
+    <edge source="PA4432" target="PA0456">
+      <data key="d8">1</data>
+      <data key="d9">146577</data>
+    </edge>
+    <edge source="PA4432" target="PA2971">
+      <data key="d8">1</data>
+      <data key="d9">147193</data>
+    </edge>
+    <edge source="PA4432" target="PA0837">
+      <data key="d8">1</data>
+      <data key="d9">148825</data>
+    </edge>
+    <edge source="PA4432" target="PA3266">
+      <data key="d8">1</data>
+      <data key="d9">149119</data>
+    </edge>
+    <edge source="PA4432" target="PA4777">
+      <data key="d8">1</data>
+      <data key="d9">150643</data>
+    </edge>
+    <edge source="PA0519" target="PA0510">
+      <data key="d8">0</data>
+      <data key="d9">4917</data>
+    </edge>
+    <edge source="PA0519" target="PA0511">
+      <data key="d8">0</data>
+      <data key="d9">4923</data>
+    </edge>
+    <edge source="PA0519" target="PA0514">
+      <data key="d8">0</data>
+      <data key="d9">4937</data>
+    </edge>
+    <edge source="PA0519" target="PA0517">
+      <data key="d8">0</data>
+      <data key="d9">4951</data>
+    </edge>
+    <edge source="PA0519" target="PA0520">
+      <data key="d8">0</data>
+      <data key="d9">4954</data>
+    </edge>
+    <edge source="PA0519" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">11166</data>
+    </edge>
+    <edge source="PA0519" target="PA3392">
+      <data key="d8">0</data>
+      <data key="d9">13531</data>
+    </edge>
+    <edge source="PA0519" target="PA0518">
+      <data key="d8">0</data>
+      <data key="d9">18870</data>
+    </edge>
+    <edge source="PA0519" target="PA3068">
+      <data key="d8">2</data>
+      <data key="d9">26571</data>
+    </edge>
+    <edge source="PA0519" target="PA3875">
+      <data key="d8">2</data>
+      <data key="d9">26624</data>
+    </edge>
+    <edge source="PA0519" target="PA0523">
+      <data key="d8">2</data>
+      <data key="d9">26685</data>
+    </edge>
+    <edge source="PA0519" target="PA0524">
+      <data key="d8">2</data>
+      <data key="d9">26686</data>
+    </edge>
+    <edge source="PA5172" target="PA5171">
+      <data key="d8">2</data>
+      <data key="d9">15381</data>
+    </edge>
+    <edge source="PA5172" target="PA3068">
+      <data key="d8">0</data>
+      <data key="d9">17171</data>
+    </edge>
+    <edge source="PA2853" target="PA3068">
+      <data key="d8">1</data>
+      <data key="d9">324</data>
+    </edge>
+    <edge source="PA4741" target="PA2970">
+      <data key="d8">0</data>
+      <data key="d9">8194</data>
+    </edge>
+    <edge source="PA3068" target="PA5025">
+      <data key="d8">0</data>
+      <data key="d9">17168</data>
+    </edge>
+    <edge source="PA3068" target="PA3152">
+      <data key="d8">0</data>
+      <data key="d9">19482</data>
+    </edge>
+    <edge source="PA3068" target="PA0782">
+      <data key="d8">2</data>
+      <data key="d9">22858</data>
+    </edge>
+    <edge source="PA2197" target="PA4761">
+      <data key="d8">0</data>
+      <data key="d9">440</data>
+    </edge>
+    <edge source="PA2197" target="PA0837">
+      <data key="d8">0</data>
+      <data key="d9">3378</data>
+    </edge>
+    <edge source="PA4761" target="PA4760">
+      <data key="d8">1</data>
+      <data key="d9">1797</data>
+    </edge>
+    <edge source="PA4761" target="PA5054">
+      <data key="d8">1</data>
+      <data key="d9">3404</data>
+    </edge>
+    <edge source="PA4761" target="PA3642">
+      <data key="d8">0</data>
+      <data key="d9">12184</data>
+    </edge>
+    <edge source="PA4761" target="PA3266">
+      <data key="d8">0</data>
+      <data key="d9">16051</data>
+    </edge>
+    <edge source="PA4761" target="PA4542">
+      <data key="d8">1</data>
+      <data key="d9">154908</data>
+    </edge>
+    <edge source="PA4761" target="PA0782">
+      <data key="d8">1</data>
+      <data key="d9">147135</data>
+    </edge>
+    <edge source="PA4761" target="PA0854">
+      <data key="d8">1</data>
+      <data key="d9">147416</data>
+    </edge>
+    <edge source="PA4761" target="PA2738">
+      <data key="d8">1</data>
+      <data key="d9">147571</data>
+    </edge>
+    <edge source="PA4761" target="PA4692">
+      <data key="d8">1</data>
+      <data key="d9">148068</data>
+    </edge>
+    <edge source="PA4761" target="PA1175">
+      <data key="d8">1</data>
+      <data key="d9">148275</data>
+    </edge>
+    <edge source="PA4761" target="PA5195">
+      <data key="d8">1</data>
+      <data key="d9">148885</data>
+    </edge>
+    <edge source="PA4761" target="PA4022">
+      <data key="d8">1</data>
+      <data key="d9">149127</data>
+    </edge>
+    <edge source="PA4761" target="PA0283">
+      <data key="d8">1</data>
+      <data key="d9">149611</data>
+    </edge>
+    <edge source="PA4761" target="PA4025">
+      <data key="d8">1</data>
+      <data key="d9">149814</data>
+    </edge>
+    <edge source="PA4761" target="PA1217">
+      <data key="d8">1</data>
+      <data key="d9">151002</data>
+    </edge>
+    <edge source="PA0587" target="PA0586">
+      <data key="d8">0</data>
+      <data key="d9">469</data>
+    </edge>
+    <edge source="PA0587" target="PA0588">
+      <data key="d8">0</data>
+      <data key="d9">1125</data>
+    </edge>
+    <edge source="PA0586" target="PA0588">
+      <data key="d8">0</data>
+      <data key="d9">3840</data>
+    </edge>
+    <edge source="PA4760" target="PA2071">
+      <data key="d8">0</data>
+      <data key="d9">1033</data>
+    </edge>
+    <edge source="PA4760" target="PA3875">
+      <data key="d8">1</data>
+      <data key="d9">1382</data>
+    </edge>
+    <edge source="PA4760" target="PA5054">
+      <data key="d8">1</data>
+      <data key="d9">3745</data>
+    </edge>
+    <edge source="PA4760" target="PA4542">
+      <data key="d8">1</data>
+      <data key="d9">154906</data>
+    </edge>
+    <edge source="PA2071" target="PA5054">
+      <data key="d8">0</data>
+      <data key="d9">1582</data>
+    </edge>
+    <edge source="PA3875" target="PA5054">
+      <data key="d8">1</data>
+      <data key="d9">145686</data>
+    </edge>
+    <edge source="PA3266" target="PA0456">
+      <data key="d8">0</data>
+      <data key="d9">1452</data>
+    </edge>
+    <edge source="PA3266" target="PA3179">
+      <data key="d8">1</data>
+      <data key="d9">142092</data>
+    </edge>
+    <edge source="PA0456" target="PA3179">
+      <data key="d8">1</data>
+      <data key="d9">142144</data>
+    </edge>
+    <edge source="PA0456" target="PA3650">
+      <data key="d8">1</data>
+      <data key="d9">134841</data>
+    </edge>
+    <edge source="PA3443" target="PA3444">
+      <data key="d8">2</data>
+      <data key="d9">1539</data>
+    </edge>
+    <edge source="PA3443" target="PA3445">
+      <data key="d8">0</data>
+      <data key="d9">2772</data>
+    </edge>
+    <edge source="PA3443" target="PA2356">
+      <data key="d8">2</data>
+      <data key="d9">26949</data>
+    </edge>
+    <edge source="PA3443" target="PA2357">
+      <data key="d8">2</data>
+      <data key="d9">26950</data>
+    </edge>
+    <edge source="PA3443" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26951</data>
+    </edge>
+    <edge source="PA3443" target="PA2600">
+      <data key="d8">2</data>
+      <data key="d9">26952</data>
+    </edge>
+    <edge source="PA3444" target="PA3445">
+      <data key="d8">2</data>
+      <data key="d9">2039</data>
+    </edge>
+    <edge source="PA3444" target="PA2356">
+      <data key="d8">2</data>
+      <data key="d9">26857</data>
+    </edge>
+    <edge source="PA3444" target="PA2357">
+      <data key="d8">2</data>
+      <data key="d9">26862</data>
+    </edge>
+    <edge source="PA3444" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26866</data>
+    </edge>
+    <edge source="PA3444" target="PA2600">
+      <data key="d8">2</data>
+      <data key="d9">26869</data>
+    </edge>
+    <edge source="PA3444" target="PA2595">
+      <data key="d8">2</data>
+      <data key="d9">26936</data>
+    </edge>
+    <edge source="PA4776" target="PA4777">
+      <data key="d8">2</data>
+      <data key="d9">2013</data>
+    </edge>
+    <edge source="PA4776" target="PA4774">
+      <data key="d8">2</data>
+      <data key="d9">12353</data>
+    </edge>
+    <edge source="PA4776" target="PA0282">
+      <data key="d8">2</data>
+      <data key="d9">19814</data>
+    </edge>
+    <edge source="PA4776" target="PA1559">
+      <data key="d8">2</data>
+      <data key="d9">19817</data>
+    </edge>
+    <edge source="PA4776" target="PA1560">
+      <data key="d8">2</data>
+      <data key="d9">19818</data>
+    </edge>
+    <edge source="PA4776" target="PA4773">
+      <data key="d8">2</data>
+      <data key="d9">19822</data>
+    </edge>
+    <edge source="PA4776" target="PA4775">
+      <data key="d8">2</data>
+      <data key="d9">19823</data>
+    </edge>
+    <edge source="PA4776" target="PA4826">
+      <data key="d8">2</data>
+      <data key="d9">19832</data>
+    </edge>
+    <edge source="PA4776" target="PA3515">
+      <data key="d8">2</data>
+      <data key="d9">19836</data>
+    </edge>
+    <edge source="PA4776" target="PA3516">
+      <data key="d8">2</data>
+      <data key="d9">19837</data>
+    </edge>
+    <edge source="PA4776" target="PA3517">
+      <data key="d8">2</data>
+      <data key="d9">19838</data>
+    </edge>
+    <edge source="PA4776" target="PA3518">
+      <data key="d8">2</data>
+      <data key="d9">19839</data>
+    </edge>
+    <edge source="PA4777" target="PA4774">
+      <data key="d8">0</data>
+      <data key="d9">10499</data>
+    </edge>
+    <edge source="PA4777" target="PA2528">
+      <data key="d8">0</data>
+      <data key="d9">17068</data>
+    </edge>
+    <edge source="PA3445" target="PA2356">
+      <data key="d8">2</data>
+      <data key="d9">26953</data>
+    </edge>
+    <edge source="PA3445" target="PA2357">
+      <data key="d8">2</data>
+      <data key="d9">26954</data>
+    </edge>
+    <edge source="PA3445" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26955</data>
+    </edge>
+    <edge source="PA3445" target="PA2600">
+      <data key="d8">2</data>
+      <data key="d9">26956</data>
+    </edge>
+    <edge source="PA2527" target="PA2526">
+      <data key="d8">1</data>
+      <data key="d9">3313</data>
+    </edge>
+    <edge source="PA2527" target="PA2525">
+      <data key="d8">0</data>
+      <data key="d9">7689</data>
+    </edge>
+    <edge source="PA2527" target="PA2528">
+      <data key="d8">0</data>
+      <data key="d9">14108</data>
+    </edge>
+    <edge source="PA2526" target="PA2528">
+      <data key="d8">0</data>
+      <data key="d9">14107</data>
+    </edge>
+    <edge source="PA3553" target="PA3556">
+      <data key="d8">0</data>
+      <data key="d9">3707</data>
+    </edge>
+    <edge source="PA3553" target="PA3555">
+      <data key="d8">2</data>
+      <data key="d9">8893</data>
+    </edge>
+    <edge source="PA3553" target="PA3557">
+      <data key="d8">0</data>
+      <data key="d9">14373</data>
+    </edge>
+    <edge source="PA3553" target="PA3552">
+      <data key="d8">0</data>
+      <data key="d9">17276</data>
+    </edge>
+    <edge source="PA3553" target="PA3554">
+      <data key="d8">2</data>
+      <data key="d9">17277</data>
+    </edge>
+    <edge source="PA3553" target="PA3559">
+      <data key="d8">0</data>
+      <data key="d9">17278</data>
+    </edge>
+    <edge source="PA3556" target="PA3552">
+      <data key="d8">0</data>
+      <data key="d9">8890</data>
+    </edge>
+    <edge source="PA3556" target="PA3554">
+      <data key="d8">0</data>
+      <data key="d9">8895</data>
+    </edge>
+    <edge source="PA3556" target="PA3555">
+      <data key="d8">0</data>
+      <data key="d9">8898</data>
+    </edge>
+    <edge source="PA3556" target="PA3559">
+      <data key="d8">0</data>
+      <data key="d9">8901</data>
+    </edge>
+    <edge source="PA3556" target="PA3558">
+      <data key="d8">0</data>
+      <data key="d9">14374</data>
+    </edge>
+    <edge source="PA0510" target="PA0513">
+      <data key="d8">0</data>
+      <data key="d9">4912</data>
+    </edge>
+    <edge source="PA0510" target="PA0514">
+      <data key="d8">0</data>
+      <data key="d9">4913</data>
+    </edge>
+    <edge source="PA0510" target="PA0517">
+      <data key="d8">0</data>
+      <data key="d9">4915</data>
+    </edge>
+    <edge source="PA0510" target="PA0518">
+      <data key="d8">0</data>
+      <data key="d9">4916</data>
+    </edge>
+    <edge source="PA0510" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">19243</data>
+    </edge>
+    <edge source="PA0513" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">4933</data>
+    </edge>
+    <edge source="PA0513" target="PA0517">
+      <data key="d8">0</data>
+      <data key="d9">4934</data>
+    </edge>
+    <edge source="PA0514" target="PA0511">
+      <data key="d8">0</data>
+      <data key="d9">4919</data>
+    </edge>
+    <edge source="PA0514" target="PA0517">
+      <data key="d8">0</data>
+      <data key="d9">4935</data>
+    </edge>
+    <edge source="PA0514" target="PA0518">
+      <data key="d8">0</data>
+      <data key="d9">4936</data>
+    </edge>
+    <edge source="PA0514" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">16452</data>
+    </edge>
+    <edge source="PA0514" target="PA0998">
+      <data key="d8">0</data>
+      <data key="d9">18266</data>
+    </edge>
+    <edge source="PA0517" target="PA0511">
+      <data key="d8">0</data>
+      <data key="d9">4921</data>
+    </edge>
+    <edge source="PA0517" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">4944</data>
+    </edge>
+    <edge source="PA0517" target="PA0518">
+      <data key="d8">0</data>
+      <data key="d9">4950</data>
+    </edge>
+    <edge source="PA0518" target="PA0511">
+      <data key="d8">0</data>
+      <data key="d9">4922</data>
+    </edge>
+    <edge source="PA0518" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">15149</data>
+    </edge>
+    <edge source="PA0511" target="PA0516">
+      <data key="d8">0</data>
+      <data key="d9">11790</data>
+    </edge>
+    <edge source="PA0520" target="PA0521">
+      <data key="d8">0</data>
+      <data key="d9">4960</data>
+    </edge>
+    <edge source="PA0523" target="PA3392">
+      <data key="d8">2</data>
+      <data key="d9">4969</data>
+    </edge>
+    <edge source="PA0523" target="PA0524">
+      <data key="d8">0</data>
+      <data key="d9">11167</data>
+    </edge>
+    <edge source="PA3392" target="PA3393">
+      <data key="d8">0</data>
+      <data key="d9">8744</data>
+    </edge>
+    <edge source="PA3392" target="PA0524">
+      <data key="d8">2</data>
+      <data key="d9">13534</data>
+    </edge>
+    <edge source="PA0854" target="PA2508">
+      <data key="d8">0</data>
+      <data key="d9">5490</data>
+    </edge>
+    <edge source="PA0854" target="PA2357">
+      <data key="d8">0</data>
+      <data key="d9">12515</data>
+    </edge>
+    <edge source="PA0854" target="PA2509">
+      <data key="d8">0</data>
+      <data key="d9">16547</data>
+    </edge>
+    <edge source="PA2508" target="PA2356">
+      <data key="d8">0</data>
+      <data key="d9">7555</data>
+    </edge>
+    <edge source="PA2508" target="PA2509">
+      <data key="d8">2</data>
+      <data key="d9">24074</data>
+    </edge>
+    <edge source="PA1514" target="PA1517">
+      <data key="d8">0</data>
+      <data key="d9">6515</data>
+    </edge>
+    <edge source="PA1514" target="PA4542">
+      <data key="d8">1</data>
+      <data key="d9">146234</data>
+    </edge>
+    <edge source="PA2110" target="PA2112">
+      <data key="d8">0</data>
+      <data key="d9">7351</data>
+    </edge>
+    <edge source="PA2112" target="PA2111">
+      <data key="d8">0</data>
+      <data key="d9">7354</data>
+    </edge>
+    <edge source="PA2354" target="PA2355">
+      <data key="d8">0</data>
+      <data key="d9">7551</data>
+    </edge>
+    <edge source="PA2355" target="PA2356">
+      <data key="d8">0</data>
+      <data key="d9">7552</data>
+    </edge>
+    <edge source="PA2355" target="PA2357">
+      <data key="d8">0</data>
+      <data key="d9">7553</data>
+    </edge>
+    <edge source="PA2356" target="PA2357">
+      <data key="d8">2</data>
+      <data key="d9">13104</data>
+    </edge>
+    <edge source="PA2356" target="PA2414">
+      <data key="d8">0</data>
+      <data key="d9">14064</data>
+    </edge>
+    <edge source="PA2356" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26855</data>
+    </edge>
+    <edge source="PA2356" target="PA2600">
+      <data key="d8">2</data>
+      <data key="d9">26856</data>
+    </edge>
+    <edge source="PA2356" target="PA2595">
+      <data key="d8">2</data>
+      <data key="d9">26932</data>
+    </edge>
+    <edge source="PA2357" target="PA5025">
+      <data key="d8">0</data>
+      <data key="d9">13105</data>
+    </edge>
+    <edge source="PA2357" target="PA2717">
+      <data key="d8">0</data>
+      <data key="d9">16159</data>
+    </edge>
+    <edge source="PA2357" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26860</data>
+    </edge>
+    <edge source="PA2357" target="PA2600">
+      <data key="d8">2</data>
+      <data key="d9">26861</data>
+    </edge>
+    <edge source="PA2357" target="PA2595">
+      <data key="d8">2</data>
+      <data key="d9">26933</data>
+    </edge>
+    <edge source="PA2597" target="PA2600">
+      <data key="d8">0</data>
+      <data key="d9">7714</data>
+    </edge>
+    <edge source="PA2597" target="PA2599">
+      <data key="d8">0</data>
+      <data key="d9">17073</data>
+    </edge>
+    <edge source="PA2600" target="PA2599">
+      <data key="d8">0</data>
+      <data key="d9">17075</data>
+    </edge>
+    <edge source="PA2600" target="PA2598">
+      <data key="d8">2</data>
+      <data key="d9">26865</data>
+    </edge>
+    <edge source="PA2600" target="PA2595">
+      <data key="d8">2</data>
+      <data key="d9">26935</data>
+    </edge>
+    <edge source="PA2619" target="PA0580">
+      <data key="d8">0</data>
+      <data key="d9">18892</data>
+    </edge>
+    <edge source="PA2619" target="PA3049">
+      <data key="d8">0</data>
+      <data key="d9">18916</data>
+    </edge>
+    <edge source="PA3516" target="PA3518">
+      <data key="d8">0</data>
+      <data key="d9">8831</data>
+    </edge>
+    <edge source="PA3552" target="PA3554">
+      <data key="d8">2</data>
+      <data key="d9">8888</data>
+    </edge>
+    <edge source="PA3552" target="PA3555">
+      <data key="d8">0</data>
+      <data key="d9">8889</data>
+    </edge>
+    <edge source="PA3552" target="PA3557">
+      <data key="d8">0</data>
+      <data key="d9">8891</data>
+    </edge>
+    <edge source="PA3552" target="PA3559">
+      <data key="d8">0</data>
+      <data key="d9">8892</data>
+    </edge>
+    <edge source="PA3554" target="PA3555">
+      <data key="d8">0</data>
+      <data key="d9">8894</data>
+    </edge>
+    <edge source="PA3554" target="PA3557">
+      <data key="d8">0</data>
+      <data key="d9">8896</data>
+    </edge>
+    <edge source="PA3554" target="PA3559">
+      <data key="d8">2</data>
+      <data key="d9">8897</data>
+    </edge>
+    <edge source="PA3555" target="PA3557">
+      <data key="d8">0</data>
+      <data key="d9">8899</data>
+    </edge>
+    <edge source="PA3555" target="PA3558">
+      <data key="d8">0</data>
+      <data key="d9">8900</data>
+    </edge>
+    <edge source="PA3555" target="PA3559">
+      <data key="d8">0</data>
+      <data key="d9">16189</data>
+    </edge>
+    <edge source="PA3557" target="PA3558">
+      <data key="d8">0</data>
+      <data key="d9">8902</data>
+    </edge>
+    <edge source="PA3557" target="PA3559">
+      <data key="d8">0</data>
+      <data key="d9">8903</data>
+    </edge>
+    <edge source="PA4542" target="PA4768">
+      <data key="d8">0</data>
+      <data key="d9">10223</data>
+    </edge>
+    <edge source="PA4542" target="PA0283">
+      <data key="d8">1</data>
+      <data key="d9">149604</data>
+    </edge>
+    <edge source="PA4542" target="PA0782">
+      <data key="d8">1</data>
+      <data key="d9">150073</data>
+    </edge>
+    <edge source="PA4542" target="PA3650">
+      <data key="d8">1</data>
+      <data key="d9">134839</data>
+    </edge>
+    <edge source="PA4542" target="PA3049">
+      <data key="d8">1</data>
+      <data key="d9">136846</data>
+    </edge>
+    <edge source="PA4768" target="PA2738">
+      <data key="d8">0</data>
+      <data key="d9">12546</data>
+    </edge>
+    <edge source="PA4598" target="PA4599">
+      <data key="d8">0</data>
+      <data key="d9">10305</data>
+    </edge>
+    <edge source="PA4598" target="PA4597">
+      <data key="d8">0</data>
+      <data key="d9">19642</data>
+    </edge>
+    <edge source="PA4599" target="PA4597">
+      <data key="d8">0</data>
+      <data key="d9">17478</data>
+    </edge>
+    <edge source="PA4774" target="PA4775">
+      <data key="d8">0</data>
+      <data key="d9">10498</data>
+    </edge>
+    <edge source="PA4774" target="PA4773">
+      <data key="d8">2</data>
+      <data key="d9">23257</data>
+    </edge>
+    <edge source="PA2738" target="PA3179">
+      <data key="d8">1</data>
+      <data key="d9">135678</data>
+    </edge>
+    <edge source="PA5468" target="PA5469">
+      <data key="d8">0</data>
+      <data key="d9">14816</data>
+    </edge>
+    <edge source="PA0998" target="PA3650">
+      <data key="d8">0</data>
+      <data key="d9">15231</data>
+    </edge>
+    <edge source="PA3650" target="PA4669">
+      <data key="d8">2</data>
+      <data key="d9">17313</data>
+    </edge>
+    <edge source="PA0282" target="PA5377">
+      <data key="d8">0</data>
+      <data key="d9">16338</data>
+    </edge>
+    <edge source="PA0615" target="PA0616">
+      <data key="d8">0</data>
+      <data key="d9">16485</data>
+    </edge>
+    <edge source="PA0634" target="PA0635">
+      <data key="d8">0</data>
+      <data key="d9">16493</data>
+    </edge>
+    <edge source="PA2599" target="PA2598">
+      <data key="d8">0</data>
+      <data key="d9">17074</data>
+    </edge>
+    <edge source="PA2598" target="PA2595">
+      <data key="d8">2</data>
+      <data key="d9">26934</data>
+    </edge>
+    <edge source="PA3515" target="PA3517">
+      <data key="d8">0</data>
+      <data key="d9">17259</data>
+    </edge>
+    <edge source="PA3757" target="PA3758">
+      <data key="d8">0</data>
+      <data key="d9">17344</data>
+    </edge>
+    <edge source="PA3758" target="PA3759">
+      <data key="d8">2</data>
+      <data key="d9">17345</data>
+    </edge>
+    <edge source="PA1513" target="PA1516">
+      <data key="d8">0</data>
+      <data key="d9">19354</data>
+    </edge>
+    <edge source="PA2432" target="PA1249">
+      <data key="d8">2</data>
+      <data key="d9">19731</data>
+    </edge>
+    <edge source="PA5445" target="PA1217">
+      <data key="d8">2</data>
+      <data key="d9">25125</data>
+    </edge>
+    <edge source="PA5445" target="PA4022">
+      <data key="d8">2</data>
+      <data key="d9">25176</data>
+    </edge>
+    <edge source="PA5445" target="PA1027">
+      <data key="d8">2</data>
+      <data key="d9">25316</data>
+    </edge>
+    <edge source="PA5195" target="PA4025">
+      <data key="d8">1</data>
+      <data key="d9">153824</data>
+    </edge>
+  </graph>
+</graphml>
