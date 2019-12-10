@@ -3,8 +3,7 @@ default = [
         'selector': 'node',
         'style': {
             'border-width': 1,
-            'border-color': 'black',
-            'min-zoomed-font-size': 10
+            'border-color': 'black'
         }
     },
     {

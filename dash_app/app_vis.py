@@ -62,7 +62,7 @@ network_path = '/home/javier/PycharmProjects/PaIntDB/temp_data/mediarpmi.treatme
 temp_network = nx.read_graphml(network_path)
 cyto_elements, cyto_nodes, cyto_edges, network = make_cyto_elements(temp_network)
 network_df = make_network_df(network)
-
+enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -99,6 +99,7 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
+                                html.Br(),
                                 html.Details(
                                     [
                                         html.Summary('By localization '),
@@ -112,6 +113,7 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
+                                html.Br(),
                                 html.Details(
                                     [
                                         html.Summary('By differential expression'),
@@ -125,13 +127,16 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
-html.Details(
+                                html.Br(),
+                                html.Details(
                                     [
                                         html.Summary('By enriched GO term'),
-                                        dbc.Input(
+                                        dcc.Dropdown(
                                             id='enrichment-selection',
-                                            placeholder='Type a GO term...',
-                                            type='text'
+                                            options=[{'label': term, 'value': term}
+                                                     for term in enrichment_results['name']],
+                                            multi=True,
+                                            optionHeight=50
                                         )
                                     ],
                                 ),
@@ -143,16 +148,16 @@ html.Details(
                                                     style={'display': 'inline-block'}),
                                         html.P(id='num-selected-nodes'),
                                         html.Br(),
-                                        html.Button('Run GO Term Enrichment',
-                                                    id='run-enrichment',
-                                                    style={'display': 'inline-block'}),
-                                        html.Div(id='enrichment-results', style={'display': 'none'})
-                                    ],
-                                    style={'text-align': 'center'})
+                                        #html.Button('Run GO Term Enrichment',
+                                        #            id='run-enrichment',
+                                        #            style={'display': 'inline-block'}),
+                                        #html.Div(id='enrichment-results', style={'display': 'none'})
+                                    ])
+                                    #style={'text-align': 'center'})
                             ],
                             style={'margin': '2vh'}
                         ),
-                        width=2,
+                        width=3,
                         style={'backgroundColor': '#7FDBFF', 'padding': '5px'}
                     ),
                     dbc.Col(
@@ -177,7 +182,7 @@ html.Details(
                                 style={'height': '25vh'}
                             )
                         ],
-                        width=10
+                        width=9
                     ),
                 ]
             )
@@ -204,14 +209,12 @@ def change_color_map(value):
     [Input('make-selection', 'n_clicks')],
     [State('source-selection', 'value'),
      State('location-selection', 'value'),
-     State('diff-exp-selection', 'value')]
+     State('diff-exp-selection', 'value'),
+     State('enrichment-selection', 'value')]
 )
-def select_nodes(n_clicks, significance_source, location, regulation):
+def select_nodes(n_clicks, significance_source, location, regulation, enriched_terms):
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
-
-    print('significance', significance_source)
-    print('location', location)
 
     query = []  # query to filter nodes
     if significance_source:
@@ -224,7 +227,13 @@ def select_nodes(n_clicks, significance_source, location, regulation):
     if regulation:
         query.append('regulation in @regulation')
 
-    print(query)
+    if enriched_terms:
+        # Get genes associated with selected GO term(s)
+        print(enriched_terms)
+        genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items'].iloc[0]
+        print(len(genes_in_term))
+        query.append('index in @genes_in_term')
+
     query_str = ' & '.join(query)
     print(query_str)
     if query_str:
@@ -233,7 +242,6 @@ def select_nodes(n_clicks, significance_source, location, regulation):
     else:
         queried_nodes = nodes
         selected_msg = ''
-    print('# nodes', len(queried_nodes))
 
     for node in nodes:
         node['selected'] = True if node['data']['id'] in queried_nodes else False
@@ -253,7 +261,13 @@ def show_node_details(node_data):
         node_ids = [node['label'] for node in node_data]
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
-                       .rename(columns={'index': 'Locus Tag'})
+                       .rename(columns={'index': 'Locus Tag',
+                                        'shortName': 'Short Name',
+                                        'description': 'Descripton',
+                                        'log2FoldChange': 'Log2 Fold Change',
+                                        'padj': 'Adjusted p-value',
+                                        'ncbi': 'NCBI Accession #',
+                                        'uniprotkb': 'UniProtKB Accession #'})
                        )
 
         table = dash_table.DataTable(
@@ -278,32 +292,30 @@ def show_node_details(node_data):
         return table
 
 
-@app.callback(
-    Output('enrichment-selection', 'list'),
-    [Input('run-enrichment', 'n_clicks'),
-     Input('enrichment-results', 'children')]
-)
-def create_enrichment_options(n_clicks, results):
-    if n_clicks:
-        results_df = pd.read_json(results)
-        options = html.Datalist(id='enriched-terms', children=[html.Option(value=name) for name in results_df['name']])
-    else:
-        options = None
-    return options
+# Might Change this back later (for now, running enrichment when app starts)
+# @app.callback(
+#     Output('enrichment-selection', 'options'),
+#     [Input('enrichment-results', 'children')]
+# )
+# def create_enrichment_options(results):
+#     results_df = pd.read_json(results)
+#     options = [{'label': term, 'value': term} for term in results_df['name']]
+#     return options
 
 
-@app.callback(
-    Output('enrichment-results', 'children'),
-    [Input('run-enrichment', 'n_clicks')]
-)
-def run_enrichment(n_clicks):
-    if n_clicks:
-        enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
-        print(enrichment_results.head())
-        table = enrichment_results.to_json()
-    else:
-        table = ""
-    return table
+# Might Change this back later (for now, running enrichment when app starts)
+# @app.callback(
+#     Output('enrichment-results', 'children'),
+#     [Input('run-enrichment', 'n_clicks')]
+# )
+# def run_enrichment(n_clicks):
+#     if n_clicks:
+#         enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
+#         print(enrichment_results.head())
+#         table = enrichment_results.to_json()
+#     else:
+#         table = ""
+#     return table
 
 
 if __name__ == "__main__":

@@ -20,9 +20,10 @@
 - How to handle exceptions
 - State not working in update_download_link
 - React errors
+- Explore client-side callbacks
 
 ## Vis module
-- Reset view button not working(Removed for now)
+- Reset view button not working (Removed for now)
 - Chained callbacks for vis layout depending on network type 
 - Padj decimal issues
 
