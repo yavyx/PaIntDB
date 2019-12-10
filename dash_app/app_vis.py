@@ -154,7 +154,6 @@ app.layout = html.Div(
                                 id='make-selection',
                                 style={'display': 'inline-block'}),
                     html.P(id='num-selected-nodes'),
-                    # html.Br(),
                     html.Button('Make Sub-Network',
                                 id='make-subnetwork',
                                 style={'display': 'inline-block'})
