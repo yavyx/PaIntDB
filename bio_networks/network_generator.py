@@ -317,12 +317,3 @@ class CombinedNetwork(DENetwork):
         CombinedNetwork.add_significance_source(self)
         return self.network
 
-
-#  Corries combined network for testing:
-CombinedNetwork(h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
-                pd.read_csv('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/RNASeq/results/mediarpmi.treatmentazm.csv'),
-                h.get_genes('/home/javier/Documents/Corrie/TnSeq_CB_Manuscript-master/TnSeq/in-vitro/essential/finalEss_noTrue_RPMI_AZMvsunt_20190715.csv'),
-                'PAO1',
-                0,
-                3,
-                False)
