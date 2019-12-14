@@ -25,7 +25,8 @@ def make_network_df(network):
     df['padj'] = df['padj'].map('{:.3g}'.format)
     df['padj'] = df['padj'].astype(float)
     df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
-    df['regulation'] = [None if sig == 'TnSeq' else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
+    if 'significanceSource' in df.columns:
+        df['regulation'] = [None if sig == 'TnSeq' else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
     return df
 
 
@@ -57,7 +58,7 @@ def make_cyto_elements(network):
 
 
 # network_path = 'corries_AZM_combined.graphml'
-network_path = os.path.join('temp_data', 'mediarpmi.treatmentazm_exp_network.graphml')
+network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
 temp_network = nx.read_graphml(network_path)
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)
