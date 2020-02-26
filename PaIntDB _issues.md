@@ -9,7 +9,7 @@
 - Check sources when building the network from a dataframe! Which source stays, which one leaves?
 - Need to add an export to CSV function.
 - New function to extract all db information from the selected interaction(s). Important for when the Dash application is running.
-- Come up with first-order interaction algortihms. Need to think more about this algorithm.
+- Come up with first-order interaction algorithms. Need to think more about this algorithm.
 - Double lists when extracting study items.
 - Fix GO enrichment. Run GO enrichment on network or on full list (not all original genes are mapped) ? Both
 - Use decorators? to modify network generating functions.
@@ -27,6 +27,14 @@
 - Chained callbacks for vis layout depending on network type 
 - Padj decimal issues
 - Change node selection to node ids, not node labels
+- Fix PA14 GO term enrichment
+
+## GO enrichment
+- Change directory for PA14/PAO1 mapping in enrichment script.
+- Create GO term sets for PA14 instead of mapping
+- Clean it up, lots of unused code.
+- Save mapped dictionary to JSON file.
+- Use os module for paths
 
 ### DONE!
 - Make DB path a constant.
