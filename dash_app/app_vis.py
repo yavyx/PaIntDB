@@ -34,8 +34,8 @@ def make_cyto_elements(network):
     classes according to the attributes and the layout coordinates."""
 
     # Get nodes of the largest component and generate sub-network
-    main_component_nodes = [component for component in nx.connected_components(temp_network)][0]
-    network = network.subgraph(main_component_nodes)
+    # main_component_nodes = [component for component in nx.connected_components(temp_network)][0]
+    # network = network.subgraph(main_component_nodes)
     nx.set_node_attributes(network, dict(network.degree()), 'degree')
 
     # Convert nx network to cytoscape JSON
@@ -56,8 +56,8 @@ def make_cyto_elements(network):
     return elements, nodes, edges, network
 
 
-# network_path = 'corries_AZM_combined.graphml'
-network_path = os.path.join('temp_data', 'mediarpmi.treatmentazm_exp_network.graphml')
+network_path = '/home/javier/Documents/Melanie/Biofilm_manuscript_data/Biofilm_vs_planktonic_PA14_network_0_order.graphml'
+# network_path = os.path.join('temp_data', 'mediarpmi.treatmentazm_exp_network.graphml')
 temp_network = nx.read_graphml(network_path)
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)

@@ -29,8 +29,8 @@ class BioNetwork:
         if order == 1:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
                                  if attr['type'] == 'p' and attr['seed'] == 1]
-
-        self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
+        if metabolites:
+            self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
 
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
@@ -299,6 +299,15 @@ class CombinedNetwork(DENetwork):
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
         self.network = CombinedNetwork.make_network(self)
+        print(len(self.network))
+        if order == 0:
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p']
+        if order == 1:
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p' and attr['seed'] == 1]
+        if metabolites:
+            self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
