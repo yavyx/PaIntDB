@@ -98,10 +98,21 @@ def map_pa14_genes(gene_list):
     return pao1_genes
 
 
+def map_pao1_genes(gene_list):
+    """Takes a list of PAO1 genes and returns the corresponding PA14 names."""
+    pa14_pao1_mapping = dict()
+    with open('/home/javier/Documents/pseudomonas_files/ortholuge_pa14_to_pao1_20190708.tsv') as mapping:
+        reader = csv.reader(mapping, delimiter='\t')
+        for row in reader:
+            pa14_pao1_mapping[row[4]] = row[10]
+
+    pa14_genes = [pa14_pao1_mapping[gene] for gene in gene_list if gene in pa14_pao1_mapping.keys()]
+    return pa14_genes
+
 def run_go_enrichment(strain, genes_of_interest, significant=True, cutoff=0.05,
                       use_parent_terms=True):
     go_association = make_go_association_dict(os.path.join('data', 'PAO1_gene_ontology.csv'))
-    background_genes = get_genes(os.path.join('data', 'PAO1_all_genes.csv'))
+    background_genes = get_genes(os.path.join('data', strain + '_all_genes.csv'))
     obo_go_fname = download_go_basic_obo()
     obo_dag = GODag('go-basic.obo')
     # genes_of_interest = list(network.nodes)
