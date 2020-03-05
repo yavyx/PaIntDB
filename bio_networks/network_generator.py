@@ -3,6 +3,7 @@ import os
 import sqlite3
 
 import networkx as nx
+from networkx.algorithms import approximation
 import pandas as pd
 
 import bio_networks.helpers as h
@@ -24,8 +25,8 @@ class BioNetwork:
         self.network = BioNetwork.make_network(self)
 
         if order == 0:
-            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
-                                 if attr['type'] == 'p']
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'p']
+
         if order == 1:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
                                  if attr['type'] == 'p' and attr['seed'] == 1]
@@ -223,10 +224,19 @@ class BioNetwork:
     def build_network(self, edge_list_df, db_tidy_info):
         """Creates a network from a edge list DataFrame, adds node attributes."""
         self.network = nx.convert_matrix.from_pandas_edgelist(edge_list_df, source='interactor1', target='interactor2',
-                                                               edge_attr=['experimental', 'id'])
+                                                              edge_attr=['experimental', 'id'])
         nx.set_node_attributes(self.network, db_tidy_info['proteins'])
         nx.set_node_attributes(self.network, db_tidy_info['short_names'])
         nx.set_node_attributes(self.network, db_tidy_info['localization'], name='localization')
+
+        # if self.order == 1:
+        #     main_component_nodes = [component for component in nx.connected_components(self.network)][0]
+        #     self.network = self.network.subgraph(main_component_nodes)
+        #     # Get minimum Steiner tree nodes.
+        #     sub_tree_nodes = approximation.steinertree.steiner_tree(self.network, self.genes_of_interest).nodes
+        #     # Use nodes to make sub-network
+        #     self.network = self.network.subgraph(sub_tree_nodes)
+
         if self._metabolites is True:
             nx.set_node_attributes(self.network, db_tidy_info['metabolites'])
 
@@ -234,9 +244,10 @@ class BioNetwork:
         if self.order == 1:
             for node in self.network.nodes():
                 if node in self.genes_of_interest:
-                    self.network.node[node]['seed'] = 1
+                    self.network.nodes[node]['seed'] = 1
                 else:
-                    self.network.node[node]['seed'] = 0
+                    self.network.nodes[node]['seed'] = 0
+
         # Remove orphan nodes and self-loop edges.
         self.network.remove_edges_from(nx.selfloop_edges(self.network))
         self.network.remove_nodes_from(list(nx.isolates(self.network)))
