@@ -2,6 +2,7 @@
 
 
 ### Back-end
+- Don't query 
 - Make queries into dataframes instead of dictionaries
 - Write tests! (check parameters in all main (user input) functions.
 - Adding metabolites is too slow, need to check why.

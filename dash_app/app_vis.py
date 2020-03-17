@@ -1,6 +1,5 @@
 from math import sqrt
 from itertools import chain
-
 import os
 import time
 
@@ -126,6 +125,7 @@ app.layout = html.Div(
                     )
                 ],
             ),
+            html.Br(),
             html.Details(
                 children=[
                     html.Summary('By experiment '),
@@ -318,7 +318,7 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
         query.append('index in @total_genes')
 
     query_str = ' & '.join(query)
-
+    print(query_str)
     # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
@@ -343,7 +343,7 @@ def show_node_details(node_data, sub_node_data):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
-        cols = ['shortName', 'description', 'log2FoldChange', 'padj', 'ncbi', 'uniprotkb']
+        cols = ['shortName', 'description', 'log2FoldChange', 'padj']
         node_ids = [node['label'] for node in node_data]
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
@@ -351,9 +351,7 @@ def show_node_details(node_data, sub_node_data):
                                         'shortName': 'Short Name',
                                         'description': 'Descripton',
                                         'log2FoldChange': 'Log2 Fold Change',
-                                        'padj': 'Adjusted p-value',
-                                        'ncbi': 'NCBI Accession #',
-                                        'uniprotkb': 'UniProtKB Accession #'})
+                                        'padj': 'Adjusted p-value'})
                        )
 
         if sub_node_data:
@@ -364,9 +362,7 @@ def show_node_details(node_data, sub_node_data):
                                             'shortName': 'Short Name',
                                             'description': 'Descripton',
                                             'log2FoldChange': 'Log2 Fold Change',
-                                            'padj': 'Adjusted p-value',
-                                            'ncbi': 'NCBI Accession #',
-                                            'uniprotkb': 'UniProtKB Accession #'})
+                                            'padj': 'Adjusted p-value'})
                            )
 
         nodes_table = dash_table.DataTable(
@@ -423,7 +419,7 @@ def download_csv(path):
 )
 def print_nodes(n_clicks, node_data):
     if n_clicks:
-        print([node['id'] for node in node_data])
+        print('miguebo  ', [node['id'] for node in node_data])
     return None
 
 
