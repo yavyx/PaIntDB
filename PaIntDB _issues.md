@@ -18,7 +18,10 @@
 - Fix mapped genes in combined networks
 
 ### Dash GUI
-- How to handle exceptions
+- How to handle exceptions:
+    - CSV input:
+        - Check no extra columns
+        - Check file format
 - State not working in update_download_link
 - React errors
 - Explore client-side callbacks

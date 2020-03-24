@@ -89,7 +89,8 @@ def go_enrichment_stats(go_results, tigs=None, pigs=None):
 def map_pa14_genes(gene_list):
     """Takes a list of PA14 genes and returns the corresponding PAO1 names."""
     pao1_pa14_mapping = dict()
-    with open('/home/javier/Documents/pseudomonas_files/ortholuge_pa14_to_pao1_20190708.tsv') as mapping:
+    mapping_path = os.path.join(os.getcwd(), 'data', 'ortholuge_pa14_to_pao1_20190708.tsv')
+    with open(mapping_path) as mapping:
         reader = csv.reader(mapping, delimiter='\t')
         for row in reader:
             pao1_pa14_mapping[row[10]] = row[4]
@@ -101,13 +102,15 @@ def map_pa14_genes(gene_list):
 def map_pao1_genes(gene_list):
     """Takes a list of PAO1 genes and returns the corresponding PA14 names."""
     pa14_pao1_mapping = dict()
-    with open('/home/javier/Documents/pseudomonas_files/ortholuge_pa14_to_pao1_20190708.tsv') as mapping:
+    mapping_path = os.path.join(os.getcwd(), 'data', 'ortholuge_pa14_to_pao1_20190708.tsv')
+    with open(mapping_path) as mapping:
         reader = csv.reader(mapping, delimiter='\t')
         for row in reader:
             pa14_pao1_mapping[row[4]] = row[10]
 
     pa14_genes = [pa14_pao1_mapping[gene] for gene in gene_list if gene in pa14_pao1_mapping.keys()]
     return pa14_genes
+
 
 def run_go_enrichment(strain, genes_of_interest, significant=True, cutoff=0.05,
                       use_parent_terms=True):

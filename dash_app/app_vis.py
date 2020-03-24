@@ -1,4 +1,6 @@
+from datetime import datetime
 from math import sqrt
+from itertools import chain
 import os
 
 import dash
@@ -8,7 +10,10 @@ import dash_core_components as dcc
 import dash_cytoscape as cyto
 import dash_html_components as html
 import dash_table
+import flask
 import networkx as nx
+from networkx.algorithms import approximation
+from networkx.utils import pairwise
 import pandas as pd
 
 import dash_app.cytoscape_stylesheets as stylesheets
@@ -49,7 +54,7 @@ def make_cyto_elements(network):
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
 
         pos = layout[node['data']['id']]  # Extract positions from layout dict
-        node['position'] = {'x': pos[0], 'y': pos[1]}
+        node['position'] = {'x': pos[0], 'y': pos[1]}  # Set positions
 
     edges = json_elements['edges']
     elements = nodes + edges
@@ -57,12 +62,27 @@ def make_cyto_elements(network):
     return elements, nodes, edges, network
 
 
-# network_path = 'corries_AZM_combined.graphml'
-network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
+network_path = os.path.join('temp_data', 'Biofilm_vs_planktonic_PA14_combined_network.graphml')
 temp_network = nx.read_graphml(network_path)
+all_nodes = len(temp_network.nodes())
+
+# Extract and use just main component
+nodes = [component for component in nx.connected_components(temp_network)][0]
+temp_network = temp_network.subgraph(nodes)
+new_nodes = len(temp_network.nodes())
+print('Lost {} nodes'.format(all_nodes - new_nodes))
+
+print('Calculating metric closure')
+t_start = datetime.now()
+metric_closure = approximation.metric_closure(temp_network)
+print(datetime.now() - t_start)
+
+strain = 'PA14'
+
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)
-enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
+
+enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -94,6 +114,22 @@ app.layout = html.Div(
                      ),
             html.Hr(),
             html.H5('Select nodes'),
+            html.Details(
+                [
+                    html.Summary('By name'),
+                    dcc.Dropdown(
+                        id='name-selection',
+                        # Search by both short name and locus tag (index)
+                        options=[{'label': term, 'value': term}
+                                 for term in network_df['shortName']] +
+                                [{'label': term, 'value': term}
+                                 for term in network_df.index],
+                        multi=True,
+                        optionHeight=50
+                    )
+                ],
+            ),
+            html.Br(),
             html.Details(
                 children=[
                     html.Summary('By experiment '),
@@ -151,17 +187,17 @@ app.layout = html.Div(
             html.Br(),
             html.Div(
                 [
-                    html.Button('Make Selection',
-                                id='make-selection',
-                                style={'display': 'inline-block'}),
                     html.P(id='num-selected-nodes'),
                     html.Button('Make Sub-Network',
                                 id='make-subnetwork',
-                                style={'display': 'inline-block'})
-                    # html.Button('Run GO Term Enrichment',
-                    #            id='run-enrichment',
-                    #            style={'display': 'inline-block'}),
-                    # html.Div(id='enrichment-results', style={'display': 'none'})
+                                style={'display': 'inline-block'}),
+                    html.Button(id='download-table-button',
+                                children=html.A('Download Table',
+                                                id='table-download-link'
+                                                )
+                                ),
+                    html.Div(id='node-details-download', style={'display': 'none'}),
+                    html.Div(id='hidden-div', style={'display': 'none'})
                 ]
             )
         ],
@@ -222,7 +258,7 @@ app.layout = html.Div(
                             html.Div(
                                 [
                                     html.H5('Selected Node Details'),
-                                    html.Div(id='node-details')
+                                    html.Div(id='node-details-table')
                                 ],
                                 style={'height': '30vh'}
                             )
@@ -252,17 +288,22 @@ def change_color_map(value):
 @app.callback(
     [Output('cytoscape', 'elements'),
      Output('num-selected-nodes', 'children')],
-    [Input('make-selection', 'n_clicks')],
-    [State('source-selection', 'value'),
-     State('location-selection', 'value'),
-     State('diff-exp-selection', 'value'),
-     State('enrichment-selection', 'value')]
+    [Input('name-selection', 'value'),
+     Input('source-selection', 'value'),
+     Input('location-selection', 'value'),
+     Input('diff-exp-selection', 'value'),
+     Input('enrichment-selection', 'value')]
 )
-def select_nodes(n_clicks, significance_source, location, regulation, enriched_terms):
+def select_nodes(short_name, significance_source, location, regulation, enriched_terms):
     """Select nodes according to significance source."""
     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
 
     query = []  # Query to filter nodes
+
+    # Add queries depending on user menu selections
+    if short_name:
+        query.append('shortName in @short_name | index in @short_name')
+
     if significance_source:
         significance_source.append('both')
         query.append('significanceSource in @significance_source')
@@ -277,9 +318,12 @@ def select_nodes(n_clicks, significance_source, location, regulation, enriched_t
         # Get genes associated with selected GO term(s)
         genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
         total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+        if strain == 'PA14':
+            total_genes = goe.map_pao1_genes(total_genes)
         query.append('index in @total_genes')
 
     query_str = ' & '.join(query)
+    print(query_str)
 
     # Use query to select nodes
     if query_str:
@@ -296,7 +340,8 @@ def select_nodes(n_clicks, significance_source, location, regulation, enriched_t
 
 
 @app.callback(
-    Output('node-details', 'children'),
+    [Output('node-details-table', 'children'),
+     Output('node-details-download', 'children')],
     [Input('cytoscape', 'selectedNodeData'),
      Input('sub_cytoscape', 'selectedNodeData')]
 )
@@ -304,7 +349,7 @@ def show_node_details(node_data, sub_node_data):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
-        cols = ['shortName', 'description', 'log2FoldChange', 'padj', 'ncbi', 'uniprotkb']
+        cols = ['shortName', 'description', 'log2FoldChange', 'padj']
         node_ids = [node['label'] for node in node_data]
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
@@ -312,9 +357,7 @@ def show_node_details(node_data, sub_node_data):
                                         'shortName': 'Short Name',
                                         'description': 'Descripton',
                                         'log2FoldChange': 'Log2 Fold Change',
-                                        'padj': 'Adjusted p-value',
-                                        'ncbi': 'NCBI Accession #',
-                                        'uniprotkb': 'UniProtKB Accession #'})
+                                        'padj': 'Adjusted p-value'})
                        )
 
         if sub_node_data:
@@ -325,12 +368,10 @@ def show_node_details(node_data, sub_node_data):
                                             'shortName': 'Short Name',
                                             'description': 'Descripton',
                                             'log2FoldChange': 'Log2 Fold Change',
-                                            'padj': 'Adjusted p-value',
-                                            'ncbi': 'NCBI Accession #',
-                                            'uniprotkb': 'UniProtKB Accession #'})
+                                            'padj': 'Adjusted p-value'})
                            )
 
-        table = dash_table.DataTable(
+        nodes_table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
             fixed_rows={'headers': True, 'data': 0},
@@ -349,7 +390,43 @@ def show_node_details(node_data, sub_node_data):
                 'textAlign': 'left'
             }
         )
-        return table
+        return nodes_table, filtered_df.to_json()
+    else:
+        return None, None
+
+
+@app.callback(
+    Output('table-download-link', 'href'),
+    [Input('download-table-button', 'n_clicks')],
+    [State('node-details-download', 'children')]
+)
+def update_download_link(n_clicks, node_details):
+    if n_clicks:
+        rel_filename = os.path.join('downloads', 'node_table.csv')
+        abs_filename = os.path.join(os.getcwd(), rel_filename)
+        pd.read_json(node_details).to_csv(abs_filename)
+        return '/{}'.format(rel_filename)
+
+
+@app.server.route('/downloads/<path:path>')
+def download_csv(path):
+    root_dir = os.getcwd()
+    return flask.send_from_directory(
+        os.path.join(root_dir, 'downloads'),
+        path,
+        cache_timeout=-1  # Prevent browser from caching previous file
+    )
+
+
+@app.callback(
+    Output('hidden-div', 'children'),
+    [Input('sub_cytoscape', 'selectedNodeData')],
+    [State('sub_cytoscape', 'selectedNodeData')]
+)
+def print_nodes(n_clicks, node_data):
+    if n_clicks:
+        print('miguebo  ', [node['id'] for node in node_data])
+    return None
 
 
 @app.callback(
@@ -359,12 +436,12 @@ def show_node_details(node_data, sub_node_data):
 )
 def make_subnetwork(n_clicks, node_data):
     if n_clicks and node_data:
-        node_ids = [node['id'] for node in node_data]
-        sub_network = nx.Graph(network_main_comp)
-
-        for node in network_main_comp.nodes():
-            if node not in node_ids:
-                sub_network.remove_node(node)
+        node_ids = [node['id'] for node in node_data]  # Get selected node ids.
+        H = metric_closure.subgraph(node_ids)
+        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
+        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
+        T = temp_network.edge_subgraph(edges)
+        sub_network = T
 
         cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network)
         return cyto_sub_network
@@ -399,4 +476,4 @@ def make_subnetwork(n_clicks, node_data):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)

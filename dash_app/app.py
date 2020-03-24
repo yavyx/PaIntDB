@@ -337,8 +337,12 @@ def update_download_link(
 @app.server.route('/downloads/<path:path>')
 def download_graphml(path):
     root_dir = os.getcwd()
+    downloads_dir = os.path.join(root_dir, 'downloads')
+    if not os.path.exists(downloads_dir):
+        os.mkdir(downloads_dir)
+
     return flask.send_from_directory(
-        os.path.join(root_dir, 'downloads'),
+        os.path.join(downloads_dir),
         path,
         cache_timeout=-1  # Prevent browser from caching previous file
     )
