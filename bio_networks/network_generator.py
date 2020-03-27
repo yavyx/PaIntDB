@@ -1,9 +1,8 @@
 from collections import defaultdict
-import os
+from datetime import datetime
 import sqlite3
 
 import networkx as nx
-from networkx.algorithms import approximation
 import pandas as pd
 
 import bio_networks.helpers as h
@@ -92,7 +91,7 @@ class BioNetwork:
                                                                  ON interaction_source.id = 
                                                                  interaction_sources.data_source""",
                                                               con=db_connection)
-            cursor.execute("""SELECT id, product_name, ncbi_acc, uniprotkb 
+            cursor.execute("""SELECT id, product_name
                               FROM protein
                               WHERE strain = ?""",
                            [self._strain])
@@ -121,9 +120,8 @@ class BioNetwork:
         proteins = self._raw_info['proteins']
         node_protein_info = dict()
         for protein in proteins:
-            node_protein_info[protein[0]] = dict(description=protein[1],
-                                                 ncbi=protein[2],
-                                                 uniprotkb=protein[3])
+            node_protein_info[protein[0]] = dict(description=protein[1])
+
         for key, value in node_protein_info.items():
             node_protein_info[key] = h.remove_nones(value)
         db_tidy_info['proteins'] = node_protein_info
@@ -229,14 +227,6 @@ class BioNetwork:
         nx.set_node_attributes(self.network, db_tidy_info['short_names'])
         nx.set_node_attributes(self.network, db_tidy_info['localization'], name='localization')
 
-        # if self.order == 1:
-        #     main_component_nodes = [component for component in nx.connected_components(self.network)][0]
-        #     self.network = self.network.subgraph(main_component_nodes)
-        #     # Get minimum Steiner tree nodes.
-        #     sub_tree_nodes = approximation.steinertree.steiner_tree(self.network, self.genes_of_interest).nodes
-        #     # Use nodes to make sub-network
-        #     self.network = self.network.subgraph(sub_tree_nodes)
-
         if self._metabolites is True:
             nx.set_node_attributes(self.network, db_tidy_info['metabolites'])
 
@@ -260,10 +250,26 @@ class BioNetwork:
 
     def make_network(self):
         """Generates a PPI network from a list of genes."""
+        print('Querying database...')
+        start = datetime.now()
         BioNetwork.query_db(self)
+        print(datetime.now() - start, '\n')
+
+        print('Tidying queries...')
+        start = datetime.now()
         tidy_db_info = BioNetwork.format_attribute_dictionaries(self)
+        print(datetime.now() - start, '\n')
+
+        print('Making edge list...')
+        start = datetime.now()
         network_data = BioNetwork.make_edge_list(self)
+        print(datetime.now() - start, '\n')
+
+        print('Building network...')
+        start = datetime.now()
         BioNetwork.build_network(self, network_data, tidy_db_info)
+        print(datetime.now() - start, '\n')
+
         BioNetwork.add_locus_tags(self)
         return self.network
 
@@ -296,7 +302,6 @@ class DENetwork(BioNetwork):
         return de_info
 
     def make_network(self):
-        super().make_network()
         nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
         return self.network
 
@@ -309,8 +314,8 @@ class CombinedNetwork(DENetwork):
         self.de_genes = de_genes_df.gene.tolist()
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
-        self.network = CombinedNetwork.make_network(self)
-        print(len(self.network))
+        CombinedNetwork.add_significance_source(self)
+
         if order == 0:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
                                  if attr['type'] == 'p']
@@ -333,7 +338,9 @@ class CombinedNetwork(DENetwork):
                 self.network.nodes[node]['significanceSource'] = 'none'
 
     def make_network(self):
-        super().make_network()
+        print('Adding significance source...')
+        start = datetime.now()
         CombinedNetwork.add_significance_source(self)
+        print(datetime.now() - start, '\n')
         return self.network
 

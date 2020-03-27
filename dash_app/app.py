@@ -245,7 +245,7 @@ def make_network(network_type,
                                    metabolites were mapped to these genes.'''
                                .format(len(bio_network.mapped_genes),
                                        len(gene_list),
-                                       len(bio_network.mapped_metabolites())
+                                       len(bio_network.mapped_metabolites)
                                        )
                                )
     else:
@@ -254,12 +254,10 @@ def make_network(network_type,
                                        len(gene_list))
                                )
     end_time = datetime.now()
-    # with open('performance.txt', 'a') as f:
-    #     f.write("order = {}, detection_method = {}, metabolites = {}\n".format(order, detection_method, str(metabolites)))
-    #     f.write('{}\n\n'.format(end_time - start_time))
+
     print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
     print(end_time - start_time)
-    #print(bio_network.network.nodes(data=True))
+
     return bio_network, mapping_msg
 
 

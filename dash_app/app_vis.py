@@ -119,7 +119,7 @@ app.layout = html.Div(
                     html.Summary('By name'),
                     dcc.Dropdown(
                         id='name-selection',
-                        # Search by both short name and locus tag (index)
+                        # Allow search by both short name and locus tag (index)
                         options=[{'label': term, 'value': term}
                                  for term in network_df['shortName']] +
                                 [{'label': term, 'value': term}
