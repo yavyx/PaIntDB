@@ -1,8 +1,8 @@
 from collections import defaultdict
 from datetime import datetime
-import sqlite3
 import os
 import pickle
+import sqlite3
 
 import pandas as pd
 
@@ -32,6 +32,7 @@ def make_go_association_dict(path):
                 go_dict[domain_short][locus_tag].add(go_id)
 
     go_dict = {'BP': dict(), 'CC': dict(), 'MF': dict()}
+
     go_domains = {'BP': 'biological_process',
                   'CC': 'cellular_component',
                   'MF': 'molecular_function'}
@@ -46,11 +47,3 @@ def make_go_association_dict(path):
         pickle.dump(go_dict, f, pickle.HIGHEST_PROTOCOL)
 
     return go_dict
-
-
-def load_time():
-    start = datetime.now()
-    with open('data\\go_association.pickle', 'rb') as handle:
-        miguebo = pickle.load(handle)
-    print(datetime.now() - start)
-    return miguebo

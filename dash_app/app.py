@@ -165,9 +165,9 @@ def parse_gene_list(contents, filename):
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     # Formatting DF
-    genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
-    genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
-    genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
+    #genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
+    #genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
+    #genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
     small_df = genes_df.head()  # smaller df to display on app
     cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
     small_df.loc[:, cols] = small_df[cols].round(2)

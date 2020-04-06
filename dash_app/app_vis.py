@@ -31,7 +31,8 @@ def make_network_df(network):
     df['padj'] = df['padj'].astype(float)
     df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
     if 'significanceSource' in df.columns:
-        df['regulation'] = [None if sig == 'TnSeq' else reg for sig, reg in zip(df['significanceSource'], df['regulation'])]
+        df['regulation'] = [None if sig == 'TnSeq' else reg
+                            for sig, reg in zip(df['significanceSource'], df['regulation'])]
     return df
 
 
@@ -70,7 +71,7 @@ all_nodes = len(temp_network.nodes())
 nodes = [component for component in nx.connected_components(temp_network)][0]
 temp_network = temp_network.subgraph(nodes)
 new_nodes = len(temp_network.nodes())
-print('Lost {} nodes'.format(all_nodes - new_nodes))
+print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
 
 print('Calculating metric closure')
 t_start = datetime.now()
