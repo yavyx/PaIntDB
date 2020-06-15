@@ -1,9 +1,7 @@
 from datetime import datetime
 from math import sqrt
-from itertools import chain
 import os
 
-import dash
 from dash.dependencies import Output, Input, State
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -12,11 +10,11 @@ import dash_html_components as html
 import dash_table
 import flask
 import networkx as nx
-from networkx.algorithms import approximation
-from networkx.utils import pairwise
 import pandas as pd
 
-import dash_app.cytoscape_stylesheets as stylesheets
+from dash_app import app
+import dash_app.vis_stylesheets as stylesheets
+from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
 
 
@@ -75,7 +73,7 @@ print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes
 
 print('Calculating metric closure')
 t_start = datetime.now()
-metric_closure = approximation.metric_closure(temp_network)
+#  metric_closure = approximation.metric_closure(temp_network)
 print(datetime.now() - t_start)
 
 strain = 'PA14'
@@ -83,12 +81,9 @@ strain = 'PA14'
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)
 
-enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
+# enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
-
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-app.layout = html.Div(
+layout = html.Div(
     [html.Div(
         style={
             'width': '23vw',
@@ -176,13 +171,13 @@ app.layout = html.Div(
             html.Details(
                 [
                     html.Summary('By enriched GO term'),
-                    dcc.Dropdown(
-                        id='enrichment-selection',
-                        options=[{'label': term, 'value': term}
-                                 for term in enrichment_results['name']],
-                        multi=True,
-                        optionHeight=50
-                    )
+                    #dcc.Dropdown(
+                    #    id='enrichment-selection',
+                    #    options=[{'label': term, 'value': term}
+                    #             for term in enrichment_results['name']],
+                    #    multi=True,
+                    #    optionHeight=50
+                    #)
                 ],
             ),
             html.Br(),
@@ -317,10 +312,10 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
 
     if enriched_terms:
         # Get genes associated with selected GO term(s)
-        genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
-        if strain == 'PA14':
-            total_genes = goe.map_pao1_genes(total_genes)
+        # genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
+        # total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+        # if strain == 'PA14':
+        #    total_genes = goe.map_pao1_genes(total_genes)
         query.append('index in @total_genes')
 
     query_str = ' & '.join(query)
@@ -430,24 +425,24 @@ def print_nodes(n_clicks, node_data):
     return None
 
 
-@app.callback(
-    Output('sub_cytoscape', 'elements'),
-    [Input('make-subnetwork', 'n_clicks')],
-    [State('cytoscape', 'selectedNodeData')]
-)
-def make_subnetwork(n_clicks, node_data):
-    if n_clicks and node_data:
-        node_ids = [node['id'] for node in node_data]  # Get selected node ids.
-        H = metric_closure.subgraph(node_ids)
-        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
-        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
-        T = temp_network.edge_subgraph(edges)
-        sub_network = T
-
-        cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network)
-        return cyto_sub_network
-    else:
-        return []
+#@app.callback(
+#    Output('sub_cytoscape', 'elements'),
+#    [Input('make-subnetwork', 'n_clicks')],
+#    [State('cytoscape', 'selectedNodeData')]
+#)
+#def make_subnetwork(n_clicks, node_data):
+#    if n_clicks and node_data:
+#        node_ids = [node['id'] for node in node_data]  # Get selected node ids.
+#        H = metric_closure.subgraph(node_ids)
+#        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
+#        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
+#        T = temp_network.edge_subgraph(edges)
+#        sub_network = T
+#
+#      cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network)
+#       return cyto_sub_network
+#    else:
+#        return []
 
 
 # Might Change this back later (for now, running enrichment when app starts)
@@ -474,7 +469,3 @@ def make_subnetwork(n_clicks, node_data):
 #     else:
 #         table = ""
 #     return table
-
-
-if __name__ == "__main__":
-    app.run_server(debug=True)
