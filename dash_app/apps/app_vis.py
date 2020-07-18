@@ -61,7 +61,7 @@ def make_cyto_elements(network):
     return elements, nodes, edges, network
 
 
-network_path = os.path.join('temp_data', 'Biofilm_vs_planktonic_PA14_combined_network.graphml')
+network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
 temp_network = nx.read_graphml(network_path)
 all_nodes = len(temp_network.nodes())
 
@@ -81,7 +81,7 @@ strain = 'PA14'
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)
 
-# enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
+enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 layout = html.Div(
     [html.Div(
@@ -171,13 +171,13 @@ layout = html.Div(
             html.Details(
                 [
                     html.Summary('By enriched GO term'),
-                    #dcc.Dropdown(
-                    #    id='enrichment-selection',
-                    #    options=[{'label': term, 'value': term}
-                    #             for term in enrichment_results['name']],
-                    #    multi=True,
-                    #    optionHeight=50
-                    #)
+                    dcc.Dropdown(
+                        id='enrichment-selection',
+                        options=[{'label': term, 'value': term}
+                                 for term in enrichment_results['name']],
+                        multi=True,
+                        optionHeight=50
+                    )
                 ],
             ),
             html.Br(),
@@ -210,7 +210,6 @@ layout = html.Div(
                         [
                             dbc.Col(
                                 id='main-view',
-                                width=6,
                                 children=[
                                     html.H5('Full Network View'),
                                     cyto.Cytoscape(
@@ -227,26 +226,6 @@ layout = html.Div(
                                     )
                                 ],
                             ),
-                            dbc.Col(
-                                id='sub-view',
-                                width=6,
-                                children=[
-                                    html.H5('Sub-network View'),
-                                    cyto.Cytoscape(
-                                        id='sub_cytoscape',
-                                        style={
-                                            'width': '100%',
-                                            'height': '65vh'
-                                        },
-                                        elements=cyto_elements,
-                                        maxZoom=5,
-                                        minZoom=0.3,
-                                        zoom=1,
-                                        layout={'name': 'preset'},
-                                        boxSelectionEnabled=True
-                                    )
-                                ]
-                            )
                         ]
                     ),
                     dbc.Row(
@@ -338,10 +317,9 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
 @app.callback(
     [Output('node-details-table', 'children'),
      Output('node-details-download', 'children')],
-    [Input('cytoscape', 'selectedNodeData'),
-     Input('sub_cytoscape', 'selectedNodeData')]
+    [Input('cytoscape', 'selectedNodeData')]
 )
-def show_node_details(node_data, sub_node_data):
+def show_node_details(node_data):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
@@ -355,17 +333,6 @@ def show_node_details(node_data, sub_node_data):
                                         'log2FoldChange': 'Log2 Fold Change',
                                         'padj': 'Adjusted p-value'})
                        )
-
-        if sub_node_data:
-            node_ids = [node['label'] for node in sub_node_data]
-            filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
-                           .reset_index()
-                           .rename(columns={'index': 'Locus Tag',
-                                            'shortName': 'Short Name',
-                                            'description': 'Descripton',
-                                            'log2FoldChange': 'Log2 Fold Change',
-                                            'padj': 'Adjusted p-value'})
-                           )
 
         nodes_table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
@@ -404,20 +371,20 @@ def update_download_link(n_clicks, node_details):
         return '/{}'.format(rel_filename)
 
 
-@app.server.route('/downloads/<path:path>')
-def download_csv(path):
-    root_dir = os.getcwd()
-    return flask.send_from_directory(
-        os.path.join(root_dir, 'downloads'),
-        path,
-        cache_timeout=-1  # Prevent browser from caching previous file
-    )
+# @app.server.route('/downloads/<path:path>')
+# def download_csv(path):
+#    root_dir = os.getcwd()
+#    return flask.send_from_directory(
+#        os.path.join(root_dir, 'downloads'),
+#        path,
+#        cache_timeout=-1  # Prevent browser from caching previous file
+#    )
 
 
 @app.callback(
     Output('hidden-div', 'children'),
-    [Input('sub_cytoscape', 'selectedNodeData')],
-    [State('sub_cytoscape', 'selectedNodeData')]
+    [Input('cytoscape', 'selectedNodeData')],
+    [State('cytoscape', 'selectedNodeData')]
 )
 def print_nodes(n_clicks, node_data):
     if n_clicks:

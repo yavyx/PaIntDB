@@ -9,26 +9,27 @@ from dash_app.apps import app_menu, app_vis
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    dbc.NavbarSimple(
+    dbc.Navbar(
         id='top-bar',
         children=[
-            dbc.NavItem(dbc.NavLink("Build Network", href="/menu")),
-            dbc.NavItem(dbc.NavLink("Explore Network", href="/vis")),
-            dbc.DropdownMenu(
-                children=[
-                    dbc.DropdownMenuItem("Help", header=True),
-                    dbc.DropdownMenuItem("Page 2", href="#"),
-                    dbc.DropdownMenuItem("Page 3", href="#"),
-                ],
-                nav=True,
-                in_navbar=True,
-                label="More",
-            ),
+            dbc.Nav([
+                dbc.NavbarBrand('PaintDB', href='/menu'),
+                dbc.NavLink("Build Network", href="/menu"),
+                dbc.NavLink("Explore Network", href="/vis"),
+                dbc.DropdownMenu(
+                    children=[
+                        dbc.DropdownMenuItem("Help", header=True),
+                        dbc.DropdownMenuItem("Page 2", href="#"),
+                        dbc.DropdownMenuItem("Page 3", href="#")
+                    ],
+                    nav=True,
+                    in_navbar=True,
+                    label="More"
+                )
+            ])
         ],
-        brand="PaIntDB",
-        brand_href="/home",
-        color="primary",
-        dark=True,
+        color="dark",
+        dark=True
     ),
     html.Div(id='page-content')
 ])

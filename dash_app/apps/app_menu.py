@@ -34,13 +34,13 @@ layout = dbc.Container(
                         html.P('Your genes must be in the first column of a CSV file.'),
                         dcc.Upload(
                             id='gene-list-upload',
-                            children=html.Button(
+                            children=dbc.Button(
                                 id='upload-button',
                                 children='Upload Gene List')),
                         html.Div([
                             dcc.Upload(
                                 id='tnseq-gene-list-upload',
-                                children=html.Button(
+                                children=dbc.Button(
                                     id='tnseq_upload-button',
                                     children='Upload TnSeq Gene List'))
                         ], style={'marginTop': '1vh'}
@@ -138,13 +138,13 @@ layout = dbc.Container(
             )
         ),
         html.Br(),
-        html.Button('Make Network', id='make-network'),
+        dbc.Button('Make Network', id='make-network'),
         html.Br(),
         dcc.Loading(id='loading',
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
-        html.Button(
+        dbc.Button(
             html.A('Download Network(GraphML)',
                    id='download-link'
                    )
