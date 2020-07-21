@@ -4,7 +4,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 
 from dash_app.app import app  # Loads app variable from app script
-from dash_app.apps import app_menu, app_vis
+from dash_app.apps import app_home, app_menu, app_vis
 
 
 app.layout = html.Div([
@@ -13,7 +13,7 @@ app.layout = html.Div([
         id='top-bar',
         children=[
             dbc.Nav([
-                dbc.NavbarBrand('PaintDB', href='/menu'),
+                dbc.NavbarBrand('PaintDB', href='/home'),
                 dbc.NavLink("Build Network", href="/menu"),
                 dbc.NavLink("Explore Network", href="/vis"),
                 dbc.DropdownMenu(
@@ -29,7 +29,8 @@ app.layout = html.Div([
             ])
         ],
         color="dark",
-        dark=True
+        dark=True,
+        sticky='fixed'
     ),
     html.Div(id='page-content')
 ])
@@ -39,7 +40,7 @@ app.layout = html.Div([
               [Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/home':
-        return app_menu.layout
+        return app_home.layout
     elif pathname == '/menu':
         return app_menu.layout
     elif pathname == '/vis':

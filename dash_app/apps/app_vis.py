@@ -47,7 +47,7 @@ def make_cyto_elements(network):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=2 / sqrt(len(network)), scale=1000)
+    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000)
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -76,7 +76,7 @@ t_start = datetime.now()
 #  metric_closure = approximation.metric_closure(temp_network)
 print(datetime.now() - t_start)
 
-strain = 'PA14'
+strain = 'PAO1' # This needs to be fixed using the bionetwork object
 
 cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
 network_df = make_network_df(network_main_comp)
@@ -90,7 +90,7 @@ layout = html.Div(
             'backgroundColor': '#7FDBFF',
             'padding': '10px',
             'display': 'inline-block',
-            'height': '100vh',
+            'height': '95vh',
             'vertical-align': 'top'
         },
         children=[
@@ -216,7 +216,7 @@ layout = html.Div(
                                         id='cytoscape',
                                         style={
                                             'width': '100%',
-                                            'height': '65vh'
+                                            'height': '60vh'
                                         },
                                         elements=cyto_elements,
                                         maxZoom=5,
@@ -240,7 +240,8 @@ layout = html.Div(
                         )
                     )
                 ]
-            ))
+            )
+        )
     ]
 )
 
@@ -291,10 +292,10 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
 
     if enriched_terms:
         # Get genes associated with selected GO term(s)
-        # genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-        # total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
-        # if strain == 'PA14':
-        #    total_genes = goe.map_pao1_genes(total_genes)
+        genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
+        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+        if strain == 'PA14':
+            total_genes = goe.map_pao1_genes(total_genes)
         query.append('index in @total_genes')
 
     query_str = ' & '.join(query)
