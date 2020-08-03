@@ -1,9 +1,11 @@
 # PaIntDB
 Pseudomonas aeruginosa Interactions Database
 
-PaIntDB takes a list of genes as input and generates a network of protein-protein interactions with these genes. You need Python 3 and `pip` installed to install and run the application locally. To install the app on Windows, you also need Microsoft Visual C++ Build Tools, this is a good [installation tutorial](https://www.scivision.co/python-windows-visual-c-14-required/).
+PaIntDB contains more than 150K protein-protein (PPI) and protein-metabolite interactions. It allows the integration and visualization of high-throughput (RNASeq and/or TnSeq) experimental results, using a list of genes as input and mapping them onto a network using the PPI data. 
 
-This is a pre-release version and still contains many bugs. The vis module pre-loads a network from the `temp_data` directory, but you can change the path in line 61 to visualize any other network generated with PaIntDB.  
+You need Python 3 and `pip` installed to install and run the application locally. To install the app on Windows, you also need Microsoft Visual C++ Build Tools, this is a good [installation tutorial](https://www.scivision.co/python-windows-visual-c-14-required/).
+
+This is a pre-release version and still contains many bugs. The visualization module pre-loads a network from the `temp_data` directory, but you can change the path in line 61 to visualize any other network generated with PaIntDB.  
 
 ## Installation
 1. Clone repo.
