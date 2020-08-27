@@ -1,9 +1,11 @@
 # PaIntDB
 Pseudomonas aeruginosa Interactions Database
 
-PaIntDB takes a list of genes as input and generates a network of protein-protein interactions with these genes. You need Python 3 and `pip` installed to install and run the application locally. To install the app on Windows, you also need Microsoft Visual C++ Build Tools, this is a good [installation tutorial](https://www.scivision.co/python-windows-visual-c-14-required/).
+PaIntDB contains more than 150K protein-protein (PPI) and protein-metabolite interactions. It allows the integration and visualization of high-throughput (RNASeq and/or TnSeq) experimental results, using a list of genes as input and mapping them onto a network using the PPI data. 
 
-The network generation and visualization modules have to be run separately for now. The vis module pre-loads a network from the `temp_data` directory, but you can change the path in line 61 to visualize any other network generated with PaIntDB.  
+You need Python 3 and `pip` installed to install and run the application locally. To install the app on Windows, you also need Microsoft Visual C++ Build Tools, this is a good [installation tutorial](https://www.scivision.co/python-windows-visual-c-14-required/).
+
+This is a pre-release version and still contains many bugs. The visualization module pre-loads a network from the `temp_data` directory, but you can change the path in line 61 to visualize any other network generated with PaIntDB.  
 
 ## Installation
 1. Clone repo.
@@ -11,4 +13,4 @@ The network generation and visualization modules have to be run separately for n
 3. Create a new Python virtual environment:  `python -m venv env`
 4. Activate virtual environment: `source env/bin/activate` on MacOS/Linux, `.\env\Scripts\activate` on Windows.
 5. Download and install required libaries: `pip install -r requirements.txt`
-6. To run the network generation app: `python -m dash_app.app`, to run the visualization app: `python -m dash_app.app_vis`
+6. To run the network generation app: `python -m dash_app.index`, and go to [http://127.0.0.1:8050/home](http://127.0.0.1:8050/home).
