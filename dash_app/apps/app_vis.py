@@ -1,14 +1,16 @@
 from datetime import datetime
 from math import sqrt
+import json
 import os
 
+import dash
 from dash.dependencies import Output, Input, State
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
 import dash_html_components as html
 import dash_table
-import flask
 import networkx as nx
 import pandas as pd
 
@@ -18,12 +20,40 @@ from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
 
 
+@app.callback(
+    [Output('cytoscape', 'elements')],
+    [Input('load-network', 'n_clicks'),
+     Input('hidden-bionetwork', 'children')],
+)
+def load_network(n_clicks, json_network):
+    if n_clicks is None:
+        raise PreventUpdate
+
+    network = nx.node_link_graph(json.loads(json_network))
+    all_nodes = len(network.nodes())
+
+    # Extract and use just main component
+    nodes = [component for component in nx.connected_components(network)][0]
+    temp_network = network.subgraph(nodes)
+    new_nodes = len(temp_network.nodes())
+    print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
+
+    # strain = bio_network._strain()
+
+    cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
+    # network_df = make_network_df(network_main_comp)
+
+    # enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
+
+    return [cyto_elements]
+
+
 def make_network_df(network):
     """Takes a network and outputs a DataFrame of every node with its attributes."""
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
     index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
-    # format fields
+    # Format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     df['padj'] = df['padj'].map('{:.3g}'.format)
     df['padj'] = df['padj'].astype(float)
@@ -39,7 +69,7 @@ def make_cyto_elements(network):
     classes according to the attributes and the layout coordinates."""
 
     # Get nodes of the largest component and generate sub-network
-    main_component_nodes = [component for component in nx.connected_components(temp_network)][0]
+    main_component_nodes = [component for component in nx.connected_components(network)][0]
     network = network.subgraph(main_component_nodes)
     nx.set_node_attributes(network, dict(network.degree()), 'degree')
 
@@ -61,27 +91,31 @@ def make_cyto_elements(network):
     return elements, nodes, edges, network
 
 
-network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
-temp_network = nx.read_graphml(network_path)
-all_nodes = len(temp_network.nodes())
+# network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
+# temp_network = nx.read_graphml(network_path)
+# all_nodes = len(temp_network.nodes())
+#
+# # Extract and use just main component
+# nodes = [component for component in nx.connected_components(temp_network)][0]
+# temp_network = temp_network.subgraph(nodes)
+# new_nodes = len(temp_network.nodes())
+# print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
+#
+# print('Calculating metric closure')
+# t_start = datetime.now()
+# #  metric_closure = approximation.metric_closure(temp_network)
+# print(datetime.now() - t_start)
 
-# Extract and use just main component
-nodes = [component for component in nx.connected_components(temp_network)][0]
-temp_network = temp_network.subgraph(nodes)
-new_nodes = len(temp_network.nodes())
-print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
+# strain = 'PAO1'  # This needs to be fixed using the bionetwork object
+#
+# cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
+# network_df = make_network_df(network_main_comp)
+#
+# enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
-print('Calculating metric closure')
-t_start = datetime.now()
-#  metric_closure = approximation.metric_closure(temp_network)
-print(datetime.now() - t_start)
+network_df = pd.DataFrame({'col1': [1, 2]})
+enrichment_results = []
 
-strain = 'PAO1' # This needs to be fixed using the bionetwork object
-
-cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
-network_df = make_network_df(network_main_comp)
-
-enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 layout = html.Div(
     [html.Div(
@@ -94,6 +128,7 @@ layout = html.Div(
             'vertical-align': 'top'
         },
         children=[
+            dbc.Button('Load Network', id='load-network'),
             html.H5('Color Mapping'),
             dbc.RadioItems(
                 options=[
@@ -113,16 +148,16 @@ layout = html.Div(
             html.Details(
                 [
                     html.Summary('By name'),
-                    dcc.Dropdown(
-                        id='name-selection',
-                        # Allow search by both short name and locus tag (index)
-                        options=[{'label': term, 'value': term}
-                                 for term in network_df['shortName']] +
-                                [{'label': term, 'value': term}
-                                 for term in network_df.index],
-                        multi=True,
-                        optionHeight=50
-                    )
+                    # dcc.Dropdown(
+                    #     id='name-selection',
+                    #     # Allow search by both short name and locus tag (index)
+                    #     options=[{'label': term, 'value': term}
+                    #              for term in network_df['shortName']] +
+                    #             [{'label': term, 'value': term}
+                    #              for term in network_df.index],
+                    #     multi=True,
+                    #     optionHeight=50
+                    # )
                 ],
             ),
             html.Br(),
@@ -141,17 +176,17 @@ layout = html.Div(
             ),
             html.Br(),
             html.Details(
-                [
-                    html.Summary('By localization '),
-                    dbc.Checklist(
-                        id='location-selection',
-                        options=[
-                            dict(label=location, value=location)
-                            for location in network_df['localization'].unique()
-                        ],
-                        value=[],
-                    )
-                ],
+                # [
+                #     html.Summary('By localization '),
+                #     dbc.Checklist(
+                #         id='location-selection',
+                #         options=[
+                #             dict(label=location, value=location)
+                #             for location in network_df['localization'].unique()
+                #         ],
+                #         value=[],
+                #     )
+                # ],
             ),
             html.Br(),
             html.Details(
@@ -170,14 +205,14 @@ layout = html.Div(
             html.Br(),
             html.Details(
                 [
-                    html.Summary('By enriched GO term'),
-                    dcc.Dropdown(
-                        id='enrichment-selection',
-                        options=[{'label': term, 'value': term}
-                                 for term in enrichment_results['name']],
-                        multi=True,
-                        optionHeight=50
-                    )
+                    # html.Summary('By enriched GO term'),
+                    # dcc.Dropdown(
+                    #     id='enrichment-selection',
+                    #     options=[{'label': term, 'value': term}
+                    #              for term in enrichment_results['name']],
+                    #     multi=True,
+                    #     optionHeight=50
+                    # )
                 ],
             ),
             html.Br(),
@@ -218,7 +253,6 @@ layout = html.Div(
                                             'width': '100%',
                                             'height': '60vh'
                                         },
-                                        elements=cyto_elements,
                                         maxZoom=5,
                                         minZoom=0.3,
                                         zoom=1,
@@ -246,6 +280,18 @@ layout = html.Div(
 )
 
 
+
+
+
+# @app.callback(Output('memory-table', 'data'),
+#               [Input('bionetwork-storage', 'data')])
+# def on_data_set_table(data):
+#     if data is None:
+#         raise PreventUpdate
+#
+#     return data
+
+
 @app.callback(
     [Output('cytoscape', 'stylesheet'),
      Output('sub_cytoscape', 'stylesheet'),
@@ -261,102 +307,103 @@ def change_color_map(value):
         return stylesheets.fold_change, stylesheets.fold_change, source
 
 
-@app.callback(
-    [Output('cytoscape', 'elements'),
-     Output('num-selected-nodes', 'children')],
-    [Input('name-selection', 'value'),
-     Input('source-selection', 'value'),
-     Input('location-selection', 'value'),
-     Input('diff-exp-selection', 'value'),
-     Input('enrichment-selection', 'value')]
-)
-def select_nodes(short_name, significance_source, location, regulation, enriched_terms):
-    """Select nodes according to significance source."""
-    nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
+# @app.callback(
+#     [Output('cytoscape', 'elements'),
+#      Output('num-selected-nodes', 'children')],
+#     [Input('name-selection', 'value'),
+#      Input('source-selection', 'value'),
+#      Input('location-selection', 'value'),
+#      Input('diff-exp-selection', 'value'),
+#      Input('enrichment-selection', 'value')],
+#     [State('network-storage', 'data')]
+# )
+# def select_nodes(short_name, significance_source, location, regulation, enriched_terms):
+#     """Select nodes according to significance source."""
+#     nodes = cyto_nodes  # Make new variable to avoid modifying the global cyto_nodes
+#
+#     query = []  # Query to filter nodes
+#
+#     # Add queries depending on user menu selections
+#     if short_name:
+#         query.append('shortName in @short_name | index in @short_name')
+#
+#     if significance_source:
+#         significance_source.append('both')
+#         query.append('significanceSource in @significance_source')
+#
+#     if location:
+#         query.append('localization in @location')
+#
+#     if regulation:
+#         query.append('regulation in @regulation')
+#
+#     if enriched_terms:
+#         # Get genes associated with selected GO term(s)
+#         genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
+#         total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+#         if strain == 'PA14':
+#             total_genes = goe.map_pao1_genes(total_genes)
+#         query.append('index in @total_genes')
+#
+#     query_str = ' & '.join(query)
+#     print(query_str)
+#
+#     # Use query to select nodes
+#     if query_str:
+#         queried_nodes = network_df.query(query_str).index.tolist()
+#         selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
+#     else:
+#         queried_nodes = nodes
+#         selected_msg = ''
+#
+#     for node in nodes:
+#         node['selected'] = True if node['data']['id'] in queried_nodes else False
+#
+#     return [nodes + cyto_edges, selected_msg]
 
-    query = []  # Query to filter nodes
 
-    # Add queries depending on user menu selections
-    if short_name:
-        query.append('shortName in @short_name | index in @short_name')
-
-    if significance_source:
-        significance_source.append('both')
-        query.append('significanceSource in @significance_source')
-
-    if location:
-        query.append('localization in @location')
-
-    if regulation:
-        query.append('regulation in @regulation')
-
-    if enriched_terms:
-        # Get genes associated with selected GO term(s)
-        genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
-        if strain == 'PA14':
-            total_genes = goe.map_pao1_genes(total_genes)
-        query.append('index in @total_genes')
-
-    query_str = ' & '.join(query)
-    print(query_str)
-
-    # Use query to select nodes
-    if query_str:
-        queried_nodes = network_df.query(query_str).index.tolist()
-        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
-    else:
-        queried_nodes = nodes
-        selected_msg = ''
-
-    for node in nodes:
-        node['selected'] = True if node['data']['id'] in queried_nodes else False
-
-    return [nodes + cyto_edges, selected_msg]
-
-
-@app.callback(
-    [Output('node-details-table', 'children'),
-     Output('node-details-download', 'children')],
-    [Input('cytoscape', 'selectedNodeData')]
-)
-def show_node_details(node_data):
-    """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
-    if node_data:
-        # Columns to display
-        cols = ['shortName', 'description', 'log2FoldChange', 'padj']
-        node_ids = [node['label'] for node in node_data]
-        filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
-                       .reset_index()
-                       .rename(columns={'index': 'Locus Tag',
-                                        'shortName': 'Short Name',
-                                        'description': 'Descripton',
-                                        'log2FoldChange': 'Log2 Fold Change',
-                                        'padj': 'Adjusted p-value'})
-                       )
-
-        nodes_table = dash_table.DataTable(
-            data=filtered_df.to_dict('records'),
-            columns=[{"name": i, "id": i} for i in filtered_df.columns],
-            fixed_rows={'headers': True, 'data': 0},
-            style_table={
-                'maxHeight': '25vh',
-                'overflowY': 'auto'
-            },
-            style_data={'whiteSpace': 'normal',
-                        'height': 'auto'
-                        },
-            style_cell={
-                'height': 'auto',
-                # all three widths are needed
-                'minWidth': '150px', 'width': '150px', 'maxWidth': '150px',
-                'whiteSpace': 'normal',
-                'textAlign': 'left'
-            }
-        )
-        return nodes_table, filtered_df.to_json()
-    else:
-        return None, None
+# @app.callback(
+#     [Output('node-details-table', 'children'),
+#      Output('node-details-download', 'children')],
+#     [Input('cytoscape', 'selectedNodeData')]
+# )
+# def show_node_details(node_data):
+#     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
+#     if node_data:
+#         # Columns to display
+#         cols = ['shortName', 'description', 'log2FoldChange', 'padj']
+#         node_ids = [node['label'] for node in node_data]
+#         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
+#                        .reset_index()
+#                        .rename(columns={'index': 'Locus Tag',
+#                                         'shortName': 'Short Name',
+#                                         'description': 'Descripton',
+#                                         'log2FoldChange': 'Log2 Fold Change',
+#                                         'padj': 'Adjusted p-value'})
+#                        )
+#
+#         nodes_table = dash_table.DataTable(
+#             data=filtered_df.to_dict('records'),
+#             columns=[{"name": i, "id": i} for i in filtered_df.columns],
+#             fixed_rows={'headers': True, 'data': 0},
+#             style_table={
+#                 'maxHeight': '25vh',
+#                 'overflowY': 'auto'
+#             },
+#             style_data={'whiteSpace': 'normal',
+#                         'height': 'auto'
+#                         },
+#             style_cell={
+#                 'height': 'auto',
+#                 # all three widths are needed
+#                 'minWidth': '150px', 'width': '150px', 'maxWidth': '150px',
+#                 'whiteSpace': 'normal',
+#                 'textAlign': 'left'
+#             }
+#         )
+#         return nodes_table, filtered_df.to_json()
+#     else:
+#         return None, None
 
 
 @app.callback(

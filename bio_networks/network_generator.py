@@ -106,7 +106,7 @@ class BioNetwork:
                               ON id = localization_id""")
             self._raw_info['localization'] = cursor.fetchall()
 
-        # Remove underscores from attribute names (don't work well with GraphML)
+        # Remove underscores from attribute names (don't work with GraphML)
         self._raw_info['sources'].rename(columns={'is_experimental': 'experimental', 'interaction_id': 'id'},
                                          inplace=True)
         # Change sources ID's to numeric

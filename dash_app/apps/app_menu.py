@@ -1,18 +1,22 @@
 import base64
-import io
 from datetime import datetime
+import io
+import json
 import os
 
 from dash.dependencies import Output, Input, State
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 import flask
+import networkx as nx
 import pandas as pd
 
 import bio_networks.network_generator as ng
 from dash_app.app import app  # Loads app variable from app script
+import dash_app.apps.app_vis as app_vis
 
 
 layout = dbc.Container(
@@ -148,7 +152,7 @@ layout = dbc.Container(
             html.A('Download Network(GraphML)',
                    id='download-link'
                    )
-        )
+        ),
     ],
     fluid=True
 )
@@ -160,9 +164,9 @@ def parse_gene_list(contents, filename):
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     # Formatting DF
-    #genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
-    #genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
-    #genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
+    # genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
+    # genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
+    # genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
     small_df = genes_df.head()  # smaller df to display on app
     cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
     small_df.loc[:, cols] = small_df[cols].round(2)
@@ -190,7 +194,7 @@ def parse_tnseq_list(contents, filename):
     decoded = base64.b64decode(content_string)
     tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     tnseq_genes = tnseq_df.iloc[:, 0].tolist()
-    upload_msg = html.Div(['Your TnSeq genes were uploaded succesfully!',
+    upload_msg = html.Div(['Your TnSeq genes were uploaded successfully!',
                            filename])
     return upload_msg, tnseq_genes
 
@@ -203,8 +207,8 @@ def make_network(network_type,
                  rnaseq_filename,
                  rnaseq_contents,
                  tnseq_filename=None,
-                 tnseq_contents=None,):
-    """Generates a BioNetwork."""
+                 tnseq_contents=None):
+    """Generates a BioNetwork. Serializes the result to JSON to use in the vis module."""
     start_time = datetime.now()
     upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
@@ -285,7 +289,8 @@ def upload_message(contents, filename):
 
 @app.callback(
     [Output('make-network-message', 'children'),
-     Output('download-link', 'href')],
+     Output('download-link', 'href'),
+     Output('hidden-bionetwork', 'children')],
     [Input('make-network', 'n_clicks')],
     [State('network-type', 'value'),
      State('strain', 'value'),
@@ -308,9 +313,10 @@ def update_download_link(
         tnseq_contents,
         rnaseq_filename,
         tnseq_filename):
-    """Generates a network every time the button is clicked."""
-    if n_clicks:
-        bio_network, mapping_msg = make_network(network_type,
+    """Generates a network every time the make network button is clicked."""
+    if n_clicks is None:
+        raise PreventUpdate
+    bio_network, mapping_msg = make_network(network_type,
                                                 strain,
                                                 order,
                                                 detection_method,
@@ -319,14 +325,14 @@ def update_download_link(
                                                 rnaseq_contents,
                                                 tnseq_filename,
                                                 tnseq_contents)
-        rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
-        abs_filename = os.path.join(os.getcwd(), rel_filename)
-        bio_network.write_gml(abs_filename)
-    else:
-        mapping_msg, rel_filename = [None, None]  # Workaround for now (Callback State not functioning properly)
-    return mapping_msg, '/{}'.format(rel_filename)
+    rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
+    abs_filename = os.path.join(os.getcwd(), rel_filename)
+    bio_network.write_gml(abs_filename)
+    json_network = json.dumps(nx.node_link_data(bio_network.network))
+    return mapping_msg, '/{}'.format(rel_filename), json_network
 
 
+# Create and send downloadable file
 @app.server.route('/downloads/<path:path>')
 def download_graphml(path):
     root_dir = os.getcwd()
@@ -339,3 +345,7 @@ def download_graphml(path):
         path,
         cache_timeout=-1  # Prevent browser from caching previous file
     )
+
+
+
+

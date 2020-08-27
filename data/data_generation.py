@@ -42,8 +42,8 @@ def make_go_association_dict(path):
     for domain_short, domain in go_domains.items():
         go_associations.apply(create_dict, 'columns')
 
+    # Save dictionary as pickle
     with open(os.path.join('data', 'go_association.pickle'), 'wb') as f:
-        # Pickle the 'data' dictionary using the highest protocol available.
         pickle.dump(go_dict, f, pickle.HIGHEST_PROTOCOL)
 
     return go_dict

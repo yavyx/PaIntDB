@@ -72,6 +72,7 @@ def map_pao1_genes(gene_list):
 
 def run_go_enrichment(strain, genes_of_interest, significant=True, cutoff=0.05,
                       use_parent_terms=True):
+    # Load GO term association dictionary
     with open(os.path.join('data', 'go_association.pickle'), 'rb') as handle:
         go_association = pickle.load(handle)
 
