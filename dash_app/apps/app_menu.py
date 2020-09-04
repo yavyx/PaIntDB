@@ -12,6 +12,7 @@ import dash_html_components as html
 import dash_table
 import flask
 import networkx as nx
+from networkx.readwrite import json_graph
 import pandas as pd
 
 import bio_networks.network_generator as ng
@@ -148,6 +149,7 @@ layout = dbc.Container(
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
+        dbc.Button('Explore Network', id='explore-button'),
         dbc.Button(
             html.A('Download Network(GraphML)',
                    id='download-link'
@@ -287,10 +289,18 @@ def upload_message(contents, filename):
             return html.Div('There was a problem uploading your file. Check that it is the correct format.')
 
 
+# @app.callback(
+#     Output('page-content', 'children'),
+#     [Input('url', 'pathname')]
+# )
+# def explore_network:
+#     """Loads the generated network into the the vis module for exploration."""
+
 @app.callback(
     [Output('make-network-message', 'children'),
      Output('download-link', 'href'),
-     Output('hidden-bionetwork', 'children')],
+     Output('hidden-bionetwork', 'children'),
+     Output('network-parameters', 'children')],
     [Input('make-network', 'n_clicks')],
     [State('network-type', 'value'),
      State('strain', 'value'),
@@ -328,8 +338,11 @@ def update_download_link(
     rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
     abs_filename = os.path.join(os.getcwd(), rel_filename)
     bio_network.write_gml(abs_filename)
-    json_network = json.dumps(nx.node_link_data(bio_network.network))
-    return mapping_msg, '/{}'.format(rel_filename), json_network
+
+    json_network = json.dumps(json_graph.node_link_data(bio_network.network))
+    network_params = {'strain': bio_network._strain}
+
+    return mapping_msg, '/{}'.format(rel_filename), json_network, json.dumps(network_params)
 
 
 # Create and send downloadable file

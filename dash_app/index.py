@@ -18,7 +18,7 @@ app.layout = html.Div([
             dbc.Nav([
                 dbc.NavbarBrand('PaintDB', href='/home'),
                 dbc.NavLink("Build Network", href="/menu"),
-                dbc.NavLink("Explore Network", href="/vis"),
+                dbc.NavLink("Explore Network", href="/vis", id='explore'),
                 dbc.DropdownMenu(
                     children=[
                         dbc.DropdownMenuItem("Help", header=True),
@@ -36,8 +36,18 @@ app.layout = html.Div([
         sticky='fixed'
     ),
     html.Div(id='hidden-bionetwork', style={'display': 'none'}),
+    html.Div(id='network-parameters', style={'display': 'none'}),
     html.Div(id='page-content')
 ])
+
+
+@app.callback(
+    Output('explore', 'disabled'),
+    [Input('hidden-bionetwork', 'children')]
+)
+def enable_explore_tab(bio_network):
+    if bio_network is None:
+        return True
 
 
 @app.callback(
@@ -47,14 +57,6 @@ app.layout = html.Div([
 )
 def display_page(pathname, bio_network):
     """Navigates to the selected app page."""
-    # ctx = dash.callback_context
-    #
-    # ctx_msg = json.dumps({
-    #     'states': ctx.states,
-    #     'triggered': ctx.triggered,
-    #     'inputs': ctx.inputs
-    # }, indent=2)
-
     if pathname == '/home':
         return app_home.layout
     elif pathname == '/menu':
