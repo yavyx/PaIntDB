@@ -149,7 +149,8 @@ layout = dbc.Container(
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
-        dbc.Button('Explore Network', id='explore-button'),
+        # dbc.Button('Explore Network', id='explore-button', href='/vis'),
+        html.Br(),
         dbc.Button(
             html.A('Download Network(GraphML)',
                    id='download-link'
@@ -288,13 +289,6 @@ def upload_message(contents, filename):
         except ValueError:
             return html.Div('There was a problem uploading your file. Check that it is the correct format.')
 
-
-# @app.callback(
-#     Output('page-content', 'children'),
-#     [Input('url', 'pathname')]
-# )
-# def explore_network:
-#     """Loads the generated network into the the vis module for exploration."""
 
 @app.callback(
     [Output('make-network-message', 'children'),

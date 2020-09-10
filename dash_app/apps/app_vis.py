@@ -26,6 +26,7 @@ def make_network_df(network):
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
     index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
+    print(df.head())
     # Format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     # Format
@@ -88,203 +89,171 @@ def make_cyto_elements(network):
 # enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 
-layout = html.Div(
-    [
-        # Hidden divs to share data and results across callbacks
-        html.Div(id='node-details-df', style={'display': 'none'}),
-        html.Div(id='enrichment-results', style={'display': 'none'}),
-        html.Div(id='hidden-div', style={'display': 'none'}),
-        html.Div(
-            style={
-                'width': '23vw',
-                'backgroundColor': '#7FDBFF',
-                'padding': '10px',
-                'display': 'inline-block',
-                'height': '95vh',
-                'vertical-align': 'top'
-            },
-            children=[
-                dbc.Button('Load Network', id='load-network'),
-                html.H5('Color Mapping'),
-                dbc.RadioItems(
-                    options=[
-                        {'label': 'Experiment', 'value': 'ss'},
-                        {'label': 'Differential Expression', 'value': 'de'}
-                    ],
-                    value='ss',
-                    id='color-map',
-                ),
-                html.Div(style={'padding': '10px'},
-                         children=html.Img(
-                             id='legend',
-                             width=100)
-                         ),
-                html.Hr(),
-                html.H5('Select nodes'),
-                html.Details(
-                    # [
-                    #     html.Summary('By name'),
-                    #     dcc.Dropdown(
-                    #         id='name-selection',
-                    #         # Allow search by both short name and locus tag (index)
-                    #         options=[{'label': term, 'value': term}
-                    #                  for term in network_df['shortName']] +
-                    #                 [{'label': term, 'value': term}
-                    #                  for term in network_df.index],
-                    #         multi=True,
-                    #         optionHeight=50
-                    #     )
-                    # ],
-                ),
-                html.Br(),
-                html.Details(
-                    children=[
-                        html.Summary('By experiment '),
-                        dbc.Checklist(
-                            id='source-selection',
-                            options=[
-                                {'label': 'RNASeq', 'value': 'RNASeq'},
-                                {'label': 'TnSeq', 'value': 'TnSeq'}
-                            ],
-                            value=[],
-                        )
-                    ],
-                ),
-                html.Br(),
-                html.Details(
-                    # [
-                    #     html.Summary('By localization '),
-                    #     dbc.Checklist(
-                    #         id='location-selection',
-                    #         options=[
-                    #             dict(label=location, value=location)
-                    #             for location in network_df['localization'].unique()
-                    #         ],
-                    #         value=[],
-                    #     )
-                    # ],
-                ),
-                html.Br(),
-                html.Details(
-                    [
-                        html.Summary('By differential expression'),
-                        dbc.Checklist(
-                            id='diff-exp-selection',
-                            options=[
-                                {'label': 'Up-Regulated', 'value': 'up'},
-                                {'label': 'Down-Regulated', 'value': 'down'}
-                            ],
-                            value=[],
-                        )
-                    ],
-                ),
-                html.Br(),
-                html.Details(
-                    [
-                        # html.Summary('By enriched GO term'),
-                        # dcc.Dropdown(
-                        #     id='enrichment-selection',
-                        #     options=[{'label': term, 'value': term}
-                        #              for term in enrichment_results['name']],
-                        #     multi=True,
-                        #     optionHeight=50
-                        # )
-                    ],
-                ),
-                html.Br(),
-                html.Div(
-                    [
-                        html.P(id='num-selected-nodes'),
-                        html.Button('Make Sub-Network',
-                                    id='make-subnetwork',
-                                    style={'display': 'inline-block'}),
-                        html.Button(id='download-table-button',
-                                    children=html.A('Download Table',
-                                                    id='table-download-link'
-                                                    )
-                                    ),
-                        html.Div(id='node-details-download', style={'display': 'none'}),
-                    ]
-                )
-            ],
-        ),
-        html.Div(
-            style={
-                'display': 'inline-block',
-                'width': '74vw'
-            },
-            children=dbc.Container(
-                fluid=True,
+def make_vis_layout(network_df, enrichment_results, elements):
+    # print(network_df.columns)
+    return html.Div(
+        [
+            html.Div(
+                style={
+                    'width': '23vw',
+                    'backgroundColor': '#7FDBFF',
+                    'padding': '10px',
+                    'display': 'inline-block',
+                    'height': '95vh',
+                    'vertical-align': 'top'
+                },
                 children=[
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                id='main-view',
-                                children=[
-                                    html.H5('Full Network View'),
-                                    cyto.Cytoscape(
-                                        id='main-view',
-                                        style={
-                                            'width': '100%',
-                                            'height': '60vh'
-                                        },
-                                        stylesheet=stylesheets.default,
-                                        maxZoom=5,
-                                        minZoom=0.3,
-                                        zoom=1,
-                                        layout={'name': 'preset'},
-                                    )
-                                ],
-                            ),
-                        ]
+                    dbc.Button('Load Network', id='load-network'),
+                    html.H5('Color Mapping'),
+                    dbc.RadioItems(
+                        options=[
+                            {'label': 'Experiment', 'value': 'ss'},
+                            {'label': 'Differential Expression', 'value': 'de'}
+                        ],
+                        value='ss',
+                        id='color-map',
                     ),
-                    dbc.Row(
-                        dbc.Col(
-                            html.Div(
-                                [
-                                    html.H5('Selected Node Details'),
-                                    html.Div(id='node-details-table')
+                    html.Div(style={'padding': '10px'},
+                             children=html.Img(
+                                 id='legend',
+                                 width=100)
+                             ),
+                    html.Hr(),
+                    html.H5('Select nodes'),
+                    html.Details(
+                        [
+                            html.Summary('By name'),
+                            dcc.Dropdown(
+                                id='name-selection',
+                                # Allow search by both short name and locus tag (index)
+                                options=[{'label': term, 'value': term}
+                                         for term in network_df['shortName']] +
+                                        [{'label': term, 'value': term}
+                                         for term in network_df.index],
+                                multi=True,
+                                optionHeight=50
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Details(
+                        children=[
+                            html.Summary('By experiment '),
+                            dbc.Checklist(
+                                id='source-selection',
+                                options=[
+                                    {'label': 'RNASeq', 'value': 'RNASeq'},
+                                    {'label': 'TnSeq', 'value': 'TnSeq'}
                                 ],
-                                style={'height': '30vh'}
+                                value=[],
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Details(
+                        [
+                            html.Summary('By localization '),
+                            dbc.Checklist(
+                                id='location-selection',
+                                options=[
+                                    dict(label=location, value=location)
+                                    for location in network_df['localization'].unique()
+                                ],
+                                value=[],
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Details(
+                        [
+                            html.Summary('By differential expression'),
+                            dbc.Checklist(
+                                id='diff-exp-selection',
+                                options=[
+                                    {'label': 'Up-Regulated', 'value': 'up'},
+                                    {'label': 'Down-Regulated', 'value': 'down'}
+                                ],
+                                value=[],
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Details(
+                        [
+                            html.Summary('By enriched GO term'),
+                            dcc.Dropdown(
+                                id='enrichment-selection',
+                                options=[{'label': term, 'value': term}
+                                         for term in enrichment_results['name']],
+                                multi=True,
+                                optionHeight=50
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Div(
+                        [
+                            html.P(id='num-selected-nodes'),
+                            html.Button('Make Sub-Network',
+                                        id='make-subnetwork',
+                                        style={'display': 'inline-block'}),
+                            html.Button(id='download-table-button',
+                                        children=html.A('Download Table',
+                                                        id='table-download-link'
+                                                        )
+                                        ),
+                            html.Div(id='node-details-download', style={'display': 'none'}),
+                        ]
+                    )
+                ],
+            ),
+            html.Div(
+                style={
+                    'display': 'inline-block',
+                    'width': '74vw'
+                },
+                children=dbc.Container(
+                    fluid=True,
+                    children=[
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    id='main-view',
+                                    children=[
+                                        html.H5('Full Network View'),
+                                        cyto.Cytoscape(
+                                            id='main-view',
+                                            style={
+                                                'width': '100%',
+                                                'height': '60vh'
+                                            },
+                                            stylesheet=stylesheets.default,
+                                            maxZoom=5,
+                                            minZoom=0.3,
+                                            zoom=1,
+                                            layout={'name': 'preset'},
+                                            elements=elements
+                                        )
+                                    ],
+                                ),
+                            ]
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H5('Selected Node Details'),
+                                        html.Div(id='node-details-table')
+                                    ],
+                                    style={'height': '30vh'}
+                                )
                             )
                         )
-                    )
-                ]
+                    ]
+                )
             )
-        )
-    ]
-)
-
-
-@app.callback(
-    [Output('main-view', 'elements'),
-     Output('node-details-df', 'children'),
-     Output('enrichment-results', 'children')],
-    [Input('load-network', 'n_clicks'),
-     Input('hidden-bionetwork', 'children'),
-     Input('network-parameters', 'children')],
-)
-def load_network(n_clicks, json_network, network_params):
-    if n_clicks is None:
-        raise PreventUpdate
-
-    network = json_graph.node_link_graph(json.loads(json_network))
-    all_nodes = len(network.nodes())
-
-    # Extract and use just main component
-    nodes = [component for component in nx.connected_components(network)][0]
-    main_comp_network = network.subgraph(nodes)
-    new_nodes = len(main_comp_network.nodes())
-    print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
-
-    cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(main_comp_network)
-    network_df = make_network_df(main_comp_network)
-    network_params = json.loads(network_params)
-    strain = network_params['strain']
-
-    enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
-
-    return [cyto_elements, network_df.to_json(), enrichment_results.to_json()]
+        ]
+    )
 
 
 @app.callback(
@@ -301,61 +270,62 @@ def change_color_map(value):
         return [stylesheets.fold_change, source]
 
 
-# @app.callback(
-#     [Output('main-view', 'elements'),
-#      Output('num-selected-nodes', 'children')],
-#     [Input('name-selection', 'value'),
-#      Input('source-selection', 'value'),
-#      Input('location-selection', 'value'),
-#      Input('diff-exp-selection', 'value'),
-#      Input('enrichment-selection', 'value')],
-#     [State('hidden_bionetwork', 'children')]
-# )
-# def select_nodes(short_name, significance_source, location, regulation, enriched_terms, json_network):
-#     """Select nodes according to user selected filters."""
-#
-#     network = json_graph.node_link_graph(json.loads(json_network))
-#     nodes = [component for component in nx.connected_components(network)][0]
-#
-#     query = []  # Query to filter nodes
-#
-#     # Add queries depending on user menu selections
-#     if short_name:
-#         query.append('shortName in @short_name | index in @short_name')
-#
-#     if significance_source:
-#         significance_source.append('both')
-#         query.append('significanceSource in @significance_source')
-#
-#     if location:
-#         query.append('localization in @location')
-#
-#     if regulation:
-#         query.append('regulation in @regulation')
-#
-#     if enriched_terms:
-#         # Get genes associated with selected GO term(s)
-#         genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-#         total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
-#         if strain == 'PA14':
-#             total_genes = goe.map_pao1_genes(total_genes)
-#         query.append('index in @total_genes')
-#
-#     query_str = ' & '.join(query)
-#     print(query_str)
-#
-#     # Use query to select nodes
-#     if query_str:
-#         queried_nodes = network_df.query(query_str).index.tolist()
-#         selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
-#     else:
-#         queried_nodes = nodes
-#         selected_msg = ''
-#
-#     for node in nodes:
-#         node['selected'] = True if node['data']['id'] in queried_nodes else False
-#
-#     return [nodes + cyto_edges, selected_msg]
+@app.callback(
+    [Output('main-view', 'elements'),
+     Output('num-selected-nodes', 'children')],
+    [Input('name-selection', 'value'),
+     Input('source-selection', 'value'),
+     Input('location-selection', 'value'),
+     Input('diff-exp-selection', 'value'),
+     Input('enrichment-selection', 'value')],
+    [State('hidden_bionetwork', 'children'),
+     State('enrichment-results', 'childreb')]
+)
+def select_nodes(short_name, significance_source, location, regulation, enriched_terms, json_network):
+    """Select nodes according to user selected filters."""
+
+    network = json_graph.node_link_graph(json.loads(json_network))
+    nodes = [component for component in nx.connected_components(network)][0]
+
+    query = []  # Query to filter nodes
+
+    # Add queries depending on user menu selections
+    if short_name:
+        query.append('shortName in @short_name | index in @short_name')
+
+    if significance_source:
+        significance_source.append('both')
+        query.append('significanceSource in @significance_source')
+
+    if location:
+        query.append('localization in @location')
+
+    if regulation:
+        query.append('regulation in @regulation')
+
+    if enriched_terms:
+        # Get genes associated with selected GO term(s)
+        genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
+        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+        if strain == 'PA14':
+            total_genes = goe.map_pao1_genes(total_genes)
+        query.append('index in @total_genes')
+
+    query_str = ' & '.join(query)
+    print(query_str)
+
+    # Use query to select nodes
+    if query_str:
+        queried_nodes = network_df.query(query_str).index.tolist()
+        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
+    else:
+        queried_nodes = nodes
+        selected_msg = ''
+
+    for node in nodes:
+        node['selected'] = True if node['data']['id'] in queried_nodes else False
+
+    return [nodes + cyto_edges, selected_msg]
 
 
 @app.callback(
@@ -373,17 +343,16 @@ def show_node_details(node_data, node_details):
         node_ids = [node['label'] for node in node_data]
         print(node_ids)
         network_df = pd.read_json(node_details)
-        print(network_df.head())
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
-                       .rename(columns={'index': 'Locus Tag',
-                                        'shortName': 'Short Name',
-                                        'description': 'Descripton',
-                                        'log2FoldChange': 'Log2 Fold Change',
-                                        'padj': 'Adjusted p-value'})
+                       # .rename(columns={'index': 'Locus Tag',
+                       #                  'shortName': 'Short Name',
+                       #                  'description': 'Descripton',
+                       #                  'log2FoldChange': 'Log2 Fold Change',
+                       #                  'padj': 'Adjusted p-value'})
                        )
-        # print(filtered_df.head())
 
+        col_names = ['Locus Tag', 'Short Name', 'Description', 'Log2 Fold Change', 'Adjusted p-value']
         nodes_table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
