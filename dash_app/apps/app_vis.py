@@ -12,7 +12,6 @@ import dash_cytoscape as cyto
 import dash_html_components as html
 import dash_table
 import networkx as nx
-from networkx.readwrite import json_graph
 import pandas as pd
 
 from dash_app import app
@@ -26,7 +25,6 @@ def make_network_df(network):
     data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
     index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
-    print(df.head())
     # Format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
     # Format
@@ -89,8 +87,7 @@ def make_cyto_elements(network):
 # enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 
-def make_vis_layout(network_df, enrichment_results, elements):
-    # print(network_df.columns)
+def make_vis_layout(network_df, enrichment_results, cyto_network):
     return html.Div(
         [
             html.Div(
@@ -103,7 +100,6 @@ def make_vis_layout(network_df, enrichment_results, elements):
                     'vertical-align': 'top'
                 },
                 children=[
-                    dbc.Button('Load Network', id='load-network'),
                     html.H5('Color Mapping'),
                     dbc.RadioItems(
                         options=[
@@ -152,20 +148,6 @@ def make_vis_layout(network_df, enrichment_results, elements):
                     html.Br(),
                     html.Details(
                         [
-                            html.Summary('By localization '),
-                            dbc.Checklist(
-                                id='location-selection',
-                                options=[
-                                    dict(label=location, value=location)
-                                    for location in network_df['localization'].unique()
-                                ],
-                                value=[],
-                            )
-                        ],
-                    ),
-                    html.Br(),
-                    html.Details(
-                        [
                             html.Summary('By differential expression'),
                             dbc.Checklist(
                                 id='diff-exp-selection',
@@ -174,6 +156,20 @@ def make_vis_layout(network_df, enrichment_results, elements):
                                     {'label': 'Down-Regulated', 'value': 'down'}
                                 ],
                                 value=[],
+                            )
+                        ],
+                    ),
+                    html.Br(),
+                    html.Details(
+                        [
+                            html.Summary('By localization '),
+                            dcc.Dropdown(
+                                id='location-selection',
+                                options=[
+                                    dict(label=location, value=location)
+                                    for location in network_df['localization'].unique()
+                                ],
+                                multi=True,
                             )
                         ],
                     ),
@@ -191,6 +187,7 @@ def make_vis_layout(network_df, enrichment_results, elements):
                         ],
                     ),
                     html.Br(),
+                    html.Div(id='triggered'),
                     html.Div(
                         [
                             html.P(id='num-selected-nodes'),
@@ -232,7 +229,7 @@ def make_vis_layout(network_df, enrichment_results, elements):
                                             minZoom=0.3,
                                             zoom=1,
                                             layout={'name': 'preset'},
-                                            elements=elements
+                                            elements=cyto_network['elements']
                                         )
                                     ],
                                 ),
@@ -253,6 +250,7 @@ def make_vis_layout(network_df, enrichment_results, elements):
                 )
             )
         ]
+
     )
 
 
@@ -278,14 +276,25 @@ def change_color_map(value):
      Input('location-selection', 'value'),
      Input('diff-exp-selection', 'value'),
      Input('enrichment-selection', 'value')],
-    [State('hidden_bionetwork', 'children'),
-     State('enrichment-results', 'childreb')]
+    [State('hidden-bionetwork', 'children'),  # TODO: Unnecessary
+     State('node-details-df', 'children'),
+     State('enrichment-results', 'children'),
+     State('network-parameters', 'children'),
+     State('cyto-network', 'children')]
 )
-def select_nodes(short_name, significance_source, location, regulation, enriched_terms, json_network):
+def select_nodes(short_name, significance_source, location, regulation, enriched_terms, json_str_network, node_details,
+                 enrichment_results, network_params, cyto_network):
     """Select nodes according to user selected filters."""
 
-    network = json_graph.node_link_graph(json.loads(json_network))
-    nodes = [component for component in nx.connected_components(network)][0]
+    network = nx.node_link_graph(json.loads(json_str_network))  # TODO: Unnecessary
+    cyto_network = json.loads(cyto_network)
+    nodes = cyto_network['nodes']
+    edges = cyto_network['edges']
+
+    network_df = pd.read_json(node_details)
+
+    network_params = json.loads(network_params)
+    strain = network_params['strain']
 
     query = []  # Query to filter nodes
 
@@ -306,7 +315,7 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
     if enriched_terms:
         # Get genes associated with selected GO term(s)
         genes_in_term = enrichment_results.loc[enrichment_results['name'].isin(enriched_terms), 'study_items']
-        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]
+        total_genes = [gene for term in genes_in_term for gene in term.split(', ')]  # Unnest genes in term
         if strain == 'PA14':
             total_genes = goe.map_pao1_genes(total_genes)
         query.append('index in @total_genes')
@@ -317,7 +326,7 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
     # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
-        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(cyto_nodes))
+        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(nodes))
     else:
         queried_nodes = nodes
         selected_msg = ''
@@ -325,7 +334,7 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
     for node in nodes:
         node['selected'] = True if node['data']['id'] in queried_nodes else False
 
-    return [nodes + cyto_edges, selected_msg]
+    return nodes + edges, selected_msg
 
 
 @app.callback(
@@ -347,7 +356,7 @@ def show_node_details(node_data, node_details):
                        .reset_index()
                        # .rename(columns={'index': 'Locus Tag',
                        #                  'shortName': 'Short Name',
-                       #                  'description': 'Descripton',
+                       #                  'description': 'Description',
                        #                  'log2FoldChange': 'Log2 Fold Change',
                        #                  'padj': 'Adjusted p-value'})
                        )
