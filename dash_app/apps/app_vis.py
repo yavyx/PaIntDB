@@ -1,5 +1,6 @@
 from datetime import datetime
 from math import sqrt
+from itertools import chain
 import json
 import os
 
@@ -12,37 +13,43 @@ import dash_cytoscape as cyto
 import dash_html_components as html
 import dash_table
 import networkx as nx
+from networkx.utils import pairwise
 import pandas as pd
+from to_precision import sci_notation
 
 from dash_app import app
 import dash_app.vis_stylesheets as stylesheets
 from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
 
+# For development  # TODO: delete
+pd.set_option('display.max_columns', None)
+
 
 def make_network_df(network):
     """Takes a network and outputs a DataFrame of every node with its attributes."""
-    data = [i[1] for i in network.nodes(data=True)]  # Get node attributes
-    index = [i[0] for i in network.nodes(data=True)]  # Use node ids as index
+    data = [node[1] for node in network.nodes(data=True)]  # Get node attributes
+    index = [node[0] for node in network.nodes(data=True)]  # Use node ids as index
     df = pd.DataFrame(data, index)
+    print(df.head)
     # Format fields
     df['log2FoldChange'] = df['log2FoldChange'].round(2)
-    # Format
-    df['padj'] = df['padj'].map('{:.3g}'.format)
-    df['padj'] = df['padj'].astype(float)
+    df['padj'] = df['padj'].apply(sci_notation, precision=2, delimiter='e')
+    # df['padj'] = df['padj'].astype(float)
     df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
     if 'significanceSource' in df.columns:
         df['regulation'] = [None if sig == 'TnSeq' else reg
                             for sig, reg in zip(df['significanceSource'], df['regulation'])]
+    print(df.head)
     return df
 
 
-def make_cyto_elements(network):
+def make_cyto_elements(network, k, scale):
     """Takes a network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
     classes according to the attributes and the layout coordinates."""
 
     # Get nodes of the largest component and generate sub-network
-    main_component_nodes = [component for component in nx.connected_components(network)][0]
+    main_component_nodes = max(nx.connected_components(network), key=len)
     network = network.subgraph(main_component_nodes)
     nx.set_node_attributes(network, dict(network.degree()), 'degree')
 
@@ -50,7 +57,7 @@ def make_cyto_elements(network):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=10 / sqrt(len(network)), scale=1000)
+    layout = nx.spring_layout(network, k=k / sqrt(len(network)), scale=scale)
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -62,29 +69,6 @@ def make_cyto_elements(network):
     elements = nodes + edges
 
     return elements, nodes, edges, network
-
-
-# network_path = os.path.join('temp_data', 'azm_vs_control_network.graphml')
-# temp_network = nx.read_graphml(network_path)
-# all_nodes = len(temp_network.nodes())
-#
-# # Extract and use just main component
-# nodes = [component for component in nx.connected_components(temp_network)][0]
-# temp_network = temp_network.subgraph(nodes)
-# new_nodes = len(temp_network.nodes())
-# print('Lost {} nodes after keeping main component.'.format(all_nodes - new_nodes))
-#
-# print('Calculating metric closure')
-# t_start = datetime.now()
-# #  metric_closure = approximation.metric_closure(temp_network)
-# print(datetime.now() - t_start)
-
-# strain = 'PAO1'  # This needs to be fixed using the bionetwork object
-#
-# cyto_elements, cyto_nodes, cyto_edges, network_main_comp = make_cyto_elements(temp_network)
-# network_df = make_network_df(network_main_comp)
-#
-# enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
 
 def make_vis_layout(network_df, enrichment_results, cyto_network):
@@ -217,12 +201,12 @@ def make_vis_layout(network_df, enrichment_results, cyto_network):
                                 dbc.Col(
                                     id='main-view',
                                     children=[
-                                        html.H5('Full Network View'),
                                         cyto.Cytoscape(
                                             id='main-view',
                                             style={
                                                 'width': '100%',
-                                                'height': '60vh'
+                                                'height': '60vh',
+                                                #'position': 'absolute'
                                             },
                                             stylesheet=stylesheets.default,
                                             maxZoom=5,
@@ -230,7 +214,23 @@ def make_vis_layout(network_df, enrichment_results, cyto_network):
                                             zoom=1,
                                             layout={'name': 'preset'},
                                             elements=cyto_network['elements']
+                                        ),
+                                        cyto.Cytoscape(
+                                            id='sub-view',
+                                            style={
+                                                'width': '100%',
+                                                'height': '60vh',
+                                                #'display': 'none',
+                                                #'position': 'absolute'
+                                            },
+                                            stylesheet=stylesheets.default,
+                                            maxZoom=5,
+                                            minZoom=0.3,
+                                            zoom=1,
+                                            layout={'name': 'preset'},
+                                            boxSelectionEnabled=True
                                         )
+
                                     ],
                                 ),
                             ]
@@ -250,22 +250,22 @@ def make_vis_layout(network_df, enrichment_results, cyto_network):
                 )
             )
         ]
-
     )
 
 
 @app.callback(
     [Output('main-view', 'stylesheet'),
+     Output('sub-view', 'stylesheet'),
      Output('legend', 'src')],
     [Input('color-map', 'value')]
 )
 def change_color_map(value):
     if value == 'ss':
         source = app.get_asset_url('sig_source_legend.svg')
-        return [stylesheets.combined, source]
+        return stylesheets.combined, stylesheets.combined, source
     else:
         source = app.get_asset_url('de_legend.svg')
-        return [stylesheets.fold_change, source]
+        return stylesheets.fold_change, stylesheets.fold_change, source
 
 
 @app.callback(
@@ -287,6 +287,8 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
     """Select nodes according to user selected filters."""
 
     network = nx.node_link_graph(json.loads(json_str_network))  # TODO: Unnecessary
+    enrichment_results = pd.read_json(enrichment_results)
+
     cyto_network = json.loads(cyto_network)
     nodes = cyto_network['nodes']
     edges = cyto_network['edges']
@@ -354,14 +356,15 @@ def show_node_details(node_data, node_details):
         network_df = pd.read_json(node_details)
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
-                       # .rename(columns={'index': 'Locus Tag',
-                       #                  'shortName': 'Short Name',
-                       #                  'description': 'Description',
-                       #                  'log2FoldChange': 'Log2 Fold Change',
-                       #                  'padj': 'Adjusted p-value'})
+                       .rename(columns={'index': 'Locus Tag',
+                                        'shortName': 'Short Name',
+                                        'description': 'Description',
+                                        'log2FoldChange': 'Log2 Fold Change',
+                                        'padj': 'Adjusted p-value'
+                                        }
+                               )
                        )
 
-        col_names = ['Locus Tag', 'Short Name', 'Description', 'Log2 Fold Change', 'Adjusted p-value']
         nodes_table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
@@ -420,24 +423,32 @@ def print_nodes(n_clicks, node_data):
     return None
 
 
-#@app.callback(
-#    Output('sub_cytoscape', 'elements'),
-#    [Input('make-subnetwork', 'n_clicks')],
-#    [State('cytoscape', 'selectedNodeData')]
-#)
-#def make_subnetwork(n_clicks, node_data):
-#    if n_clicks and node_data:
-#        node_ids = [node['id'] for node in node_data]  # Get selected node ids.
-#        H = metric_closure.subgraph(node_ids)
-#        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
-#        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
-#        T = temp_network.edge_subgraph(edges)
-#        sub_network = T
-#
-#      cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network)
-#       return cyto_sub_network
-#    else:
-#        return []
+@app.callback(
+   [Output('sub-view', 'elements'),
+    Output('main-view', 'style'),
+    Output('sub-view', 'style')],
+   [Input('make-subnetwork', 'n_clicks')],
+   [State('main-view', 'selectedNodeData'),
+    State('metric-closure', 'children'),
+    State('hidden-bionetwork', 'children')]
+)
+def make_subnetwork(n_clicks, node_data, json_metric_closure, json_str_network):
+    print('hello ma fren')
+    metric_closure = nx.node_link_graph(json.loads(json_metric_closure))
+    if n_clicks:
+        print('make network')
+        network = nx.node_link_graph(json.loads(json_str_network))
+        node_ids = [node['id'] for node in node_data]  # Get selected node ids.
+        H = metric_closure.subgraph(node_ids)
+        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
+        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
+        T = network.edge_subgraph(edges)
+        sub_network = T
+        print(sub_network)
+        cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 2, 300)
+        return cyto_sub_network, {'display': 'none'}, {'display': 'block'}
+    else:
+        return [], None
 
 
 # Might Change this back later (for now, running enrichment when app starts)
