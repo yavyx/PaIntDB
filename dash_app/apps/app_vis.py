@@ -15,7 +15,6 @@ import dash_table
 import networkx as nx
 from networkx.utils import pairwise
 import pandas as pd
-from to_precision import sci_notation
 
 from dash_app import app
 import dash_app.vis_stylesheets as stylesheets
@@ -24,24 +23,6 @@ import go_enrichment.go_enrichment as goe
 
 # For development  # TODO: delete
 pd.set_option('display.max_columns', None)
-
-
-def make_network_df(network):
-    """Takes a network and outputs a DataFrame of every node with its attributes."""
-    data = [node[1] for node in network.nodes(data=True)]  # Get node attributes
-    index = [node[0] for node in network.nodes(data=True)]  # Use node ids as index
-    df = pd.DataFrame(data, index)
-    print(df.head)
-    # Format fields
-    df['log2FoldChange'] = df['log2FoldChange'].round(2)
-    df['padj'] = df['padj'].apply(sci_notation, precision=2, delimiter='e')
-    # df['padj'] = df['padj'].astype(float)
-    df['regulation'] = ['up' if change > 0 else 'down' for change in df['log2FoldChange']]
-    if 'significanceSource' in df.columns:
-        df['regulation'] = [None if sig == 'TnSeq' else reg
-                            for sig, reg in zip(df['significanceSource'], df['regulation'])]
-    print(df.head)
-    return df
 
 
 def make_cyto_elements(network, k, scale):
@@ -269,6 +250,24 @@ def change_color_map(value):
 
 
 @app.callback(
+    [Output('diff-expression', 'style'),
+     Output('source-selection', 'style')],
+    [Input('network-parameters', 'children')]
+)
+def toggle_filters(network_params):
+    """Toggles the available filters depending on the network type"""
+    if network_params:
+        network_params = json.loads(network_params)
+        network_type = network_params['type']
+        if network_type == 'gene_list':
+            return {'display': 'none'}, {'display': 'none'}
+        elif network_type == 'rna_seq':
+            return {'display': 'block'}, {'display': 'none'}
+        else:
+            return {'display': 'block'}, {'display': 'block'}
+
+
+@app.callback(
     [Output('main-view', 'elements'),
      Output('num-selected-nodes', 'children')],
     [Input('name-selection', 'value'),
@@ -343,17 +342,22 @@ def select_nodes(short_name, significance_source, location, regulation, enriched
     [Output('node-details-table', 'children'),
      Output('node-details-download', 'children')],
     [Input('main-view', 'selectedNodeData')],
-    [State('node-details-df', 'children')]
+    [State('node-details-df', 'children'),
+     State('network-parameters', 'children')]
 )
-def show_node_details(node_data, node_details):
+def show_node_details(node_data, node_details, network_params):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
         print('miguebo')
-        cols = ['shortName', 'description', 'log2FoldChange', 'padj']
+        cols = ['shortName', 'description']
+        network_params = json.loads(network_params)
+        if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
+            cols.extend(['log2FoldChange', 'padj'])
         node_ids = [node['label'] for node in node_data]
         print(node_ids)
         network_df = pd.read_json(node_details)
+        print(network_df.head())
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
                        .rename(columns={'index': 'Locus Tag',

@@ -274,6 +274,7 @@ def upload_message(contents, filename):
     [Output('make-network-message', 'children'),
      Output('download-link', 'href'),
      Output('hidden-bionetwork', 'children'),
+     Output('node-details-df', 'children'),
      Output('network-parameters', 'children')],
     [Input('make-network', 'n_clicks')],
     [State('network-type', 'value'),
@@ -291,6 +292,7 @@ def update_download_link(n_clicks, network_type, strain, order, detection_method
     """Generates a network and graphml file every time the make network button is clicked."""
     if n_clicks is None:
         raise PreventUpdate
+
     bio_network, mapping_msg = make_network(network_type, strain, order, detection_method, metabolites, rnaseq_filename,
                                             rnaseq_contents, tnseq_filename, tnseq_contents)
     rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
@@ -298,9 +300,10 @@ def update_download_link(n_clicks, network_type, strain, order, detection_method
     bio_network.write_gml(abs_filename)
 
     json_network = json.dumps(nx.node_link_data(bio_network.network))
-    network_params = {'strain': bio_network._strain}
+    network_df = bio_network.network_df
+    network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
-    return mapping_msg, '/{}'.format(rel_filename), json_network, json.dumps(network_params)
+    return mapping_msg, '/{}'.format(rel_filename), json_network, network_df.to_json(), json.dumps(network_params)
 
 
 # Create and send downloadable file

@@ -4,6 +4,7 @@ import sqlite3
 
 import networkx as nx
 import pandas as pd
+from to_precision import sci_notation
 
 import bio_networks.helpers as h
 
@@ -14,14 +15,16 @@ class BioNetwork:
     """Creates NetworkX networks with additional biological attributes for use with PaintDB."""
 
     def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
-        self._strain = strain
+        self.strain = strain
         self.order = order
-        self._detection_method = detection_method
-        self._metabolites = metabolites
+        self.detection_method = detection_method
+        self.metabolites = metabolites
         self.genes_of_interest = gene_list
         self._raw_info = dict()
         self._interactions_of_interest = []
         self.network = BioNetwork.make_network(self)
+        self.network_df = BioNetwork.make_network_df(self)
+        self.network_type = 'gene_list'
 
         if order == 0:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'p']
@@ -37,7 +40,7 @@ class BioNetwork:
 
         with sqlite3.connect(DB_PATH) as db_connection:
             cursor = db_connection.cursor()
-            if self._metabolites is True:
+            if self.metabolites is True:
                 cursor.execute('SELECT id, kegg, pubchem, cas, chebi, ecocyc FROM metabolite')
                 self._raw_info['metabolites'] = cursor.fetchall()
                 interaction_type = ['p-p', 'p-m', 'm-p']
@@ -45,10 +48,10 @@ class BioNetwork:
                 interaction_type = ['p-p']
 
             # Parameters for safe SQL querying
-            params = [self._strain, self._detection_method] + interaction_type
-            params_all = [self._strain] + interaction_type
+            params = [self.strain, self.detection_method] + interaction_type
+            params_all = [self.strain] + interaction_type
 
-            if self._detection_method in [0, 1, 2]:
+            if self.detection_method in [0, 1, 2]:
                 # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
                                   FROM interaction_participants
@@ -72,9 +75,9 @@ class BioNetwork:
                                                   interaction_sources.data_source
                                                   WHERE is_experimental = ?""",
                                                               con=db_connection,
-                                                              params=[self._detection_method])
+                                                              params=[self.detection_method])
 
-            elif self._detection_method == 3:
+            elif self.detection_method == 3:
                 # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction_id, type
                                   FROM interaction_participants 
@@ -94,7 +97,7 @@ class BioNetwork:
             cursor.execute("""SELECT id, product_name
                               FROM protein
                               WHERE strain = ?""",
-                           [self._strain])
+                           [self.strain])
             self._raw_info['proteins'] = cursor.fetchall()
 
             cursor.execute('SELECT id, name, type FROM interactor')
@@ -144,7 +147,7 @@ class BioNetwork:
             short_names[key] = h.remove_nones(value)
         db_tidy_info['short_names'] = short_names
 
-        if self._metabolites is True:
+        if self.metabolites is True:
             metabolites = self._raw_info['metabolites']
             metabolite_node_info = dict()
             for metabolite in metabolites:
@@ -192,7 +195,7 @@ class BioNetwork:
             interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                         if interactors[0] in self.genes_of_interest
                                         and interactors[1] in self.genes_of_interest]
-            if self._metabolites is True:
+            if self.metabolites is True:
                 mapped_metabolites = BioNetwork.map_metabolites(interaction_edges)
                 metabolites_of_interest = [metabolites for protein, metabolites in mapped_metabolites.items()
                                            if protein in self.genes_of_interest]
@@ -210,7 +213,7 @@ class BioNetwork:
         elif self.order == 1:
             print('Getting interactions of interest')
             start = datetime.now()
-            if self._metabolites is True:
+            if self.metabolites is True:
                 interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                             if interactors[0] in self.genes_of_interest
                                             or interactors[1] in self.genes_of_interest]
@@ -240,7 +243,7 @@ class BioNetwork:
         nx.set_node_attributes(self.network, db_tidy_info['short_names'])
         nx.set_node_attributes(self.network, db_tidy_info['localization'], name='localization')
 
-        if self._metabolites is True:
+        if self.metabolites is True:
             nx.set_node_attributes(self.network, db_tidy_info['metabolites'])
 
         # Label seed proteins in first-order networks.
@@ -260,6 +263,14 @@ class BioNetwork:
         for node in self.network.nodes:
             if self.network.nodes[node]['shortName'] == 'NA':
                 self.network.nodes[node]['shortName'] = node
+
+    def make_network_df(self):
+        """Takes a network and outputs a DataFrame of every node with its attributes."""
+        data = [node[1] for node in self.network.nodes(data=True)]  # Get node attributes
+        index = [node[0] for node in self.network.nodes(data=True)]  # Use node ids as index
+        df = pd.DataFrame(data, index)
+        print(df.head())
+        return df
 
     def make_network(self):
         """Generates a PPI network from a list of genes."""
@@ -284,6 +295,7 @@ class BioNetwork:
         print(datetime.now() - start, '\n')
 
         BioNetwork.add_locus_tags(self)
+
         return self.network
 
     def write_gml(self, path):
@@ -297,8 +309,16 @@ class DENetwork(BioNetwork):
     def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites):
         super().__init__(gene_list, strain, order, detection_method, metabolites)
         self.de_genes_df = de_genes_df
-        self.genes_of_interest = gene_list
-        self.network = DENetwork.make_network(self)
+        # self.genes_of_interest = gene_list
+        # self.network = DENetwork.make_network(self)
+        self.network_type = 'rna_seq'
+        # Add experimental info
+        nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
+        self.network_df = BioNetwork.make_network_df(self)
+        # Format DataFrame fields
+        self.network_df['log2FoldChange'] = self.network_df['log2FoldChange'].round(2)
+        self.network_df['padj'] = self.network_df['padj'].apply(sci_notation, precision=2, delimiter='e')
+        self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
 
     @staticmethod
     def process_de_genes_list(de_genes_df):
@@ -314,10 +334,6 @@ class DENetwork(BioNetwork):
                                           padj=value['padj'])
         return de_info
 
-    def make_network(self):
-        nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
-        return self.network
-
 
 class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
@@ -328,15 +344,22 @@ class CombinedNetwork(DENetwork):
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
         CombinedNetwork.add_significance_source(self)
+        self.network_type = 'combined'
+        self.network_df = BioNetwork.make_network_df(self)
+        # Add regulation column to network DataFrame
+        self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
+        self.network_df['regulation'] = [None if sig == 'TnSeq' else reg
+                                         for sig, reg in
+                                         zip(self.network_df['significanceSource'], self.network_df['regulation'])]
 
-        if order == 0:
-            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
-                                 if attr['type'] == 'p']
-        if order == 1:
-            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
-                                 if attr['type'] == 'p' and attr['seed'] == 1]
-        if metabolites:
-            self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
+        # if order == 0:
+        #     self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+        #                          if attr['type'] == 'p']
+        # if order == 1:
+        #     self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+        #                          if attr['type'] == 'p' and attr['seed'] == 1]
+        # if metabolites:
+        #     self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
@@ -350,10 +373,9 @@ class CombinedNetwork(DENetwork):
             else:
                 self.network.nodes[node]['significanceSource'] = 'none'
 
-    def make_network(self):
-        print('Adding significance source...')
-        start = datetime.now()
-        CombinedNetwork.add_significance_source(self)
-        print(datetime.now() - start, '\n')
-        return self.network
-
+    # def make_network(self):
+    #     print('Adding significance source...')
+    #     start = datetime.now()
+    #     CombinedNetwork.add_significance_source(self)
+    #     print(datetime.now() - start, '\n')
+    #     return self.network

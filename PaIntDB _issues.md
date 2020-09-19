@@ -25,6 +25,7 @@
 - Padj decimal issues
 - Change node selection to node ids, not node labels
 - Fix PA14 GO term enrichment
+- Fixed combined networks gene count
 
 ## GO enrichment
 - Change directory for PA14/PAO1 mapping in enrichment script.
