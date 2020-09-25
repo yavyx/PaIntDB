@@ -26,6 +26,8 @@ app.layout = html.Div([
                 dbc.NavbarBrand('PaintDB', href='/'),
                 dbc.NavLink("Build Network", href='/menu'),
                 dbc.NavLink("Explore Network", href='/vis', id='explore'),
+                # dbc.Button('Toggle filterss',
+                #            id='toggle-filters'),
                 dbc.DropdownMenu(
                     children=[
                         dbc.DropdownMenuItem("Tutorial", href='#'),
@@ -41,7 +43,6 @@ app.layout = html.Div([
         dark=True,
         sticky='fixed'
     ),
-    html.Br(),
     html.Div(id='page-content'),
 
     # Hidden divs to store and share data across callbacks
@@ -87,7 +88,6 @@ def load_network(network_params, bio_network, network_df):
 
     network_params = json.loads(network_params)
     strain = network_params['strain']
-    print(network_df.head())
     enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
 
     return json.dumps(cyto_network), enrichment_results.to_json(), json_metric_closure
@@ -110,7 +110,7 @@ def display_page(pathname, bio_network, json_df, network_params):
     elif pathname == '/menu':
         return app_menu.layout, no_update, no_update, no_update
     elif pathname == '/vis':
-        if bio_network is not None:
+        if bio_network:
             # Load JSON data
             network_df = pd.read_json(json_df)
             json_cyto_network, json_enrichment_results, json_metric_closure = \
@@ -118,7 +118,7 @@ def display_page(pathname, bio_network, json_df, network_params):
             # Deserialize JSON
             cyto_network, enrichment_results = json.loads(json_cyto_network), pd.read_json(json_enrichment_results)
             # Generate layout using data
-            vis_layout = app_vis.make_vis_layout(network_df, enrichment_results, cyto_network)
+            vis_layout = app_vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
             return vis_layout, json_cyto_network, json_metric_closure, json_enrichment_results
         else:
             return html.Div('You need to create a network first.'), no_update, no_update, no_update

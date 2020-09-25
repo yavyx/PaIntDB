@@ -269,7 +269,6 @@ class BioNetwork:
         data = [node[1] for node in self.network.nodes(data=True)]  # Get node attributes
         index = [node[0] for node in self.network.nodes(data=True)]  # Use node ids as index
         df = pd.DataFrame(data, index)
-        print(df.head())
         return df
 
     def make_network(self):
@@ -314,10 +313,11 @@ class DENetwork(BioNetwork):
         self.network_type = 'rna_seq'
         # Add experimental info
         nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
-        self.network_df = BioNetwork.make_network_df(self)
+        self.network_df['log2FoldChange'] = pd.Series(dict(self.network.nodes(data='log2FoldChange')))
+        self.network_df['padj'] = pd.Series(dict(self.network.nodes(data='padj')))
         # Format DataFrame fields
         self.network_df['log2FoldChange'] = self.network_df['log2FoldChange'].round(2)
-        self.network_df['padj'] = self.network_df['padj'].apply(sci_notation, precision=2, delimiter='e')
+        # self.network_df['padj'] = self.network_df['padj'].apply(sci_notation, precision=2, delimiter='e')
         self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
 
     @staticmethod
@@ -344,8 +344,9 @@ class CombinedNetwork(DENetwork):
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
         CombinedNetwork.add_significance_source(self)
+        # Add significance source column to network DataFrame
+        self.network_df['significanceSource'] = pd.Series(dict(self.network.nodes(data='significanceSource')))
         self.network_type = 'combined'
-        self.network_df = BioNetwork.make_network_df(self)
         # Add regulation column to network DataFrame
         self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
         self.network_df['regulation'] = [None if sig == 'TnSeq' else reg
