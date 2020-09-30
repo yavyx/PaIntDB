@@ -6,7 +6,6 @@ import os
 
 import dash
 from dash.dependencies import Output, Input, State, ALL
-from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
@@ -231,38 +230,22 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                             [
                                 dbc.Col(
                                     id='main-view',
-                                    children=[
-                                        cyto.Cytoscape(
-                                            id='main-view',
-                                            style={
-                                                'width': '100%',
-                                                'height': '60vh',
-                                                # 'position': 'absolute'
-                                            },
-                                            stylesheet=stylesheets.default,
-                                            maxZoom=5,
-                                            minZoom=0.3,
-                                            zoom=1,
-                                            layout={'name': 'preset'},
-                                            elements=cyto_network['elements']
-                                        ),
-                                        cyto.Cytoscape(
-                                            id='sub-view',
-                                            style={
-                                                'width': '100%',
-                                                'height': '60vh',
-                                                # 'display': 'none'
-                                                # 'position': 'absolute'
-                                            },
-                                            stylesheet=stylesheets.default,
-                                            maxZoom=5,
-                                            minZoom=0.3,
-                                            zoom=1,
-                                            layout={'name': 'preset'},
-                                            boxSelectionEnabled=True
-                                        )
-
-                                    ],
+                                    children=
+                                    cyto.Cytoscape(
+                                        id='main-view',
+                                        style={
+                                            'width': '100%',
+                                            'height': '60vh',
+                                            # 'position': 'absolute'
+                                        },
+                                        stylesheet=stylesheets.default,
+                                        maxZoom=5,
+                                        minZoom=0.3,
+                                        zoom=1,
+                                        layout={'name': 'preset'},
+                                        elements=cyto_network['elements'],
+                                        boxSelectionEnabled=True
+                                    )
                                 ),
                             ]
                         ),
@@ -286,32 +269,38 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
 
 @app.callback(
     [Output('main-view', 'stylesheet'),
-     Output('sub-view', 'stylesheet'),
      Output('legend', 'src')],
     [Input('color-map', 'value')]
 )
 def change_color_map(value):
     if value == 'ss':
         source = app.get_asset_url('sig_source_legend.svg')
-        return stylesheets.combined, stylesheets.combined, source
+        return stylesheets.combined, source
     else:
         source = app.get_asset_url('de_legend.svg')
-        return stylesheets.fold_change, stylesheets.fold_change, source
+        return stylesheets.fold_change, source
 
 
 @app.callback(
     [Output('main-view', 'elements'),
      Output('num-selected-nodes', 'children')],
-    [Input({'type': 'filter', 'index': ALL}, 'value')],  # Pattern-matching all callbacks with filter type
-    [State('node-details-df', 'children'),
+    [Input({'type': 'filter', 'index': ALL}, 'value'), # Pattern-matching all callbacks with filter type
+     Input('make-subnetwork', 'n_clicks'),
+     Input('reset-network', 'n_clicks')],
+    [State('main-view', 'selectedNodeData'),
+     State('node-details-df', 'children'),
      State('enrichment-results', 'children'),
      State('network-parameters', 'children'),
-     State('cyto-network', 'children')]
+     State('cyto-network', 'children'),
+     State('hidden-bionetwork', 'children'),
+     State('metric-closure', 'children')]
 )
-def select_nodes(values, node_details, enrichment_results, network_params, cyto_network):
+def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_details, enrichment_results,
+                 network_params, cyto_network, bio_network, metric_closure):
     """Select nodes according to user selected filters."""
-    enrichment_results = pd.read_json(enrichment_results)
+
     cyto_network = json.loads(cyto_network)
+    enrichment_results = pd.read_json(enrichment_results)
     nodes = cyto_network['nodes']
     edges = cyto_network['edges']
     network_df = pd.read_json(node_details)
@@ -362,14 +351,33 @@ def select_nodes(values, node_details, enrichment_results, network_params, cyto_
     for node in nodes:
         node['selected'] = True if node['data']['id'] in queried_nodes else False
 
+    if reset_clicks:
+        return nodes + edges, selected_msg
+
+    if subnetwork_clicks:
+        cyto_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
+        return cyto_sub_network, ''
+
     return nodes + edges, selected_msg
+
+
+def make_subnetwork(node_data, json_metric_closure, json_str_network):
+    metric_closure = nx.node_link_graph(json.loads(json_metric_closure))
+    network = nx.node_link_graph(json.loads(json_str_network))
+    node_ids = [node['id'] for node in node_data]  # Get selected nodes in main network
+    H = metric_closure.subgraph(node_ids)
+    mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
+    edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
+    sub_network = network.edge_subgraph(edges)
+    print(sub_network)
+    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 2, 300)
+    return cyto_sub_network
 
 
 @app.callback(
     [Output('node-details-table', 'children'),
      Output('node-details-download', 'children')],
-    [Input('main-view', 'selectedNodeData'),
-     Input('sub-view', 'selectedNodeData')],
+    [Input('main-view', 'selectedNodeData')],
     [State('node-details-df', 'children'),
      State('network-parameters', 'children')]
 )
@@ -395,18 +403,6 @@ def show_node_details(node_data, sub_node_data, node_details, network_params):
                                         }
                                )
                        )
-        if sub_node_data:
-            node_ids = [node['label'] for node in sub_node_data]
-            filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
-                           .reset_index()
-                           .rename(columns={'index': 'Locus Tag',
-                                            'shortName': 'Short Name',
-                                            'description': 'Descripton',
-                                            'log2FoldChange': 'Log2 Fold Change',
-                                            'padj': 'Adjusted p-value'
-                                            }
-                                   )
-                           )
 
         nodes_table = dash_table.DataTable(
             data=filtered_df.to_dict('records'),
@@ -430,36 +426,6 @@ def show_node_details(node_data, sub_node_data, node_details, network_params):
         return nodes_table, filtered_df.to_json()
     else:
         return None, None
-
-
-@app.callback(
-   [Output('sub-view', 'elements'),
-    Output('main-view', 'style'),
-    Output('sub-view', 'style')],
-   [Input('make-subnetwork', 'n_clicks'),
-    Input('reset-network', 'n_clicks')],
-   [State('main-view', 'selectedNodeData'),
-    State('metric-closure', 'children'),
-    State('hidden-bionetwork', 'children')]
-)
-def make_subnetwork(n_clicks, reset_clicks, node_data, json_metric_closure, json_str_network):
-    if n_clicks:
-        print('make subnetwork')
-        metric_closure = nx.node_link_graph(json.loads(json_metric_closure))
-        network = nx.node_link_graph(json.loads(json_str_network))
-        node_ids = [node['id'] for node in node_data]  # Get selected nodes in main network
-        H = metric_closure.subgraph(node_ids)
-        mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
-        edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
-        T = network.edge_subgraph(edges)
-        sub_network = T
-        print(sub_network)
-        cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 2, 300)
-        return cyto_sub_network, {'display': 'none'}, {'display': 'block'}
-
-    if reset_clicks:
-        print('resetting')
-        return [], {'display': 'block'}, {'display': 'none'}
 
 
 @app.callback(
@@ -495,7 +461,7 @@ def download_csv():
     Output('download-subnetwork', 'href'),
     [Input('download-subnetwork', 'n_clicks')],
     [State('hidden-bionetwork', 'children'),
-     State('sub-view', 'selectedNodeData')]
+     State('main-view', 'selectedNodeData')]
 )
 def update_sub_download_link(n_clicks, json_str_network, node_data):
     if n_clicks:
@@ -525,8 +491,7 @@ def download_sub_graphml(path):
 
 @app.callback(
     Output('hidden-div', 'children'),
-    [Input('sub-view', 'selectedNodeData')],
-   # [State('cytoscape', 'selectedNodeData')]
+    [Input('main-view', 'selectedNodeData')],
 )
 def print_nodes(node_data):
     if node_data:

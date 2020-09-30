@@ -26,8 +26,6 @@ app.layout = html.Div([
                 dbc.NavbarBrand('PaintDB', href='/'),
                 dbc.NavLink("Build Network", href='/menu'),
                 dbc.NavLink("Explore Network", href='/vis', id='explore'),
-                # dbc.Button('Toggle filterss',
-                #            id='toggle-filters'),
                 dbc.DropdownMenu(
                     children=[
                         dbc.DropdownMenuItem("Tutorial", href='#'),
