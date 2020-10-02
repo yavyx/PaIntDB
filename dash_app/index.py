@@ -9,12 +9,11 @@ from dash.dash import no_update
 import networkx as nx
 from networkx.algorithms import approximation
 from networkx.readwrite import json_graph
-from networkx.utils import pairwise
 import pandas as pd
 
 from dash_app.app import app  # Loads app variable from app script
 from dash_app.apps import app_home, app_menu, app_vis
-import go_enrichment.go_enrichment as goe
+from go_enrichment.go_enrichment import run_go_enrichment
 
 
 app.layout = html.Div([
@@ -24,20 +23,20 @@ app.layout = html.Div([
         children=[
             dbc.Nav([
                 dbc.NavbarBrand('PaintDB', href='/'),
-                dbc.NavLink("Build Network", href='/menu'),
-                dbc.NavLink("Explore Network", href='/vis', id='explore'),
+                dbc.NavLink('Build Network', href='/menu'),
+                dbc.NavLink('Explore Network', href='/vis', id='explore'),
                 dbc.DropdownMenu(
                     children=[
-                        dbc.DropdownMenuItem("Tutorial", href='#'),
-                        dbc.DropdownMenuItem("About", href="#"),
+                        dbc.DropdownMenuItem('Tutorial', href='#'),
+                        dbc.DropdownMenuItem('About', href='#'),
                     ],
                     nav=True,
                     in_navbar=True,
-                    label="More"
+                    label='More'
                 )
             ])
         ],
-        color="dark",
+        color='dark',
         dark=True,
         sticky='fixed'
     ),
@@ -86,7 +85,7 @@ def load_network(network_params, bio_network, network_df):
 
     network_params = json.loads(network_params)
     strain = network_params['strain']
-    enrichment_results, goea_results = goe.run_go_enrichment(strain, list(network_df.index))
+    enrichment_results, goea_results = run_go_enrichment(strain, list(network_df.index))
 
     return json.dumps(cyto_network), enrichment_results.to_json(), json_metric_closure
 

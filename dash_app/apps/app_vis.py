@@ -1,14 +1,14 @@
-from datetime import datetime
 from math import sqrt
 from itertools import chain
 import json
 import os
 
-import dash
 from dash.dependencies import Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
+from dash_extensions import Download
+from dash_extensions.snippets import send_file, send_data_frame
 import dash_html_components as html
 import dash_table
 import flask
@@ -53,6 +53,7 @@ def make_cyto_elements(network, k, scale):
 
 
 def make_vis_layout(network_df, enrichment_results, cyto_network, network_params):
+    """Generates a custom layout depending on the network type."""
     network_params = json.loads(network_params)
     # This filter is only used with RNASeq/Combined networks
     regulation_filter = html.Details(
@@ -201,19 +202,32 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     html.Div(
                         [
                             html.P(id='num-selected-nodes'),
-                            dbc.Button('Make Sub-Network',
-                                       id='make-subnetwork',
-                                       style={'display': 'inline-block'}),
-                            dbc.Button('Reset Network',
-                                       id='reset-network',
-                                       style={'display': 'inline-block'}),
-                            dbc.Button('Download Table',
-                                       id='download-table-button',
-                                       ),
-                            dbc.Button('Download Subnetwork',
-                                       id='download-subnetwork'),
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button('Make Sub-Network',
+                                               id='make-subnetwork'),
+                                    dbc.Button('Reset Network',
+                                               id='reset-network',
+                                               disabled=True)
+                                ]
+                            ),
+                            dbc.DropdownMenu(
+                                label='Download',
+                                direction='right',
+                                children=[
+                                    dbc.DropdownMenuItem('Download Table (.csv)',
+                                                         id='download-table'),
+                                    dbc.DropdownMenuItem('Network (.graphml)',
+                                                         id='download-network'),
+                                    dbc.DropdownMenuItem('Network (.svg)',
+                                                         id='download-network-img')
+                                ]
+                            ),
+                            Download(id='graphml-download2'),
+                            Download(id='csv-download'),
                             # Hidden Div to store node details table download file
-                            html.Div(id='node-details-download', style={'display': 'none'}),
+                            html.Div(id='filtered-node-details', style={'display': 'none'}),
+                            html.Div(id='hidden-subnetwork', style={'display':'none'})
                         ]
                     )
                 ],
@@ -230,8 +244,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                             [
                                 dbc.Col(
                                     id='main-view',
-                                    children=
-                                    cyto.Cytoscape(
+                                    children=cyto.Cytoscape(
                                         id='main-view',
                                         style={
                                             'width': '100%',
@@ -283,8 +296,11 @@ def change_color_map(value):
 
 @app.callback(
     [Output('main-view', 'elements'),
-     Output('num-selected-nodes', 'children')],
-    [Input({'type': 'filter', 'index': ALL}, 'value'), # Pattern-matching all callbacks with filter type
+     Output('hidden-subnetwork', 'children'),
+     Output('num-selected-nodes', 'children'),
+     Output('make-subnetwork', 'disabled'),
+     Output('reset-network', 'disabled')],
+    [Input({'type': 'filter', 'index': ALL}, 'value'),  # Pattern-matching all callbacks with filter type
      Input('make-subnetwork', 'n_clicks'),
      Input('reset-network', 'n_clicks')],
     [State('main-view', 'selectedNodeData'),
@@ -297,8 +313,7 @@ def change_color_map(value):
 )
 def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_details, enrichment_results,
                  network_params, cyto_network, bio_network, metric_closure):
-    """Select nodes according to user selected filters."""
-
+    """Select nodes according to user selected filters. Creates subnetwork with selected nodes."""
     cyto_network = json.loads(cyto_network)
     enrichment_results = pd.read_json(enrichment_results)
     nodes = cyto_network['nodes']
@@ -320,7 +335,7 @@ def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_detail
     else:
         regulation, significance_source = [], []
 
-    # Add queries depending on user filter selections
+    # Add queries depending on GUI filter selections
     if short_name:
         query.append('shortName in @short_name | index in @short_name')
     if location:
@@ -351,14 +366,19 @@ def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_detail
     for node in nodes:
         node['selected'] = True if node['data']['id'] in queried_nodes else False
 
-    if reset_clicks:
-        return nodes + edges, selected_msg
-
     if subnetwork_clicks:
-        cyto_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
-        return cyto_sub_network, ''
+        cyto_sub_network, json_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
+        return cyto_sub_network, json_sub_network, '', True, False
 
-    return nodes + edges, selected_msg
+    return nodes + edges, None, selected_msg, False, True
+
+
+@app.callback(
+    Output('make-subnetwork', 'n_clicks'),
+    [Input('reset-network', 'n_clicks')])
+def reset(n_clicks):
+    """Reset subnetwork clicks to cycle through full network/subnetworks."""
+    return 0
 
 
 def make_subnetwork(node_data, json_metric_closure, json_str_network):
@@ -371,17 +391,18 @@ def make_subnetwork(node_data, json_metric_closure, json_str_network):
     sub_network = network.edge_subgraph(edges)
     print(sub_network)
     cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 2, 300)
-    return cyto_sub_network
+    json_sub_network = json.dumps(nx.node_link_data(sub_network))
+    return cyto_sub_network, json_sub_network
 
 
 @app.callback(
     [Output('node-details-table', 'children'),
-     Output('node-details-download', 'children')],
+     Output('filtered-node-details', 'children')],
     [Input('main-view', 'selectedNodeData')],
     [State('node-details-df', 'children'),
      State('network-parameters', 'children')]
 )
-def show_node_details(node_data, sub_node_data, node_details, network_params):
+def show_node_details(node_data, node_details, network_params):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
@@ -429,64 +450,37 @@ def show_node_details(node_data, sub_node_data, node_details, network_params):
 
 
 @app.callback(
-    Output('download-table-button', 'href'),
-    [Input('download-table-button', 'n_clicks')],
-    [State('node-details-download', 'children')]
+    Output('csv-download', 'data'),
+    [Input('download-table', 'n_clicks')],
+    [State('filtered-node-details', 'children')]
 )
-def update_download_link(n_clicks, node_details):
+def download_csv(n_clicks, json_df):
     if n_clicks:
-        rel_filename = os.path.join('downloads', 'node_table.csv')
-        abs_filename = os.path.join(os.getcwd(), rel_filename)
-        pd.read_json(node_details).to_csv(abs_filename)
-        return '/{}'.format(rel_filename)
-
-
-@app.server.route('/downloads/<path:path>')
-def download_csv():
-    root_dir = os.getcwd()
-    # downloads_dir = os.path.join(root_dir, 'downloads')
-    # if not os.path.exists(downloads_dir):
-    #    os.mkdir(downloads_dir)
-
-    return flask.send_file(
-        os.path.join(root_dir, 'downloads', 'table.csv'),
-        mimetype='text/csv',
-        attachment_filename='node_table.csv',
-        as_attachment=True,
-        cache_timeout=-1  # Prevent browser from caching previous file
-    )
+        # downloads_dir = os.path.join(os.getcwd(), 'downloads')
+        # if not os.path.exists(downloads_dir):
+        #     os.mkdir(downloads_dir)
+        node_details = pd.read_json(json_df)
+        # abs_filename = os.path.join(downloads_dir, 'node_details.csv')
+        print(node_details.head())
+        # TODO: Fix index issue
+        return send_data_frame(node_details.to_csv, 'node_details.csv')
 
 
 @app.callback(
-    Output('download-subnetwork', 'href'),
-    [Input('download-subnetwork', 'n_clicks')],
-    [State('hidden-bionetwork', 'children'),
-     State('main-view', 'selectedNodeData')]
+    Output('graphml-download2', 'data'),
+    Input('download-network', 'n_clicks'),
+    State('hidden-subnetwork', 'children')
 )
-def update_sub_download_link(n_clicks, json_str_network, node_data):
+def download_graphml_2(n_clicks, json_str_sub_network):
     if n_clicks:
-        rel_filename = os.path.join('downloads', 'sub_network.graphml')
+        downloads_dir = os.path.join(os.getcwd(), 'downloads')
+        if not os.path.exists(downloads_dir):
+            os.mkdir(downloads_dir)
+        rel_filename = os.path.join('downloads', 'subnetwork.graphml')
         abs_filename = os.path.join(os.getcwd(), rel_filename)
-        network = nx.node_link_graph(json.loads(json_str_network))
-        sub_nodes = [node['id'] for node in node_data]
-        sub_network = nx.subgraph(network, sub_nodes)
-        nx.write_graphml(sub_network, abs_filename)
-
-        return '/{}'.format(rel_filename)
-
-
-@app.server.route('/downloads/<path:path>')
-def download_sub_graphml(path):
-    root_dir = os.getcwd()
-    downloads_dir = os.path.join(root_dir, 'downloads')
-    if not os.path.exists(downloads_dir):
-        os.mkdir(downloads_dir)
-
-    return flask.send_from_directory(
-        os.path.join(downloads_dir),
-        path,
-        cache_timeout=-1  # Prevent browser from caching previous file
-    )
+        sub_network = nx.node_link_graph(json.loads(json_str_sub_network))
+        nx.write_graphml(sub_network, path=abs_filename)
+        return send_file(abs_filename)
 
 
 @app.callback(

@@ -6,13 +6,15 @@ import os
 
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
+from dash_extensions import Download
+from dash_extensions.snippets import send_file
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
-import flask
 import networkx as nx
 import pandas as pd
+
 
 import bio_networks.network_generator as ng
 from dash_app.app import app  # Loads app variable from app script
@@ -141,18 +143,23 @@ layout = dbc.Container(
             )
         ),
         html.Br(),
-        dbc.Button('Make Network', id='make-network'),
+        dbc.Button('Make Network', id='make-network-btn'),
         html.Br(),
+        html.Br(),
+        html.Div(id='make-network-message'),
         dcc.Loading(id='loading',
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
-        # dbc.Button('Explore Network', id='explore-button', href='/vis'),
         html.Br(),
-        dbc.Button(
-            html.A('Download Network(GraphML)',
-                   id='download-link'
-                   )
+        html.Div(
+            [
+                dbc.Button('Explore Network', id='explore-btn', href='/vis'),
+                dbc.Button('Download Network', id='download-btn'),
+                Download(id='graphml-download1')
+            ],
+            id='network-buttons',
+            style={'display': 'none'}
         ),
     ],
     fluid=True
@@ -161,13 +168,10 @@ layout = dbc.Container(
 
 def parse_gene_list(contents, filename):
     """Parses the uploaded gene list, returns a Bootstrap table and a Pandas DataFrame."""
+    # TODO: Add checks for table headers
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    # Formatting DF
-    # genes_df['pvalue'] = genes_df['pvalue'].map('{:.3g}'.format)  # Change to have 2 decimals
-    # genes_df['padj'] = genes_df['padj'].map('{:.3g}'.format)
-    # genes_df.loc[:, ['pvalue', 'padj']] = genes_df[['pvalue', 'padj']].astype(float)
     small_df = genes_df.head()  # smaller df to display on app
     cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
     small_df.loc[:, cols] = small_df[cols].round(2)
@@ -200,59 +204,14 @@ def parse_tnseq_list(contents, filename):
     return upload_msg, tnseq_genes
 
 
-def make_network(network_type, strain, order, detection_method, metabolites, rnaseq_filename, rnaseq_contents,
-                 tnseq_filename=None, tnseq_contents=None):
-    """Generates a BioNetwork. Serializes the result to JSON for use in the vis module."""
-    start_time = datetime.now()
-    upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
-    genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
-    gene_list = genes_df.gene.tolist()
-    if network_type == 'basic':
-        bio_network = ng.BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                    metabolites=metabolites)
-    elif network_type == 'DE':
-        bio_network = ng.DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                   metabolites=metabolites, de_genes_df=genes_df)
-    elif network_type == 'combined':
-        upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
-        bio_network = ng.CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
-                                         detection_method=detection_method, metabolites=metabolites,
-                                         de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
-
-    else:
-        bio_network = None
-
-    if metabolites:
-        mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
-                                   metabolites were mapped to these genes.'''
-                               .format(len(bio_network.mapped_genes),
-                                       len(gene_list),
-                                       len(bio_network.mapped_metabolites)
-                                       )
-                               )
-    else:
-        mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
-                               .format(len(bio_network.mapped_genes),
-                                       len(gene_list))
-                               )
-    end_time = datetime.now()
-
-    print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
-    print(end_time - start_time)
-
-    return bio_network, mapping_msg
-
-
 @app.callback(
     Output('tnseq-gene-list-upload', 'style'),
     [Input('network-type', 'value')]
 )
 def show_tnseq_upload(network_type):
     """Show TnSeq upload button when combined networks are selected."""
-    if network_type == 'combined':
-        return {'display': 'block'}
-    else:
-        return {'display': 'none'}
+    display = {'display': 'block'} if network_type == 'combined' else {'display': 'none'}
+    return display
 
 
 @app.callback(
@@ -271,12 +230,12 @@ def upload_message(contents, filename):
 
 
 @app.callback(
-    [Output('make-network-message', 'children'),
-     Output('download-link', 'href'),
+    [Output('network-buttons', 'style'),
+     Output('make-network-message', 'children'),
      Output('hidden-bionetwork', 'children'),
      Output('node-details-df', 'children'),
      Output('network-parameters', 'children')],
-    [Input('make-network', 'n_clicks')],
+    [Input('make-network-btn', 'n_clicks')],
     [State('network-type', 'value'),
      State('strain', 'value'),
      State('order', 'value'),
@@ -287,39 +246,74 @@ def upload_message(contents, filename):
      State('gene-list-upload', 'filename'),
      State('tnseq-gene-list-upload', 'filename')]
 )
-def update_download_link(n_clicks, network_type, strain, order, detection_method, metabolites, rnaseq_contents,
-                         tnseq_contents, rnaseq_filename, tnseq_filename):
-    """Generates a network and graphml file every time the make network button is clicked."""
+def build_network(n_clicks, network_type, strain, order, detection_method, metabolites, rnaseq_contents,
+                  tnseq_contents, rnaseq_filename, tnseq_filename):
+    """Generates a network every time the make network button is clicked. Serializes results to JSON
+    and stores them in hidden divs. Shows download and explore network button."""
     if n_clicks is None:
         raise PreventUpdate
 
-    bio_network, mapping_msg = make_network(network_type, strain, order, detection_method, metabolites, rnaseq_filename,
-                                            rnaseq_contents, tnseq_filename, tnseq_contents)
-    rel_filename = os.path.join('downloads', '{}_network.graphml'.format(rnaseq_filename[:-4]))
-    abs_filename = os.path.join(os.getcwd(), rel_filename)
-    bio_network.write_gml(abs_filename)
+    start_time = datetime.now()
+    upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
+    genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
+    gene_list = genes_df.gene.tolist()
+    if network_type == 'basic':
+        bio_network = ng.BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
+                                    metabolites=metabolites)
+    elif network_type == 'DE':
+        bio_network = ng.DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
+                                   metabolites=metabolites, de_genes_df=genes_df)
+    elif network_type == 'combined':
+        upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
+        bio_network = ng.CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
+                                         detection_method=detection_method, metabolites=metabolites,
+                                         de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
+    else:
+        bio_network = None
+
+    if metabolites:
+        mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
+                                       metabolites were mapped to these genes.'''
+                               .format(len(bio_network.mapped_genes),
+                                       len(gene_list),
+                                       len(bio_network.mapped_metabolites)
+                                       )
+                               )
+    else:
+        mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
+                               .format(len(bio_network.mapped_genes),
+                                       len(gene_list))
+                               )
+    end_time = datetime.now()
+
+    print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
+    print(end_time - start_time)
 
     json_network = json.dumps(nx.node_link_data(bio_network.network))
     network_df = bio_network.network_df
     network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
-    return mapping_msg, '/{}'.format(rel_filename), json_network, network_df.to_json(), json.dumps(network_params)
+    return {'display': 'block'}, mapping_msg, json_network, network_df.to_json(), \
+            json.dumps(network_params)
 
 
-# Create and send downloadable file
-@app.server.route('/downloads/<path:path>')
-def download_graphml(path):
-    root_dir = os.getcwd()
-    downloads_dir = os.path.join(root_dir, 'downloads')
-    if not os.path.exists(downloads_dir):
-        os.mkdir(downloads_dir)
+@app.callback(
+    Output('graphml-download1', 'data'),
+    [Input('download-btn', 'n_clicks')],
+    [State('gene-list-upload', 'filename'),
+     State('hidden-bionetwork', 'children')]
+)
+def download_graphml(n_clicks, filename, json_str_network):
+    """Generates and sends a graphml file for download."""
+    if n_clicks:
+        # Create downloads directory if there isn't one
+        downloads_dir = os.path.join(os.getcwd(), 'downloads')
+        if not os.path.exists(downloads_dir):
+            os.mkdir(downloads_dir)
 
-    return flask.send_from_directory(
-        os.path.join(downloads_dir),
-        path,
-        cache_timeout=-1  # Prevent browser from caching previous file
-    )
-
-
-
+        rel_filename = os.path.join('downloads', '{}_network.graphml'.format(filename[:-4]))
+        abs_filename = os.path.join(os.getcwd(), rel_filename)
+        network = nx.node_link_graph(json.loads(json_str_network))
+        nx.write_graphml(network, path=abs_filename)
+        return send_file(abs_filename)
 
