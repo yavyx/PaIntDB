@@ -153,16 +153,46 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         ),
         html.Br()
     ]
+    # Add extra filters for DE/Combined networks
     if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
-        sidebar_filters.extend([
-            regulation_filter,
-            html.Br()
-        ])
+        sidebar_filters.extend([regulation_filter, html.Br()])
         if network_params['type'] == 'combined':
-            sidebar_filters.extend([
-                source_filter,
-            ])
+            sidebar_filters.extend([source_filter])
 
+    # Add color mapping functionality for DE/Combined networks
+    if network_params['type'] == 'gene_list':
+        color_mapping = None
+        stylesheet = stylesheets.default
+    elif network_params['type'] == 'rna_seq':
+        color_mapping = [
+            html.H5('Color Mapping'),
+            html.Div(style={'padding': '10px'},
+                     children=html.Img(
+                         src=app.get_asset_url('de_legend.svg'),
+                         id='legend',
+                         width=100)
+                     )
+        ]
+        stylesheet = stylesheets.fold_change
+    elif network_params['type'] == 'combined':
+        color_mapping = [
+            html.H5('Color Mapping'),
+            dbc.RadioItems(
+                options=[
+                    {'label': 'Experiment', 'value': 'ss'},
+                    {'label': 'Differential Expression', 'value': 'de'}
+                ],
+                value='ss',
+                id='color-map',
+            ),
+            html.Div(style={'padding': '10px'},
+                     children=html.Img(
+                         id='legend',
+                         width=100)
+                     )
+        ]
+        stylesheet = stylesheets.fold_change
+    # Layout begins here
     return html.Div(
         [
             html.Div(
@@ -176,22 +206,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                 },
                 children=[
                     html.Div(id='color-map-div',
-                             children=[
-                                 html.H5('Color Mapping'),
-                                 dbc.RadioItems(
-                                     options=[
-                                         {'label': 'Experiment', 'value': 'ss'},
-                                         {'label': 'Differential Expression', 'value': 'de'}
-                                     ],
-                                     value='ss',
-                                     id='color-map',
-                                 ),
-                                 html.Div(style={'padding': '10px'},
-                                          children=html.Img(
-                                              id='legend',
-                                              width=100)
-                                          )
-                             ]
+                             children=color_mapping
                              ),
                     html.Hr(),
                     html.Div(
@@ -251,7 +266,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                             'height': '60vh',
                                             # 'position': 'absolute'
                                         },
-                                        stylesheet=stylesheets.default,
+                                        stylesheet=stylesheet,
                                         maxZoom=5,
                                         minZoom=0.3,
                                         zoom=1,
@@ -301,8 +316,7 @@ def change_color_map(value):
      Output('make-subnetwork', 'disabled'),
      Output('reset-network', 'disabled')],
     [Input({'type': 'filter', 'index': ALL}, 'value'),  # Pattern-matching all callbacks with filter type
-     Input('make-subnetwork', 'n_clicks'),
-     Input('reset-network', 'n_clicks')],
+     Input('make-subnetwork', 'n_clicks')],
     [State('main-view', 'selectedNodeData'),
      State('node-details-df', 'children'),
      State('enrichment-results', 'children'),
@@ -311,7 +325,7 @@ def change_color_map(value):
      State('hidden-bionetwork', 'children'),
      State('metric-closure', 'children')]
 )
-def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_details, enrichment_results,
+def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_results,
                  network_params, cyto_network, bio_network, metric_closure):
     """Select nodes according to user selected filters. Creates subnetwork with selected nodes."""
     cyto_network = json.loads(cyto_network)
@@ -332,6 +346,8 @@ def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_detail
         regulation = values[3]
         if network_params['type'] == 'combined':
             significance_source = values[4]
+        else:
+            significance_source = None
     else:
         regulation, significance_source = [], []
 
@@ -358,18 +374,26 @@ def select_nodes(values, subnetwork_clicks, reset_clicks, node_data, node_detail
     # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
-        selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(nodes))
+
     else:
         queried_nodes = nodes
         selected_msg = ''
 
+    i = 0  # Selected nodes counter
     for node in nodes:
-        node['selected'] = True if node['data']['id'] in queried_nodes else False
+        if node['data']['id'] in queried_nodes:
+            node['selected'] = True
+            i += 1
+        else:
+            node['selected'] = False
+
+    selected_msg = 'Selected {} out of {} nodes'.format(i, len(nodes))
 
     if subnetwork_clicks:
         cyto_sub_network, json_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
+        # Return subnetwork
         return cyto_sub_network, json_sub_network, '', True, False
-
+    # Return full network
     return nodes + edges, None, selected_msg, False, True
 
 

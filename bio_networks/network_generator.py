@@ -28,7 +28,6 @@ class BioNetwork:
 
         if order == 0:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'p']
-
         if order == 1:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
                                  if attr['type'] == 'p' and attr['seed'] == 1]
@@ -352,15 +351,13 @@ class CombinedNetwork(DENetwork):
         self.network_df['regulation'] = [None if sig == 'TnSeq' else reg
                                          for sig, reg in
                                          zip(self.network_df['significanceSource'], self.network_df['regulation'])]
-
-        # if order == 0:
-        #     self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
-        #                          if attr['type'] == 'p']
-        # if order == 1:
-        #     self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
-        #                          if attr['type'] == 'p' and attr['seed'] == 1]
-        # if metabolites:
-        #     self.mapped_metabolites = [node for node, attr in self.network.nodes(data=True) if attr['type'] == 'm']
+        if order == 0:
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p']
+        if order == 1:
+            self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
+                                 if attr['type'] == 'p' and attr['seed'] == 1]
+        print(len(self.mapped_genes))
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""

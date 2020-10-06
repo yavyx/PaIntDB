@@ -15,17 +15,12 @@
     - CSV input:
         - Check no extra columns
         - Check file format
-- State not working in update_download_link
-- React errors
-- Explore client-side callbacks
 
 ## Vis module
-- Reset view button not working (Removed for now)
-- Chained callbacks for vis layout depending on network type 
 - Padj decimal issues
 - Change node selection to node ids, not node labels
 - Fix PA14 GO term enrichment
-- Fixed combined networks gene count
+- Fix combined networks gene count
 - Check TnSeq genes in combined networks
 
 ## GO enrichment
