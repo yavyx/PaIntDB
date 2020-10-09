@@ -22,6 +22,7 @@
 - Fix PA14 GO term enrichment
 - Fix combined networks gene count
 - Check TnSeq genes in combined networks
+- Error messages when 0 genes are mapped.
 
 ## GO enrichment
 - Change directory for PA14/PAO1 mapping in enrichment script.

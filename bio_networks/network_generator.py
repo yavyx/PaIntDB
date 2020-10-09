@@ -338,10 +338,10 @@ class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
 
     def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
-        super().__init__(gene_list, de_genes_df, strain, order, detection_method, metabolites)
-        self.de_genes = de_genes_df.gene.tolist()
+        self.de_genes = gene_list
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))
+        super().__init__(self.genes_of_interest, de_genes_df, strain, order, detection_method, metabolites)
         CombinedNetwork.add_significance_source(self)
         # Add significance source column to network DataFrame
         self.network_df['significanceSource'] = pd.Series(dict(self.network.nodes(data='significanceSource')))

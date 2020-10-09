@@ -516,28 +516,3 @@ def print_nodes(node_data):
         print('miguebo  ', [node['id'] for node in node_data])
     return None
 
-
-# Might Change this back later (for now, running enrichment when app starts)
-# @app.callback(
-#     Output('enrichment-selection', 'options'),
-#     [Input('enrichment-results', 'children')]
-# )
-# def create_enrichment_options(results):
-#     results_df = pd.read_json(results)
-#     options = [{'label': term, 'value': term} for term in results_df['name']]
-#     return options
-
-
-# Might Change this back later (for now, running enrichment when app starts)
-# @app.callback(
-#     Output('enrichment-results', 'children'),
-#     [Input('run-enrichment', 'n_clicks')]
-# )
-# def run_enrichment(n_clicks):
-#     if n_clicks:
-#         enrichment_results, goea_results = goe.run_go_enrichment('PAO1', list(network_df.index))
-#         print(enrichment_results.head())
-#         table = enrichment_results.to_json()
-#     else:
-#         table = ""
-#     return table

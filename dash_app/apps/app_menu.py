@@ -234,7 +234,8 @@ def upload_message(contents, filename):
      Output('make-network-message', 'children'),
      Output('hidden-bionetwork', 'children'),
      Output('node-details-df', 'children'),
-     Output('network-parameters', 'children')],
+     Output('network-parameters', 'children'),
+     Output('genes-of-interest', 'children')],
     [Input('make-network-btn', 'n_clicks')],
     [State('network-type', 'value'),
      State('strain', 'value'),
@@ -275,14 +276,14 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
         mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
                                        metabolites were mapped to these genes.'''
                                .format(len(bio_network.mapped_genes),
-                                       len(gene_list),
+                                       len(bio_network.genes_of_interest),
                                        len(bio_network.mapped_metabolites)
                                        )
                                )
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
                                .format(len(bio_network.mapped_genes),
-                                       len(gene_list))
+                                       len(bio_network.genes_of_interest))
                                )
     end_time = datetime.now()
 
@@ -291,10 +292,11 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
 
     json_network = json.dumps(nx.node_link_data(bio_network.network))
     network_df = bio_network.network_df
+    genes_of_interest = bio_network.genes_of_interest
     network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
     return {'display': 'block'}, mapping_msg, json_network, network_df.to_json(), \
-            json.dumps(network_params)
+           json.dumps(network_params), json.dumps(genes_of_interest)
 
 
 @app.callback(

@@ -49,6 +49,7 @@ app.layout = html.Div([
     html.Div(id='node-details-df', style={'display': 'none'}),
     html.Div(id='enrichment-results', style={'display': 'none'}),
     html.Div(id='cyto-network', style={'display': 'none'}),
+    html.Div(id='genes-of-interest', style={'display': 'none'}),
     html.Div(id='hidden-div', style={'display': 'none'})
 ])
 
@@ -62,7 +63,7 @@ def enable_explore_tab(bio_network):
     return True if bio_network is None else False
 
 
-def load_network(network_params, bio_network, network_df):
+def load_network(network_params, bio_network, genes_of_interest):
     """Loads the Bionetwork for use in the vis module."""
     network = json_graph.node_link_graph(json.loads(bio_network))
     all_nodes = len(network.nodes())
@@ -85,7 +86,8 @@ def load_network(network_params, bio_network, network_df):
 
     network_params = json.loads(network_params)
     strain = network_params['strain']
-    enrichment_results, goea_results = run_go_enrichment(strain, list(network_df.index))
+    print('{} genes of interest'.format(len(json.loads(genes_of_interest))))
+    enrichment_results, goea_results = run_go_enrichment(strain, json.loads(genes_of_interest))
 
     return json.dumps(cyto_network), enrichment_results.to_json(), json_metric_closure
 
@@ -98,9 +100,10 @@ def load_network(network_params, bio_network, network_df):
     [Input('url', 'pathname')],
     [State('hidden-bionetwork', 'children'),
      State('node-details-df', 'children'),
-     State('network-parameters', 'children')]
+     State('network-parameters', 'children'),
+     State('genes-of-interest', 'children')]
 )
-def display_page(pathname, bio_network, json_df, network_params):
+def display_page(pathname, bio_network, json_df, network_params, genes_of_interest):
     """Navigates to the selected app page. Generates vis layout depending on BioNetwork attributes."""
     if pathname == '/':
         return app_home.layout, no_update, no_update, no_update
@@ -111,7 +114,7 @@ def display_page(pathname, bio_network, json_df, network_params):
             # Load JSON data
             network_df = pd.read_json(json_df)
             json_cyto_network, json_enrichment_results, json_metric_closure = \
-                load_network(network_params, bio_network, network_df)
+                load_network(network_params, bio_network, genes_of_interest)
             # Deserialize JSON
             cyto_network, enrichment_results = json.loads(json_cyto_network), pd.read_json(json_enrichment_results)
             # Generate layout using data
