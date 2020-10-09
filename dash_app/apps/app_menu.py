@@ -26,6 +26,7 @@ layout = dbc.Container(
             [
                 dbc.Col(
                     [
+                        html.Br(),
                         'Select your input data: ',
                         dbc.RadioItems(
                             id='network-type',

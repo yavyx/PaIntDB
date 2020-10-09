@@ -20,6 +20,9 @@ app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dbc.Navbar(
         id='top-bar',
+        color='dark',
+        dark=True,
+        sticky='sticky',
         children=[
             dbc.Nav([
                 dbc.NavbarBrand('PaintDB', href='/'),
@@ -36,9 +39,6 @@ app.layout = html.Div([
                 )
             ])
         ],
-        color='dark',
-        dark=True,
-        sticky='fixed'
     ),
     html.Div(id='page-content'),
 

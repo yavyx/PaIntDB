@@ -11,7 +11,6 @@ from dash_extensions import Download
 from dash_extensions.snippets import send_file, send_data_frame
 import dash_html_components as html
 import dash_table
-import flask
 import networkx as nx
 from networkx.utils import pairwise
 import pandas as pd
@@ -160,10 +159,11 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             sidebar_filters.extend([source_filter])
 
     # Add color mapping functionality for DE/Combined networks
-    if network_params['type'] == 'gene_list':
-        color_mapping = None
-        stylesheet = stylesheets.default
-    elif network_params['type'] == 'rna_seq':
+    color_mapping = None
+    stylesheet = stylesheets.default
+    # if network_params['type'] == 'gene_list':
+    #    stylesheet = stylesheets.default
+    if network_params['type'] == 'rna_seq':
         color_mapping = [
             html.H5('Color Mapping'),
             html.Div(style={'padding': '10px'},
@@ -191,18 +191,18 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                          width=100)
                      )
         ]
-        stylesheet = stylesheets.fold_change
     # Layout begins here
     return html.Div(
         [
             html.Div(
                 style={
-                    'width': '23vw',
-                    'backgroundColor': '#7FDBFF',
+                    'width': '28vw',
+                    'backgroundColor': '#7FDBFF',  # light blue
                     'padding': '10px',
                     'display': 'inline-block',
                     'height': '95vh',
-                    'vertical-align': 'top'
+                    'vertical-align': 'top',
+                    'overflow': 'auto'
                 },
                 children=[
                     html.Div(id='color-map-div',
@@ -227,6 +227,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 ]
                             ),
                             dbc.DropdownMenu(
+                                style={'padding-top': '5px'},
                                 label='Download',
                                 direction='right',
                                 children=[
@@ -242,7 +243,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                             Download(id='csv-download'),
                             # Hidden Div to store node details table download file
                             html.Div(id='filtered-node-details', style={'display': 'none'}),
-                            html.Div(id='hidden-subnetwork', style={'display':'none'})
+                            html.Div(id='hidden-subnetwork', style={'display': 'none'})
                         ]
                     )
                 ],
@@ -250,7 +251,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '74vw'
+                    'width': '70vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -284,7 +285,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                         html.H5('Selected Node Details'),
                                         html.Div(id='node-details-table')
                                     ],
-                                    style={'height': '30vh'}
+                                    style={'height': '35vh'}
                                 )
                             )
                         )
@@ -369,7 +370,6 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
     if regulation:
         query.append('regulation in @regulation')
     query_str = ' & '.join(query)
-    print(query_str)
 
     # Use query to select nodes
     if query_str:
@@ -379,15 +379,15 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         queried_nodes = nodes
         selected_msg = ''
 
-    i = 0  # Selected nodes counter
+    n_selected = 0  # Selected nodes counter
     for node in nodes:
         if node['data']['id'] in queried_nodes:
             node['selected'] = True
-            i += 1
+            n_selected += 1
         else:
             node['selected'] = False
 
-    selected_msg = 'Selected {} out of {} nodes'.format(i, len(nodes))
+    selected_msg = 'Selected {} out of {} nodes'.format(n_selected, len(nodes))
 
     if subnetwork_clicks:
         cyto_sub_network, json_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
@@ -454,7 +454,7 @@ def show_node_details(node_data, node_details, network_params):
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
             fixed_rows={'headers': True, 'data': 0},
             style_table={
-                'maxHeight': '25vh',
+                'maxHeight': '30vh',
                 'overflowY': 'auto'
             },
             style_data={'whiteSpace': 'normal',
