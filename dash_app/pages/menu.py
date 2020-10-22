@@ -159,7 +159,7 @@ layout = dbc.Container(
         html.Div(
             [
                 dbc.Button('Explore Network', id='explore-btn', href='/vis'),
-                dbc.Button('Download Network', id='download-btn'),
+                dbc.Button('Download Network', id='download-btn', style={'margin-left': '1vh'}),
                 Download(id='graphml-download1')
             ],
             id='network-buttons',
@@ -170,15 +170,21 @@ layout = dbc.Container(
 )
 
 
-def parse_gene_list(contents, filename):
+def parse_gene_list(contents, network_type):
     """Parses the uploaded gene list, returns a Bootstrap table and a Pandas DataFrame."""
     # TODO: Add checks for table headers
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+    cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
+    genes_df.loc[:, cols] = genes_df[cols].round(2)
+    if network_type == 'DE' or network_type == 'combined':
+        # Check RNASeq headers are there
+        if not {'log2FoldChange', 'padj'}.issubset(genes_df.columns):
+            return dbc.Alert('Check your header names. They should include "log2FoldChange" and "padj"',
+                             color='danger'), []
+
     small_df = genes_df.head()  # smaller df to display on app
-    cols = [col for col in small_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
-    small_df.loc[:, cols] = small_df[cols].round(2)
     table = dash_table.DataTable(
         data=small_df.to_dict('records'),
         columns=[{"name": i, "id": i} for i in small_df.columns],
@@ -190,7 +196,6 @@ def parse_gene_list(contents, filename):
     upload_contents = html.Div(
         [
             dbc.Alert('Your list was uploaded successfully!', color='primary'),
-            html.P(filename),
             table
         ]
     )
@@ -212,26 +217,45 @@ def parse_tnseq_list(contents, filename):
     Output('tnseq-gene-list-upload', 'style'),
     [Input('network-type', 'value')]
 )
-def show_tnseq_upload(network_type):
+def show_tnseq_upload_btn(network_type):
     """Show TnSeq upload button when combined networks are selected."""
-    display = {'display': 'block'} if network_type == 'combined' else {'display': 'none'}
-    return display
+    return {'display': 'block'} if network_type == 'combined' else {'display': 'none'}
+
+
+@app.callback(
+    Output('make-network-btn', 'style'),
+    [Input('gene-list-upload', 'contents'),
+     Input('tnseq-gene-list-upload', 'contents'),
+     Input('network-type', 'value')]
+)
+def show_make_network_btn(contents, tnseq_contents, network_type):
+    """Shows make network button upload after upload is read."""
+    if network_type == 'combined':
+        if contents and tnseq_contents:
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+    elif network_type == 'basic' or network_type == 'DE':
+        if contents:
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
 
 
 @app.callback(
     Output('data-upload-output', 'children'),
     [Input('gene-list-upload', 'contents')],
-    [State('gene-list-upload', 'filename')]
+    [State('network-type', 'value')]
 )
-def upload_message(contents, filename):
+def upload_message(contents, network_type):
     """Returns a successful message after file was uploaded."""
     if contents:
         try:
-            small_table, genes_df = parse_gene_list(contents, filename)
+            small_table, genes_df = parse_gene_list(contents, network_type)
             return small_table
         except ValueError:
             return dbc.Alert('There was a problem uploading your file. Check that it is the correct format.',
-                             color='warning')
+                             color='danger')
 
 
 @app.callback(
@@ -265,15 +289,15 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
     gene_list = genes_df.gene.tolist()
     if network_type == 'basic':
         bio_network = BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                    metabolites=metabolites)
+                                 metabolites=metabolites)
     elif network_type == 'DE':
         bio_network = DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                   metabolites=metabolites, de_genes_df=genes_df)
+                                metabolites=metabolites, de_genes_df=genes_df)
     elif network_type == 'combined':
         upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
         bio_network = CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
-                                         detection_method=detection_method, metabolites=metabolites,
-                                         de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
+                                      detection_method=detection_method, metabolites=metabolites,
+                                      de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
     else:
         bio_network = None
 
@@ -300,8 +324,8 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
     genes_of_interest = bio_network.genes_of_interest
     network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
-    return {'display': 'block'}, mapping_msg, json_network, network_df.to_json(), \
-           json.dumps(network_params), json.dumps(genes_of_interest)
+    return {'display': 'block'}, mapping_msg, json_network, network_df.to_json(), json.dumps(network_params), \
+           json.dumps(genes_of_interest)
 
 
 @app.callback(

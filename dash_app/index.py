@@ -9,7 +9,7 @@ from networkx.readwrite import json_graph
 import pandas as pd
 
 from dash_app.app import app  # Loads app variable from app script
-from dash_app.apps import app_home, app_menu, app_vis
+from dash_app.pages import home, menu, vis
 from go_enrichment.go_enrichment import run_go_enrichment
 
 
@@ -46,7 +46,6 @@ app.layout = html.Div([
     html.Div(id='enrichment-results', style={'display': 'none'}),
     html.Div(id='cyto-network', style={'display': 'none'}),
     html.Div(id='genes-of-interest', style={'display': 'none'}),
-    html.Div(id='hidden-div', style={'display': 'none'})
 ])
 
 
@@ -65,7 +64,7 @@ def load_network(network_params, bio_network, genes_of_interest):
 
     cyto_network = dict()
     cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'], network = \
-        app_vis.make_cyto_elements(network, 5, 1000)
+        vis.make_cyto_elements(network, 5, 1000)
 
     network_params = json.loads(network_params)
     strain = network_params['strain']
@@ -90,9 +89,9 @@ def load_network(network_params, bio_network, genes_of_interest):
 def display_page(pathname, bio_network, json_df, network_params, genes_of_interest):
     """Navigates to the selected app page. Generates vis layout depending on BioNetwork attributes."""
     if pathname == '/':
-        return app_home.layout, no_update, no_update
+        return home.layout, no_update, no_update
     elif pathname == '/menu':
-        return app_menu.layout, no_update, no_update
+        return menu.layout, no_update, no_update
     elif pathname == '/vis':
         if bio_network:
             # Load JSON data
@@ -100,8 +99,8 @@ def display_page(pathname, bio_network, json_df, network_params, genes_of_intere
             json_cyto_network, json_enrichment_results = load_network(network_params, bio_network, genes_of_interest)
             # Deserialize JSON
             cyto_network, enrichment_results = json.loads(json_cyto_network), pd.read_json(json_enrichment_results)
-            # Generate layout using data
-            vis_layout = app_vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
+            # Generate layout using generated data
+            vis_layout = vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
             return vis_layout, json_cyto_network, json_enrichment_results
         else:
             return html.Div('You need to create a network first.'), no_update, no_update
