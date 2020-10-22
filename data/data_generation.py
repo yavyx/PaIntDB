@@ -17,6 +17,38 @@ def make_metabolite_mapping():
         gene_metabolite_map = defaultdict(list)  # Creates a dictionary with empty lists as default values.
 
 
+def make_interactome(strain):
+    """Generates interactomes to use with OmicsIntegrator."""
+    with sqlite3.connect(DB_PATH) as db_connection:
+        cursor = db_connection.cursor()
+        # Get PAO1 interactions
+        cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
+                                  FROM interaction_participants
+                                  INNER JOIN interaction_sources
+                                  USING (interaction_id)
+                                  INNER JOIN interaction_source
+                                  ON interaction_sources.data_source = interaction_source.id
+                                  INNER JOIN interaction
+                                  ON interaction_id = interaction.id
+                                  WHERE strain = ?
+                                  AND type = 'p-p'""", [strain])
+        interactors = cursor.fetchall()
+        interactome = dict()
+        # Create a dictionary edge list from the list of interactions (two rows per interaction)
+        for i in range(0, len(interactors), 2):
+            interactome[interactors[i][1]] = (interactors[i][0],  # 1st interactor
+                                              interactors[i+1][0],  # 2nd interactor
+                                              interactors[i][3])  # Confidence
+        # Create data frame from dictionary
+        interactome_df = pd.DataFrame.from_dict(interactome, orient='index',
+                                                columns=['protein1', 'protein2', 'confidence'])
+        # Convert confidence values into edge costs
+        interactome_df['cost'] = 1.5 - interactome_df['confidence'] / 2
+        del interactome_df['confidence']
+        interactome_df.to_csv(os.path.join('data', '{}_interactome.tsv'.format(strain)), sep='\t')
+    return interactome_df
+
+
 def make_go_association_dict(path):
     """Creates and pickles a nested GO association dictionary that maps genes to GO terms which is used by GOAtools
     for GO enrichment, using the Ontology file in data directory."""
@@ -47,3 +79,6 @@ def make_go_association_dict(path):
         pickle.dump(go_dict, f, pickle.HIGHEST_PROTOCOL)
 
     return go_dict
+
+
+

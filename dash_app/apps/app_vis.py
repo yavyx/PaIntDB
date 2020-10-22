@@ -1,9 +1,9 @@
 from math import sqrt
-from itertools import chain
 import json
 import os
 
 from dash.dependencies import Output, Input, State, ALL
+from dash.dash import no_update
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
@@ -12,7 +12,7 @@ from dash_extensions.snippets import send_file, send_data_frame
 import dash_html_components as html
 import dash_table
 import networkx as nx
-from networkx.utils import pairwise
+from OmicsIntegrator import Graph
 import pandas as pd
 
 from dash_app import app
@@ -27,10 +27,7 @@ pd.set_option('display.max_columns', None)
 def make_cyto_elements(network, k, scale):
     """Takes a network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
     classes according to the attributes and the layout coordinates."""
-
-    # Get nodes of the largest component and generate sub-network
-    main_component_nodes = max(nx.connected_components(network), key=len)
-    network = network.subgraph(main_component_nodes)
+    # Get node degrees
     nx.set_node_attributes(network, dict(network.degree()), 'degree')
 
     # Convert nx network to cytoscape JSON
@@ -196,7 +193,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         [
             html.Div(
                 style={
-                    'width': '28vw',
+                    'width': '25vw',
                     'backgroundColor': '#7FDBFF',  # light blue
                     'padding': '10px',
                     'display': 'inline-block',
@@ -251,7 +248,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '70vw'
+                    'width': '72vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -323,11 +320,10 @@ def change_color_map(value):
      State('enrichment-results', 'children'),
      State('network-parameters', 'children'),
      State('cyto-network', 'children'),
-     State('hidden-bionetwork', 'children'),
-     State('metric-closure', 'children')]
+     State('hidden-bionetwork', 'children')]
 )
 def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_results,
-                 network_params, cyto_network, bio_network, metric_closure):
+                 network_params, cyto_network, bio_network):
     """Select nodes according to user selected filters. Creates subnetwork with selected nodes."""
     cyto_network = json.loads(cyto_network)
     enrichment_results = pd.read_json(enrichment_results)
@@ -348,7 +344,7 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         if network_params['type'] == 'combined':
             significance_source = values[4]
         else:
-            significance_source = None
+            significance_source = []
     else:
         regulation, significance_source = [], []
 
@@ -389,8 +385,14 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
 
     selected_msg = 'Selected {} out of {} nodes'.format(n_selected, len(nodes))
 
+    # Generate subnetwork when button is clicked.
     if subnetwork_clicks:
-        cyto_sub_network, json_sub_network = make_subnetwork(node_data, metric_closure, bio_network)
+        cyto_sub_network, json_sub_network = make_subnetwork(node_data, network_df, bio_network, strain)
+        # Throws warning if subnetwork solution is empty.
+        if json_sub_network is None:
+            selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
+                                     color='danger')
+            return no_update, no_update, selected_msg, True, False
         # Return subnetwork
         return cyto_sub_network, json_sub_network, '', True, False
     # Return full network
@@ -400,22 +402,43 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
 @app.callback(
     Output('make-subnetwork', 'n_clicks'),
     [Input('reset-network', 'n_clicks')])
-def reset(n_clicks):
-    """Reset subnetwork clicks to cycle through full network/subnetworks."""
+def reset_subnetwork_clicks(n_clicks):
+    """Reset subnetwork clicks to cycle through full network/subnetwork view."""
     return 0
 
 
-def make_subnetwork(node_data, json_metric_closure, json_str_network):
-    metric_closure = nx.node_link_graph(json.loads(json_metric_closure))
+def make_subnetwork(node_data, network_df, json_str_network, strain):
+    """Returns a subnetwork using the PCSF algorithm, using the user-selected nodes as terminals."""
+
+    def make_prize_file(network_df, node_data):
+        """Generates .tsv file with node prizes for use with OmicsIntegrator."""
+        # User-selected nodes are terminals
+        terminals = [node['id'] for node in node_data]
+        print(terminals)
+        terminal_prizes = network_df.loc[network_df.index.isin(terminals), ['log2FoldChange']]
+        # The bigger the fold change, the bigger the prize
+        terminal_prizes.log2FoldChange = abs(terminal_prizes.log2FoldChange)
+        # Set TnSeq prizes to the max log2FoldChange
+        terminal_prizes.loc[terminal_prizes['log2FoldChange'].isna(), :] = max(network_df['log2FoldChange'])
+        terminal_prizes = terminal_prizes.rename(columns={'log2FoldChange': 'prize'})
+        terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
+
     network = nx.node_link_graph(json.loads(json_str_network))
-    node_ids = [node['id'] for node in node_data]  # Get selected nodes in main network
-    H = metric_closure.subgraph(node_ids)
-    mst_edges = nx.minimum_spanning_edges(H, weight='distance', data=True)
-    edges = chain.from_iterable(pairwise(d['path']) for u, v, d in mst_edges)
-    sub_network = network.edge_subgraph(edges)
-    print(sub_network)
-    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 2, 300)
-    json_sub_network = json.dumps(nx.node_link_data(sub_network))
+    print(len(network.nodes()))
+    # Make Graph object for prize-collecting Steiner forest (PCSF)
+    graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
+                  {'b': 1.5})  # b > 1 results in more terminal nodes in solution
+    make_prize_file(network_df, node_data)
+    graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
+    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))
+    vertex_indices, edge_indices = graph.pcsf()
+    forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
+    #
+    if len(forest.nodes) == 0:
+        return None, None
+    sub_network = network.edge_subgraph(augmented_forest.edges())
+    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 5, 500)
+    json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
     return cyto_sub_network, json_sub_network
 
 
@@ -430,13 +453,12 @@ def show_node_details(node_data, node_details, network_params):
     """Filters the network DataFrame with the user-selected nodes and returns a DataTable."""
     if node_data:
         # Columns to display
-        print('miguebo')
         cols = ['shortName', 'description']
         network_params = json.loads(network_params)
         if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
             cols.extend(['log2FoldChange', 'padj'])
+        # Get selected nodes
         node_ids = [node['label'] for node in node_data]
-        print(node_ids)
         network_df = pd.read_json(node_details)
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
@@ -454,7 +476,7 @@ def show_node_details(node_data, node_details, network_params):
             columns=[{"name": i, "id": i} for i in filtered_df.columns],
             fixed_rows={'headers': True, 'data': 0},
             style_table={
-                'maxHeight': '30vh',
+                'maxHeight': '25vh',
                 'overflowY': 'auto'
             },
             style_data={'whiteSpace': 'normal',
@@ -495,7 +517,7 @@ def download_csv(n_clicks, json_df):
     Input('download-network', 'n_clicks'),
     State('hidden-subnetwork', 'children')
 )
-def download_graphml_2(n_clicks, json_str_sub_network):
+def download_sub_graphml(n_clicks, json_str_sub_network):
     if n_clicks:
         downloads_dir = os.path.join(os.getcwd(), 'downloads')
         if not os.path.exists(downloads_dir):
@@ -507,12 +529,12 @@ def download_graphml_2(n_clicks, json_str_sub_network):
         return send_file(abs_filename)
 
 
-@app.callback(
-    Output('hidden-div', 'children'),
-    [Input('main-view', 'selectedNodeData')],
-)
-def print_nodes(node_data):
-    if node_data:
-        print('miguebo  ', [node['id'] for node in node_data])
-    return None
+# @app.callback(
+#     Output('hidden-div', 'children'),
+#     [Input('main-view', 'selectedNodeData')],
+# )
+# def print_nodes(node_data):
+#     if node_data:
+#         print('miguebo  ', [node['id'] for node in node_data])
+#     return None
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import csv
 import os
-import pickle
+import pickle5 as pickle
 
 from goatools.base import download_go_basic_obo
 from goatools.obo_parser import GODag
@@ -24,24 +24,6 @@ def get_enrichment_results(enrichment_results):
     enrichment_results_df = pd.DataFrame.from_records(enrichment_results, columns=fields)
     # enrichment_results_df.study_items = enrichment_results_df.study_items.str.split(", ")
     return enrichment_results_df
-
-
-def go_enrichment_stats(go_results, tigs=None, pigs=None):
-    """Returns dataFrame with ratios of genes assigned to significant GO terms. """
-    results = go_results
-    if tigs:
-        n_tigs = [len(set(tigs) & set(results.study_items[row])) for row in range(len(results))]
-        results['n_tigs'] = n_tigs
-        tigs_ratio = [n_tigs[row] / len(results.study_items[row])
-                      for row in range(len(results))]
-        results['tigs_ratio'] = tigs_ratio
-    if pigs:
-        n_pigs = [len(set(pigs) & set(results.study_items[row])) for row in range(len(results))]
-        results['n_pigs'] = n_pigs
-        pigs_ratio = [n_pigs[row] / len(results.study_items[row])
-                      for row in range(len(results))]
-        results['pigs_ratio'] = pigs_ratio
-    return results
 
 
 def map_pa14_genes(gene_list):

@@ -16,7 +16,7 @@ import networkx as nx
 import pandas as pd
 
 
-import bio_networks.network_generator as ng
+from bio_networks.network_generator import BioNetwork, DENetwork, CombinedNetwork
 from dash_app.app import app  # Loads app variable from app script
 
 
@@ -56,7 +56,10 @@ layout = dbc.Container(
                     width=4
                 ),
                 dbc.Col(
-                    html.Div(id='data-upload-output', style={'height': '30vh'}),
+                    [
+                        html.Br(),
+                        html.Div(id='data-upload-output', style={'height': '30vh'})
+                    ],
                     width=5
                 ),
             ]
@@ -186,7 +189,7 @@ def parse_gene_list(contents, filename):
 
     upload_contents = html.Div(
         [
-            html.P('Your list was uploaded successfully!'),
+            dbc.Alert('Your list was uploaded successfully!', color='primary'),
             html.P(filename),
             table
         ]
@@ -227,7 +230,8 @@ def upload_message(contents, filename):
             small_table, genes_df = parse_gene_list(contents, filename)
             return small_table
         except ValueError:
-            return html.Div('There was a problem uploading your file. Check that it is the correct format.')
+            return dbc.Alert('There was a problem uploading your file. Check that it is the correct format.',
+                             color='warning')
 
 
 @app.callback(
@@ -260,14 +264,14 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = genes_df.gene.tolist()
     if network_type == 'basic':
-        bio_network = ng.BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
+        bio_network = BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
                                     metabolites=metabolites)
     elif network_type == 'DE':
-        bio_network = ng.DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
+        bio_network = DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
                                    metabolites=metabolites, de_genes_df=genes_df)
     elif network_type == 'combined':
         upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
-        bio_network = ng.CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
+        bio_network = CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
                                          detection_method=detection_method, metabolites=metabolites,
                                          de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
     else:

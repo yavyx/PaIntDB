@@ -8,21 +8,21 @@
 - Come up with first-order interaction algorithms. Need to think more about this algorithm. Maybe
 - Double lists when extracting study items.
 - Change gene_list to genes_df for all networks
-- Fix mapped genes in combined networks
 
 ### Dash GUI
 - How to handle exceptions:
     - CSV input:
         - Check no extra columns
         - Check file format
+- Error messages when 0 genes are mapped.
 
 ## Vis module
 - Padj decimal issues
 - Change node selection to node ids, not node labels
 - Fix PA14 GO term enrichment
-- Fix combined networks gene count
-- Check TnSeq genes in combined networks
-- Error messages when 0 genes are mapped.
+- Fix subnetworks in flat lists
+- Fix down regulated genes in first-order networks
+
 
 ## GO enrichment
 - Change directory for PA14/PAO1 mapping in enrichment script.
@@ -30,6 +30,7 @@
 - Clean it up, lots of unused code.
 - Save mapped dictionary to JSON file.
 - Use os module for paths
+
 
 ### DONE!
 - Make DB path a constant.
@@ -41,6 +42,9 @@
 - Metabolites are not added in computational networks. Not a bug! (There are no computational p-m interactions)
 - Download button not working properly.
 - IMPORTANT: Inherited classes (DE network and combined network calling init more than once)
+- Fix combined networks gene count
+- Check TnSeq genes in combined networks
+- Only keep enriched terms, not purified
 
 ### Separate
 Assigning all parent GO terms for Pseudomonas genes (to make subnetworks)

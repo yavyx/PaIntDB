@@ -4,7 +4,7 @@ import sqlite3
 
 import networkx as nx
 import pandas as pd
-from to_precision import sci_notation
+# from to_precision import sci_notation
 
 import bio_networks.helpers as h
 
@@ -12,7 +12,8 @@ DB_PATH = 'PaIntDB.db'
 
 
 class BioNetwork:
-    """Creates NetworkX networks with additional biological attributes for use with PaintDB."""
+    """Creates NetworkX networks with additional biological attributes for use with PaintDB.
+    Detection method key: """
 
     def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
         self.strain = strain
@@ -183,14 +184,15 @@ class BioNetwork:
         start = datetime.now()
         # Create a dictionary edge list from the list of interactions (two rows per interaction)
         for i in range(0, len(interaction_participants), 2):
-            interaction_edges[interaction_participants[i][1]] = (interaction_participants[i][0],
-                                                                 interaction_participants[i+1][0],
-                                                                 interaction_participants[i][2])
+            interaction_edges[interaction_participants[i][1]] = (interaction_participants[i][0],  # 1st interactor
+                                                                 interaction_participants[i+1][0],  # 2nd interactor
+                                                                 interaction_participants[i][2])  # interaction type
         print(datetime.now() - start)
 
         if self.order == 0:
             print('Getting interactions of interest')
             start = datetime.now()
+            # Get interaction id's if both interactors are in input
             interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                         if interactors[0] in self.genes_of_interest
                                         and interactors[1] in self.genes_of_interest]
