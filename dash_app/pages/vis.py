@@ -25,7 +25,7 @@ pd.set_option('display.max_columns', None)
 
 
 def make_cyto_elements(network, k, scale):
-    """Takes a network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
+    """Takes a networkx network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
     classes according to the attributes and the layout coordinates."""
     # Get node degrees
     nx.set_node_attributes(network, dict(network.degree()), 'degree')
@@ -45,7 +45,7 @@ def make_cyto_elements(network, k, scale):
     edges = json_elements['edges']
     elements = nodes + edges
 
-    return elements, nodes, edges, network
+    return elements, nodes, edges
 
 
 def make_vis_layout(network_df, enrichment_results, cyto_network, network_params):
@@ -433,11 +433,11 @@ def make_subnetwork(node_data, network_df, json_str_network, strain):
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
-    #
+    # If solution is empty, warning is shown
     if len(forest.nodes) == 0:
         return None, None
     sub_network = network.edge_subgraph(augmented_forest.edges())
-    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges, subnetwork = make_cyto_elements(sub_network, 5, 500)
+    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network, 5, 500)
     json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
     return cyto_sub_network, json_sub_network
 

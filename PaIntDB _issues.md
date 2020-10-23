@@ -10,10 +10,6 @@
 - Change gene_list to genes_df for all networks
 
 ### Dash GUI
-- How to handle exceptions:
-    - CSV input:
-        - Check no extra columns
-        - Check file format
 - Error messages when 0 genes are mapped.
 
 ## Vis module
@@ -22,14 +18,14 @@
 - Fix PA14 GO term enrichment
 - Fix subnetworks in flat lists
 - Fix down regulated genes in first-order networks
+- Fix subnetworks in basic networks.
 
 
 ## GO enrichment
 - Change directory for PA14/PAO1 mapping in enrichment script.
 - Create GO term sets for PA14 instead of mapping
 - Clean it up, lots of unused code.
-- Save mapped dictionary to JSON file.
-- Use os module for paths
+
 
 
 ### DONE!
@@ -45,6 +41,12 @@
 - Fix combined networks gene count
 - Check TnSeq genes in combined networks
 - Only keep enriched terms, not purified
+- How to handle exceptions:
+    - CSV input:
+        - Check no extra columns
+        - Check file format
+- Save mapped dictionary to JSON file.
+- Use os module for paths
 
 ### Separate
 Assigning all parent GO terms for Pseudomonas genes (to make subnetworks)

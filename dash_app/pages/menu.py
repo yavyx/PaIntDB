@@ -17,6 +17,7 @@ import pandas as pd
 
 
 from bio_networks.network_generator import BioNetwork, DENetwork, CombinedNetwork
+from go_enrichment.go_enrichment import run_go_enrichment
 from dash_app.app import app  # Loads app variable from app script
 
 
@@ -42,13 +43,15 @@ layout = dbc.Container(
                             id='gene-list-upload',
                             children=dbc.Button(
                                 id='upload-button',
-                                children='Upload Gene List')),
+                                children='1. Upload Gene List',
+                                color='primary')),
                         html.Div([
                             dcc.Upload(
                                 id='tnseq-gene-list-upload',
                                 children=dbc.Button(
                                     id='tnseq_upload-button',
-                                    children='Upload TnSeq Gene List'))
+                                    children='Upload TnSeq Gene List',
+                                    color='primary'))
                         ], style={'marginTop': '1vh'}
                         )
 
@@ -88,11 +91,11 @@ layout = dbc.Container(
                         html.Div(
                             ['Select the network order: ',
                              html.Abbr("?",
-                                       title=('Zero-order: Maps direct interactions between your queried genes.\n'
-                                              'Recommended for long lists (>200 genes).\n\n'
-                                              'First-order: Uses your queried genes as "seed" genes and finds any\n'
-                                              'interaction between them and the other genes in the database.\n'
-                                              'Recommended for short lists (<200 genes).')
+                                       title=("""Zero-order: Maps direct interactions between your queried genes.\n
+                                              Recommended for long lists (>200 genes).\n\n
+                                              First-order: Uses your queried genes as "seed" genes and finds any\n
+                                              interaction between them and the other genes in the database.\n
+                                              Recommended for short lists (<200 genes).""")
                                        ),
                              dbc.RadioItems(
                                  id='order',
@@ -112,10 +115,10 @@ layout = dbc.Container(
                             [
                                 'Select the interaction detection method: ',
                                 html.Abbr("?",
-                                          title=('Choose which interactions you want to use to generate the '
-                                                 'network.\n\nAll includes interactions predicted computationally.\n\n'
-                                                 'Experimentally-verified interactions have the highest confidence,\n '
-                                                 'but result in smaller networks.\n\n ')
+                                          title=("""Choose which interactions you want to use to generate the 
+                                                 network.\n\n"All" includes interactions predicted computationally.\n\n
+                                                 Experimentally-verified interactions have the highest confidence,\n 
+                                                 but result in smaller networks.\n\n """)
                                           ),
                                 dbc.RadioItems(
                                     id='detection-method',
@@ -135,22 +138,21 @@ layout = dbc.Container(
             dbc.Col(
                 html.Div(
                     [
-                        html.Br(),
+                        # html.Br(),
                         dbc.Checklist(
                             id='metabolites',
                             options=[
                                 {'label': 'Include metabolites', 'value': 1}
-                            ]
+                            ],
+                            style={'display': 'none'}  # Removed for now
                         )
                     ]
                 )
             )
         ),
         html.Br(),
-        dbc.Button('Make Network', id='make-network-btn'),
+        dbc.Button('2. Make Network', id='make-network-btn', color='primary'),
         html.Br(),
-        html.Br(),
-        html.Div(id='make-network-message'),
         dcc.Loading(id='loading',
                     children=html.Div(id='make-network-message'),
                     type='dot'),
@@ -158,13 +160,19 @@ layout = dbc.Container(
         html.Br(),
         html.Div(
             [
-                dbc.Button('Explore Network', id='explore-btn', href='/vis'),
-                dbc.Button('Download Network', id='download-btn', style={'margin-left': '1vh'}),
+                dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary'),
+                dbc.Button('Download', id='download-btn', color='link', style={'margin-left': '1vh'}),
                 Download(id='graphml-download1')
             ],
             id='network-buttons',
             style={'display': 'none'}
         ),
+        html.Br(),
+        dbc.Button('4. Explore Network', id='explore-btn', href='/vis', color='primary', block=False,
+                   style={'display': 'none'}),
+        dcc.Loading(id='loading',
+                    children=html.Div(id='enrichment-loading'),
+                    type='dot')
     ],
     fluid=True
 )
@@ -176,13 +184,13 @@ def parse_gene_list(contents, network_type):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except pvalues
+    cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
     genes_df.loc[:, cols] = genes_df[cols].round(2)
     if network_type == 'DE' or network_type == 'combined':
         # Check RNASeq headers are there
         if not {'log2FoldChange', 'padj'}.issubset(genes_df.columns):
             return dbc.Alert('Check your header names. They should include "log2FoldChange" and "padj"',
-                             color='danger'), []
+                             color='danger', style={'display': 'inline-block'}), []
 
     small_df = genes_df.head()  # smaller df to display on app
     table = dash_table.DataTable(
@@ -195,7 +203,8 @@ def parse_gene_list(contents, network_type):
 
     upload_contents = html.Div(
         [
-            dbc.Alert('Your list was uploaded successfully!', color='primary'),
+            dbc.Alert('Your list was uploaded successfully!', color='primary', dismissable=True,
+                      style={'display': 'inline-block'}),
             table
         ]
     )
@@ -255,7 +264,7 @@ def upload_message(contents, network_type):
             return small_table
         except ValueError:
             return dbc.Alert('There was a problem uploading your file. Check that it is the correct format.',
-                             color='danger')
+                             color='danger', style={'display': 'inline-block'})
 
 
 @app.callback(
@@ -347,4 +356,34 @@ def download_graphml(n_clicks, filename, json_str_network):
         network = nx.node_link_graph(json.loads(json_str_network))
         nx.write_graphml(network, path=abs_filename)
         return send_file(abs_filename)
+
+
+@app.callback(
+    [Output('enrichment-results', 'children'),
+     Output('enrichment-loading', 'children')],
+    [Input('run-enrichment', 'n_clicks')],
+    [State('network-parameters', 'children'),
+     State('genes-of-interest', 'children')]
+)
+def run_enrichment(n_clicks, network_params, genes_of_interest):
+    if n_clicks is None:
+        raise PreventUpdate
+    network_params = json.loads(network_params)
+    strain = network_params['strain']
+    print('{} genes of interest'.format(len(json.loads(genes_of_interest))))
+    enrichment_results, goea_results = run_go_enrichment(strain, json.loads(genes_of_interest))
+    # Keep only overrepresented terms (remove underrepresented)
+    enrichment_results = enrichment_results.loc[enrichment_results['enrichment'] == 'e', :]
+    return enrichment_results.to_json(), ""
+
+
+@app.callback(
+    Output('explore-btn', 'style'),
+    [Input('enrichment-results', 'children')]
+)
+def show_explore_network_btn(enrichment_results):
+    """Shows explore network button after enrichment is done."""
+    if enrichment_results:
+        return {'display': 'inline-block'}
+
 

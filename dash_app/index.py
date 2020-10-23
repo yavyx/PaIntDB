@@ -10,8 +10,6 @@ import pandas as pd
 
 from dash_app.app import app  # Loads app variable from app script
 from dash_app.pages import home, menu, vis
-from go_enrichment.go_enrichment import run_go_enrichment
-
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -39,7 +37,7 @@ app.layout = html.Div([
     ),
     html.Div(id='page-content'),
 
-    # Hidden divs to store and share data across callbacks and pages
+    # Hidden divs to store and share JSON data across callbacks and pages
     html.Div(id='hidden-bionetwork', style={'display': 'none'}),
     html.Div(id='network-parameters', style={'display': 'none'}),
     html.Div(id='node-details-df', style={'display': 'none'}),
@@ -58,52 +56,44 @@ def enable_explore_tab(bio_network):
     return True if bio_network is None else False
 
 
-def load_network(network_params, bio_network, genes_of_interest):
+def load_network(bio_network):
     """Loads the Bionetwork for use in the vis module."""
     network = json_graph.node_link_graph(json.loads(bio_network))
-
     cyto_network = dict()
-    cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'], network = \
-        vis.make_cyto_elements(network, 5, 1000)
+    cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network, 5, 1000)
 
-    network_params = json.loads(network_params)
-    strain = network_params['strain']
-    print('{} genes of interest'.format(len(json.loads(genes_of_interest))))
-    enrichment_results, goea_results = run_go_enrichment(strain, json.loads(genes_of_interest))
-    # Keep only overrepresented terms (remove underrepresented)
-    enrichment_results = enrichment_results.loc[enrichment_results['enrichment'] == 'e', :]
-
-    return json.dumps(cyto_network), enrichment_results.to_json()
+    return json.dumps(cyto_network)
 
 
 @app.callback(
     [Output('page-content', 'children'),
-     Output('cyto-network', 'children'),
-     Output('enrichment-results', 'children')],
+     Output('cyto-network', 'children')],
     [Input('url', 'pathname')],
     [State('hidden-bionetwork', 'children'),
      State('node-details-df', 'children'),
-     State('network-parameters', 'children'),
-     State('genes-of-interest', 'children')]
+     State('enrichment-results', 'children'),
+     State('network-parameters', 'children')]
 )
-def display_page(pathname, bio_network, json_df, network_params, genes_of_interest):
-    """Navigates to the selected app page. Generates vis layout depending on BioNetwork attributes."""
+def display_page(pathname, bio_network, json_df, json_enrichment_results, network_params):
+    """Navigates to the selected app page. Generates vis layout depending on BioNetwork type."""
     if pathname == '/':
-        return home.layout, no_update, no_update
+        return home.layout, no_update
     elif pathname == '/menu':
-        return menu.layout, no_update, no_update
+        return menu.layout, no_update
     elif pathname == '/vis':
         if bio_network:
             # Load JSON data
             network_df = pd.read_json(json_df)
-            json_cyto_network, json_enrichment_results = load_network(network_params, bio_network, genes_of_interest)
+            json_cyto_network = load_network(bio_network)
             # Deserialize JSON
             cyto_network, enrichment_results = json.loads(json_cyto_network), pd.read_json(json_enrichment_results)
             # Generate layout using generated data
             vis_layout = vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
-            return vis_layout, json_cyto_network, json_enrichment_results
+            return vis_layout, json_cyto_network
         else:
-            return html.Div('You need to create a network first.'), no_update, no_update
+            return dbc.Alert('You need to build a network first.',
+                             color='warning',
+                             style={'display': 'inline-block'}), no_update
     else:
         return '404'
 

@@ -21,7 +21,7 @@ def make_interactome(strain):
     """Generates interactomes to use with OmicsIntegrator."""
     with sqlite3.connect(DB_PATH) as db_connection:
         cursor = db_connection.cursor()
-        # Get PAO1 interactions
+        # Query database with selected strain
         cursor.execute("""SELECT interactor_id, interaction.id, type, is_experimental
                                   FROM interaction_participants
                                   INNER JOIN interaction_sources
