@@ -383,7 +383,6 @@ def run_enrichment(n_clicks, network_params, genes_of_interest):
 )
 def show_explore_network_btn(enrichment_results):
     """Shows explore network button after enrichment is done."""
-    if enrichment_results:
-        return {'display': 'inline-block'}
+    return {'display': 'inline-block'} if enrichment_results else {'display': 'none'}
 
 

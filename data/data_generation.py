@@ -79,6 +79,3 @@ def make_go_association_dict(path):
         pickle.dump(go_dict, f, pickle.HIGHEST_PROTOCOL)
 
     return go_dict
-
-
-

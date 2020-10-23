@@ -51,6 +51,7 @@ def make_cyto_elements(network, k, scale):
 def make_vis_layout(network_df, enrichment_results, cyto_network, network_params):
     """Generates a custom layout depending on the network type."""
     network_params = json.loads(network_params)
+
     # This filter is only used with RNASeq/Combined networks
     regulation_filter = html.Details(
         id='diff-exp-details',
@@ -70,6 +71,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             )
         ],
     )
+
     # This filter is only used with Combined networks
     source_filter = html.Details(
         id='source-details',
@@ -89,6 +91,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             )
         ],
     )
+
     # These filters are used for all networks
     sidebar_filters = [
         html.H5('Select nodes'),
@@ -149,6 +152,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         ),
         html.Br()
     ]
+
     # Add extra filters for DE/Combined networks
     if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
         sidebar_filters.extend([regulation_filter, html.Br()])
@@ -188,6 +192,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                          width=100)
                      )
         ]
+
     # Layout begins here
     return html.Div(
         [
@@ -207,23 +212,24 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                              ),
                     html.Hr(),
                     html.Div(
-                        id='select-nodes',
-                        children=sidebar_filters
-                    ),
-                    html.Br(),
-                    html.Div(
-                        [
-                            html.P(id='num-selected-nodes'),
-                            dbc.ButtonGroup(
-                                [
-                                    dbc.Button('Make Sub-Network',
-                                               id='make-subnetwork'),
-                                    dbc.Button('Reset Network',
-                                               id='reset-network',
-                                               disabled=True)
-                                ]
+                        id='full-network-panel',
+                        children=[
+                            html.Div(
+                                id='node-filters',
+                                children=sidebar_filters
                             ),
+                            html.Br(),
+                            html.P(id='num-selected-nodes'),
+                            dbc.Button('Make Sub-Network', id='make-subnetwork')
+                        ]
+                    ),
+                    html.Div(
+                        id='subnetwork-btns',
+                        style={'display': 'none'},
+                        children=[
+                            dbc.Button('Return to selection', id='reset-network', ),
                             dbc.DropdownMenu(
+                                id='download-dropdown',
                                 style={'padding-top': '5px'},
                                 label='Download',
                                 direction='right',
@@ -236,13 +242,13 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                                          id='download-network-img')
                                 ]
                             ),
-                            Download(id='graphml-download2'),
-                            Download(id='csv-download'),
-                            # Hidden Div to store node details table download file
-                            html.Div(id='filtered-node-details', style={'display': 'none'}),
-                            html.Div(id='hidden-subnetwork', style={'display': 'none'})
                         ]
-                    )
+                    ),
+                    Download(id='graphml-download2'),
+                    Download(id='csv-download'),
+                    # Hidden Divs to store node details and subnetwork for download
+                    html.Div(id='filtered-node-details', style={'display': 'none'}),
+                    html.Div(id='hidden-subnetwork', style={'display': 'none'})
                 ],
             ),
             html.Div(
@@ -308,11 +314,11 @@ def change_color_map(value):
 
 
 @app.callback(
-    [Output('main-view', 'elements'),
+    [Output('full-network-panel', 'style'),
+     Output('subnetwork-btns', 'style'),
+     Output('main-view', 'elements'),
      Output('hidden-subnetwork', 'children'),
-     Output('num-selected-nodes', 'children'),
-     Output('make-subnetwork', 'disabled'),
-     Output('reset-network', 'disabled')],
+     Output('num-selected-nodes', 'children')],
     [Input({'type': 'filter', 'index': ALL}, 'value'),  # Pattern-matching all callbacks with filter type
      Input('make-subnetwork', 'n_clicks')],
     [State('main-view', 'selectedNodeData'),
@@ -392,11 +398,11 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         if json_sub_network is None:
             selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
                                      color='danger')
-            return no_update, no_update, selected_msg, True, False
+            return {'display': 'none'}, {'display': 'none'}, no_update, no_update, selected_msg
         # Return subnetwork
-        return cyto_sub_network, json_sub_network, '', True, False
+        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, ''
     # Return full network
-    return nodes + edges, None, selected_msg, False, True
+    return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg
 
 
 @app.callback(
