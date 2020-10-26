@@ -46,6 +46,7 @@ pluggy==0.13.1
 py==1.9.0
 pybind11==2.5.0
 pydot==1.4.1
+pygraphviz==1.6
 pyparsing==2.4.7
 pytest==6.1.1
 pytest-cov==2.10.1
