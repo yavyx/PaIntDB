@@ -60,7 +60,7 @@ def load_network(bio_network):
     """Loads the Bionetwork for use in the vis module."""
     network = json_graph.node_link_graph(json.loads(bio_network))
     cyto_network = dict()
-    cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network, 5, 1000)
+    cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network)
 
     return json.dumps(cyto_network)
 

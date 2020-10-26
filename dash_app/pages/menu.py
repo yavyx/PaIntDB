@@ -90,12 +90,12 @@ layout = dbc.Container(
                     [
                         html.Div(
                             ['Select the network order: ',
-                             html.Abbr("?",
-                                       title=("""Zero-order: Maps direct interactions between your queried genes.\n
-                                              Recommended for long lists (>200 genes).\n\n
-                                              First-order: Uses your queried genes as "seed" genes and finds any\n
-                                              interaction between them and the other genes in the database.\n
-                                              Recommended for short lists (<200 genes).""")
+                             html.Abbr('?',
+                                       title=(('Zero-order: Maps direct interactions between your queried genes. '
+                                               '\nRecommended for long lists (>200 genes).'
+                                               '\n\nFirst-order: Uses your queried genes as "seed" genes and finds any '
+                                               'interaction between them and the other genes in the database. '
+                                               '\nRecommended for short lists (<200 genes).'))
                                        ),
                              dbc.RadioItems(
                                  id='order',
@@ -114,11 +114,11 @@ layout = dbc.Container(
                         html.Div(
                             [
                                 'Select the interaction detection method: ',
-                                html.Abbr("?",
-                                          title=("""Choose which interactions you want to use to generate the 
-                                                 network.\n\n"All" includes interactions predicted computationally.\n\n
-                                                 Experimentally-verified interactions have the highest confidence,\n 
-                                                 but result in smaller networks.\n\n """)
+                                html.Abbr('?',
+                                          title=(('Choose which interactions you want to use to generate the network.'
+                                                  '\n\n"All" includes interactions predicted computationally.'
+                                                  '\n\nExperimentally-verified interactions have the highest '
+                                                  'confidence, but result in smaller networks.'))
                                           ),
                                 dbc.RadioItems(
                                     id='detection-method',
@@ -157,7 +157,6 @@ layout = dbc.Container(
                     children=html.Div(id='make-network-message'),
                     type='dot'),
         html.Hr(),
-        html.Br(),
         html.Div(
             [
                 dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary'),

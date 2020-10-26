@@ -7,7 +7,7 @@ default = [
             'min-zoomed-font-size': 10,
             'width': 'mapData(degree, 1, 31, 20, 70)',
             'height': 'mapData(degree, 1, 31, 20, 70)',
-            'content': 'data(label)',
+            #'content': 'data(label)',
         }
     },
     {

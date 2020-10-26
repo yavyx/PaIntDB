@@ -1,6 +1,6 @@
-from math import sqrt
 import json
 import os
+import datetime
 
 from dash.dependencies import Output, Input, State, ALL
 from dash.dash import no_update
@@ -24,7 +24,7 @@ import go_enrichment.go_enrichment as goe
 pd.set_option('display.max_columns', None)
 
 
-def make_cyto_elements(network, k, scale):
+def make_cyto_elements(network):
     """Takes a networkx network and outputs Cytoscape elements that can be visualized with Dash. Also creates selector
     classes according to the attributes and the layout coordinates."""
     # Get node degrees
@@ -34,7 +34,7 @@ def make_cyto_elements(network, k, scale):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    layout = nx.spring_layout(network, k=k / sqrt(len(network)), scale=scale)
+    layout = nx.nx_agraph.graphviz_layout(network)
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
@@ -254,7 +254,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '72vw'
+                    'width': '74vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -267,8 +267,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                         id='main-view',
                                         style={
                                             'width': '100%',
-                                            'height': '60vh',
-                                            # 'position': 'absolute'
+                                            'height': '90vh',
                                         },
                                         stylesheet=stylesheet,
                                         maxZoom=5,
@@ -283,13 +282,9 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                         ),
                         dbc.Row(
                             dbc.Col(
-                                html.Div(
-                                    [
-                                        html.H5('Selected Node Details'),
-                                        html.Div(id='node-details-table')
-                                    ],
-                                    style={'height': '35vh'}
-                                )
+                                html.Div(id='node-details-table',
+                                         style={'margin-top': '-30vh'}
+                                         )
                             )
                         )
                     ]
@@ -376,10 +371,8 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
     # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
-
     else:
         queried_nodes = nodes
-        selected_msg = ''
 
     n_selected = 0  # Selected nodes counter
     for node in nodes:
@@ -443,7 +436,7 @@ def make_subnetwork(node_data, network_df, json_str_network, strain):
     if len(forest.nodes) == 0:
         return None, None
     sub_network = network.edge_subgraph(augmented_forest.edges())
-    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network, 5, 500)
+    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network)
     json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
     return cyto_sub_network, json_sub_network
 
@@ -477,25 +470,33 @@ def show_node_details(node_data, node_details, network_params):
                                )
                        )
 
-        nodes_table = dash_table.DataTable(
-            data=filtered_df.to_dict('records'),
-            columns=[{"name": i, "id": i} for i in filtered_df.columns],
-            fixed_rows={'headers': True, 'data': 0},
-            style_table={
-                'maxHeight': '25vh',
-                'overflowY': 'auto'
-            },
-            style_data={'whiteSpace': 'normal',
-                        'height': 'auto'
-                        },
-            style_cell={
-                'height': 'auto',
-                # all three widths are needed
-                'minWidth': '150px', 'width': '150px', 'maxWidth': '150px',
-                'whiteSpace': 'normal',
-                'textAlign': 'left'
-            }
-        )
+        nodes_table = [
+            html.H5('Selected Node(s) Details'),
+            dash_table.DataTable(
+                data=filtered_df.to_dict('records'),
+                columns=[{'name': i, 'id': i} for i in filtered_df.columns],
+                fixed_rows={'headers': True},
+                css=[{'selector': '.row', 'rule': 'margin: 0'}],  # Fixes left margin crop
+                page_action='none',
+                sort_action='native',
+                style_as_list_view=True,
+                style_table={
+                    'maxHeight': '30vh',
+                    'overflowY': 'auto'
+                },
+                style_cell={'textAlign': 'left',
+                            'minWidth': '150px',
+                            'width': '150px',
+                            'maxWidth': '150px',
+                            },
+                style_header={'backgroundColor': 'rgb(115, 217, 255)',
+                              'fontWeight': 'bold'
+                              },
+                style_data={'whiteSpace': 'normal',
+                            'table-layout': 'fixed'
+                            }
+            )
+        ]
         return nodes_table, filtered_df.to_json()
     else:
         return None, None
