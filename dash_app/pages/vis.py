@@ -426,7 +426,7 @@ def make_subnetwork(node_data, network_df, json_str_network, strain):
     print(len(network.nodes()))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
     graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
-                  {'b': 1.5})  # b > 1 results in more terminal nodes in solution
+                  {'b': 5})  # b > 1 results in more terminal nodes in solution
     make_prize_file(network_df, node_data)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))
@@ -435,7 +435,7 @@ def make_subnetwork(node_data, network_df, json_str_network, strain):
     # If solution is empty, warning is shown
     if len(forest.nodes) == 0:
         return None, None
-    sub_network = network.edge_subgraph(augmented_forest.edges())
+    sub_network = network.edge_subgraph(forest.edges())
     cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network)
     json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
     return cyto_sub_network, json_sub_network

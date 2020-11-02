@@ -5,15 +5,16 @@ default = [
             'border-width': 1,
             'border-color': 'black',
             'min-zoomed-font-size': 10,
-            'width': 'mapData(degree, 1, 31, 20, 70)',
-            'height': 'mapData(degree, 1, 31, 20, 70)',
-            #'content': 'data(label)',
+            'width': 'mapData(degree, 1, 31, 15, 40)',
+            'height': 'mapData(degree, 1, 31, 15, 40)',
+            'padding': '10%'
+            # 'content': 'data(label)',
         }
     },
     {
         'selector': ':selected',
         'style': {
-            'border-width': 8,
+            'border-width': 5,
             'content': 'data(label)',
             'border-color': 'black',
             'border-opacity': 1,

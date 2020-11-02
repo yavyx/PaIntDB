@@ -156,22 +156,32 @@ layout = dbc.Container(
         dcc.Loading(id='loading',
                     children=html.Div(id='make-network-message'),
                     type='dot'),
-        html.Hr(),
         html.Div(
             [
-                dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary'),
-                dbc.Button('Download', id='download-btn', color='link', style={'margin-left': '1vh'}),
+                dbc.Button('Download (.graphml)', id='download-btn', color='link', style={'margin-top': '1vh'}),
                 Download(id='graphml-download1')
             ],
-            id='network-buttons',
+            id='download',
+            style={'display': 'none'},
+        ),
+        html.Div(
+            [
+                html.Hr(),
+                'Select the genes for enrichment: ',
+                dbc.RadioItems(id='enrichment-options'),
+                html.Br(),
+                dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary')
+            ],
+            id='enrichment-btns',
             style={'display': 'none'}
         ),
         html.Br(),
-        dbc.Button('4. Explore Network', id='explore-btn', href='/vis', color='primary', block=False,
-                   style={'display': 'none'}),
         dcc.Loading(id='loading',
                     children=html.Div(id='enrichment-loading'),
-                    type='dot')
+                    type='dot'),
+        html.Br(),
+        dbc.Button('4. Explore Network', id='explore-btn', href='/vis', color='primary', block=False,
+                   style={'display': 'none'}),
     ],
     fluid=True
 )
@@ -267,7 +277,10 @@ def upload_message(contents, network_type):
 
 
 @app.callback(
-    [Output('network-buttons', 'style'),
+    [Output('enrichment-btns', 'style'),
+     Output('download', 'style'),
+     Output('enrichment-options', 'options'),
+     Output('enrichment-options', 'value'),
      Output('make-network-message', 'children'),
      Output('hidden-bionetwork', 'children'),
      Output('node-details-df', 'children'),
@@ -327,13 +340,18 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
     print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
     print(end_time - start_time)
 
+    enrichment_options = [
+            {'label': 'Full gene list ({} genes)'.format(len(bio_network.genes_of_interest)), 'value': 'all'},
+            {'label': 'Genes mapped to network ({} genes)'.format(len(bio_network.mapped_genes)), 'value': 'network'},
+        ]
+
     json_network = json.dumps(nx.node_link_data(bio_network.network))
     network_df = bio_network.network_df
     genes_of_interest = bio_network.genes_of_interest
     network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
-    return {'display': 'block'}, mapping_msg, json_network, network_df.to_json(), json.dumps(network_params), \
-           json.dumps(genes_of_interest)
+    return {'display': 'block'}, {'display': 'block'}, enrichment_options, 'all', mapping_msg, json_network, \
+           network_df.to_json(), json.dumps(network_params), json.dumps(genes_of_interest)
 
 
 @app.callback(
@@ -362,18 +380,24 @@ def download_graphml(n_clicks, filename, json_str_network):
      Output('enrichment-loading', 'children')],
     [Input('run-enrichment', 'n_clicks')],
     [State('network-parameters', 'children'),
-     State('genes-of-interest', 'children')]
+     State('genes-of-interest', 'children'),
+     State('enrichment-options', 'value'),
+     State('hidden-bionetwork', 'children')]
 )
-def run_enrichment(n_clicks, network_params, genes_of_interest):
+def run_enrichment(n_clicks, network_params, genes_of_interest, gene_list, json_network):
     if n_clicks is None:
         raise PreventUpdate
+    # Load JSON data
     network_params = json.loads(network_params)
     strain = network_params['strain']
-    print('{} genes of interest'.format(len(json.loads(genes_of_interest))))
-    enrichment_results, goea_results = run_go_enrichment(strain, json.loads(genes_of_interest))
+    network = nx.node_link_graph(json.loads(json_network))
+    # Use full gene list or genes mapped to network depending on user selection
+    enrichment_genes = json.loads(genes_of_interest) if gene_list == 'all' else network.nodes
+    # Run enrichment
+    enrichment_results, goea_results = run_go_enrichment(strain, enrichment_genes)
     # Keep only overrepresented terms (remove underrepresented)
     enrichment_results = enrichment_results.loc[enrichment_results['enrichment'] == 'e', :]
-    return enrichment_results.to_json(), ""
+    return enrichment_results.to_json(), 'Found {} enriched GO terms.'.format(len(enrichment_results))
 
 
 @app.callback(

@@ -20,7 +20,7 @@ app.layout = html.Div([
         sticky='sticky',
         children=[
             dbc.Nav([
-                dbc.NavbarBrand('PaintDB', href='/'),
+                dbc.NavbarBrand('PaIntDB', href='/'),
                 dbc.NavLink('Build Network', href='/menu'),
                 dbc.NavLink('Explore Network', href='/vis', id='explore'),
                 dbc.DropdownMenu(
@@ -56,15 +56,6 @@ def enable_explore_tab(bio_network):
     return True if bio_network is None else False
 
 
-def load_network(bio_network):
-    """Loads the Bionetwork for use in the vis module."""
-    network = json_graph.node_link_graph(json.loads(bio_network))
-    cyto_network = dict()
-    cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network)
-
-    return json.dumps(cyto_network)
-
-
 @app.callback(
     [Output('page-content', 'children'),
      Output('cyto-network', 'children')],
@@ -83,13 +74,15 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
     elif pathname == '/vis':
         if bio_network:
             # Load JSON data
+            network = json_graph.node_link_graph(json.loads(bio_network))
             network_df = pd.read_json(json_df)
-            json_cyto_network = load_network(bio_network)
-            # Deserialize JSON
-            cyto_network, enrichment_results = json.loads(json_cyto_network), pd.read_json(json_enrichment_results)
+            enrichment_results = pd.read_json(json_enrichment_results)
+            # Create cyto network for visualization
+            cyto_network = dict()
+            cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network)
             # Generate layout using generated data
             vis_layout = vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
-            return vis_layout, json_cyto_network
+            return vis_layout, json.dumps(cyto_network)
         else:
             return dbc.Alert('You need to build a network first.',
                              color='warning',
