@@ -1,7 +1,7 @@
 import pandas as pd
 import csv
 import os
-import pickle5 as pickle
+import pickle
 
 from goatools.base import download_go_basic_obo
 from goatools.obo_parser import GODag
@@ -61,7 +61,6 @@ def run_go_enrichment(strain, genes_of_interest, significant=True, cutoff=0.05,
     background_genes = get_genes(os.path.join('data', strain + '_all_genes.csv'))
     obo_go_fname = download_go_basic_obo()
     obo_dag = GODag('go-basic.obo')
-    # genes_of_interest = list(network.nodes)
 
     if strain == 'PA14':
         genes_of_interest = map_pa14_genes(genes_of_interest)

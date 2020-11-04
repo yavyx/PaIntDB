@@ -4,7 +4,7 @@ import dash_html_components as html
 
 layout = dbc.Jumbotron(
     [
-        html.H3('Welcome to PaIntDB!', className='display-3'),
+        html.H1('Welcome to PaIntDB!'),
         dcc.Markdown(
             'Pseudomonas aeruginosa Interactions Database',
             className='lead',

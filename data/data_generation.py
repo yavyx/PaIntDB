@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+import json
 import os
 import pickle
 import sqlite3
@@ -7,6 +7,7 @@ import sqlite3
 import pandas as pd
 
 DB_PATH = 'PaIntDB.db'
+ONTOLOGY_PATH = os.path.join('data', 'PAO1_gene_ontology.csv')
 
 
 def make_metabolite_mapping():
@@ -49,7 +50,7 @@ def make_interactome(strain):
     return interactome_df
 
 
-def make_go_association_dict(path):
+def make_go_association_dict():
     """Creates and pickles a nested GO association dictionary that maps genes to GO terms which is used by GOAtools
     for GO enrichment, using the Ontology file in data directory."""
 
@@ -58,24 +59,23 @@ def make_go_association_dict(path):
         locus_tag, go_id, namespace = row['Locus Tag'], row['Accession'], row['Namespace']
         if domain == namespace:
             if locus_tag not in go_dict[domain_short]:
-                go_dict[domain_short][locus_tag] = set()
+                go_dict[domain_short][locus_tag] = set()  # Use sets to avoid duplicate GO ID's
                 go_dict[domain_short][locus_tag].add(go_id)
             else:
                 go_dict[domain_short][locus_tag].add(go_id)
 
     go_dict = {'BP': dict(), 'CC': dict(), 'MF': dict()}
-
     go_domains = {'BP': 'biological_process',
                   'CC': 'cellular_component',
                   'MF': 'molecular_function'}
 
-    go_associations = pd.read_csv(path)
+    go_associations = pd.read_csv(ONTOLOGY_PATH)
 
     for domain_short, domain in go_domains.items():
         go_associations.apply(create_dict, 'columns')
 
     # Save dictionary as pickle
     with open(os.path.join('data', 'go_association.pickle'), 'wb') as f:
-        pickle.dump(go_dict, f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(go_dict, f)
 
     return go_dict
