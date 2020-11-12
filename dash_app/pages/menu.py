@@ -183,7 +183,10 @@ layout = dbc.Container(
         dbc.Button('4. Explore Network', id='explore-btn', href='/vis', color='primary', block=False,
                    style={'display': 'none'}),
     ],
-    fluid=True
+    fluid=True,
+    style={'background-color': '#ededed',
+           'height': '95vh',
+           'overflow': 'auto'}
 )
 
 
@@ -207,6 +210,9 @@ def parse_gene_list(contents, network_type):
         columns=[{"name": i, "id": i} for i in small_df.columns],
         style_table={
             'maxHeight': '20vh',
+        },
+        style_cell={
+            'font-family': 'sans-serif'
         }
     )
 

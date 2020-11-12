@@ -16,9 +16,9 @@
 - Padj decimal issues
 - Change node selection to node ids, not node labels
 - Fix PA14 GO term enrichment
-- Fix subnetworks in flat lists
+- Fix subnetworks in flat lists ()
 - Fix down regulated genes in first-order networks
-- Fix subnetworks in basic networks.
+
 
 
 ## GO enrichment

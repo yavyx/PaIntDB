@@ -15,7 +15,7 @@ app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dbc.Navbar(
         id='top-bar',
-        color='dark',
+        color='#1a3775',
         dark=True,
         sticky='sticky',
         children=[
@@ -84,9 +84,9 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
             vis_layout = vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
             return vis_layout, json.dumps(cyto_network)
         else:
-            return dbc.Alert('You need to build a network first.',
+            return dbc.Alert('Warning: You need to build a network first.',
                              color='warning',
-                             style={'display': 'inline-block'}), no_update
+                             style={'display': 'inline-block', 'margin': '10px'}), no_update
     else:
         return '404'
 

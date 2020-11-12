@@ -15,7 +15,6 @@ import networkx as nx
 from OmicsIntegrator import Graph
 import pandas as pd
 
-from dash_app import app
 import dash_app.vis_stylesheets as stylesheets
 from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
@@ -59,6 +58,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         children=[
             html.Summary('By differential expression'),
             dbc.Checklist(
+                # ID type for pattern matching callback
                 id={
                     'type': 'filter',
                     'index': 3
@@ -79,6 +79,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         children=[
             html.Summary('By experiment '),
             dbc.Checklist(
+                # ID type for pattern matching callback
                 id={
                     'type': 'filter',
                     'index': 4
@@ -100,6 +101,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             children=[
                 html.Summary('By name'),
                 dcc.Dropdown(
+                    # ID type for pattern-matching callback
                     id={
                         'type': 'filter',
                         'index': 0
@@ -120,6 +122,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             children=[
                 html.Summary('By localization '),
                 dcc.Dropdown(
+                    # ID type for pattern-matching callback
                     id={
                         'type': 'filter',
                         'index': 1
@@ -138,6 +141,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             children=[
                 html.Summary('By enriched GO term'),
                 dcc.Dropdown(
+                    # ID type for pattern-matching callback
                     id={
                         'type': 'filter',
                         'index': 2
@@ -199,7 +203,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'width': '25vw',
-                    'backgroundColor': '#7FDBFF',  # light blue
+                    'backgroundColor': '#a6edff',
                     'padding': '10px',
                     'display': 'inline-block',
                     'height': '95vh',
@@ -220,16 +224,17 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                             ),
                             html.Br(),
                             html.P(id='num-selected-nodes'),
-                            dbc.Button('Make Sub-Network', id='make-subnetwork')
+                            dbc.Button('Make Sub-Network', id='make-subnetwork', color='primary')
                         ]
                     ),
                     html.Div(
                         id='subnetwork-btns',
                         style={'display': 'none'},
                         children=[
-                            dbc.Button('Return to selection', id='reset-network', ),
+                            dbc.Button('Return to selection', id='reset-network', color='primary'),
                             dbc.DropdownMenu(
                                 id='download-dropdown',
+                                color='primary',
                                 style={'padding-top': '5px'},
                                 label='Download',
                                 direction='right',
@@ -488,8 +493,9 @@ def show_node_details(node_data, node_details, network_params):
                             'minWidth': '150px',
                             'width': '150px',
                             'maxWidth': '150px',
+                            'font-family': 'sans-serif'
                             },
-                style_header={'backgroundColor': 'rgb(115, 217, 255)',
+                style_header={'backgroundColor': 'rgb(166, 237, 255)',
                               'fontWeight': 'bold'
                               },
                 style_data={'whiteSpace': 'normal',
