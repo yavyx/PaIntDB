@@ -1,6 +1,5 @@
 import json
 import os
-from math import sqrt
 
 from dash.dependencies import Output, Input, State, ALL
 from dash.dash import no_update
@@ -18,9 +17,6 @@ import pandas as pd
 import dash_app.vis_stylesheets as stylesheets
 from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
-
-# For development  # TODO: delete
-pd.set_option('display.max_columns', None)
 
 
 def make_cyto_elements(network):
@@ -355,8 +351,7 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         regulation, significance_source = [], []
 
     # Add queries depending on GUI filter selections
-    if short_name:
-        query.append('shortName in @short_name | index in @short_name')
+
     if location:
         query.append('localization in @location')
     if enriched_terms:
@@ -371,27 +366,29 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         query.append('significanceSource in @significance_source')
     if regulation:
         query.append('regulation in @regulation')
-    query_str = ' & '.join(query)
+    query_str = ' & '.join(query)  # Join all queries
+
+    if short_name:
+        if not query:
+            query_str += 'shortName in @short_name | index in @short_name'
+        else:
+            query_str += '| shortName in @short_name | index in @short_name'
 
     # Use query to select nodes
     if query_str:
         queried_nodes = network_df.query(query_str).index.tolist()
     else:
-        queried_nodes = nodes
+        queried_nodes = []
 
-    n_selected = 0  # Selected nodes counter
+    # Select nodes
     for node in nodes:
-        if node['data']['id'] in queried_nodes:
-            node['selected'] = True
-            n_selected += 1
-        else:
-            node['selected'] = False
+        node['selected'] = True if node['data']['id'] in queried_nodes else False
 
-    selected_msg = 'Selected {} out of {} nodes'.format(n_selected, len(nodes))
+    selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(nodes))
 
     # Generate subnetwork when button is clicked.
     if subnetwork_clicks:
-        cyto_sub_network, json_sub_network = make_subnetwork(node_data, network_df, bio_network, strain)
+        cyto_sub_network, json_sub_network = make_subnetwork(node_data, network_df, bio_network, strain, network_type)
         # Throws warning if subnetwork solution is empty.
         if json_sub_network is None:
             selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
@@ -411,36 +408,42 @@ def reset_subnetwork_clicks(n_clicks):
     return 0
 
 
-def make_subnetwork(node_data, network_df, json_str_network, strain):
+def make_subnetwork(node_data, network_df, json_str_network, strain, network_type):
     """Returns a subnetwork using the PCSF algorithm, using the user-selected nodes as terminals."""
 
-    def make_prize_file(network_df, node_data):
+    def make_prize_file(network_df, node_data, network_type):
         """Generates .tsv file with node prizes for use with OmicsIntegrator."""
         # User-selected nodes are terminals
         terminals = [node['id'] for node in node_data]
-        print(terminals)
-        terminal_prizes = network_df.loc[network_df.index.isin(terminals), ['log2FoldChange']]
-        # The bigger the fold change, the bigger the prize
-        terminal_prizes.log2FoldChange = abs(terminal_prizes.log2FoldChange)
-        # Set TnSeq prizes to the max log2FoldChange
-        terminal_prizes.loc[terminal_prizes['log2FoldChange'].isna(), :] = max(network_df['log2FoldChange'])
-        terminal_prizes = terminal_prizes.rename(columns={'log2FoldChange': 'prize'})
+        if network_type == 'gene_list':
+            network_df['prize'] = 1
+            terminal_prizes = network_df.loc[network_df.index.isin(terminals), 'prize']
+        elif network_type == 'rna_seq' or network_type == 'combined':
+            terminal_prizes = network_df.loc[network_df.index.isin(terminals), ['log2FoldChange']]
+            # The bigger the fold change, the bigger the prize
+            terminal_prizes.log2FoldChange = abs(terminal_prizes.log2FoldChange)
+            if network_type == 'combined':
+                # Set TnSeq prizes to the max log2FoldChange
+                terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = max(network_df['log2FoldChange'])
+        if network_type == 'rna_seq' or network_type == 'combined':
+            terminal_prizes = terminal_prizes.rename(columns={'log2FoldChange': 'prize'})
         terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
 
     network = nx.node_link_graph(json.loads(json_str_network))
-    print(len(network.nodes()))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
     graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
                   {'b': 5})  # b > 1 results in more terminal nodes in solution
-    make_prize_file(network_df, node_data)
+    make_prize_file(network_df, node_data, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
+    forest.remove_nodes_from(list(nx.isolates(forest)))
+    augmented_forest.remove_nodes_from(list(nx.isolates(augmented_forest)))
     # If solution is empty, warning is shown
     if len(forest.nodes) == 0:
         return None, None
-    sub_network = network.edge_subgraph(forest.edges())
+    sub_network = network.edge_subgraph(augmented_forest.edges())
     cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network)
     json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
     return cyto_sub_network, json_sub_network

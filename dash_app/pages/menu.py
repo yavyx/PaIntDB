@@ -212,7 +212,8 @@ def parse_gene_list(contents, network_type):
             'maxHeight': '20vh',
         },
         style_cell={
-            'font-family': 'sans-serif'
+            'font-family': 'sans-serif',
+            'textAlign': 'left'
         }
     )
 
