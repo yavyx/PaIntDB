@@ -33,9 +33,7 @@ def make_cyto_elements(network):
     json_elements = nx.readwrite.json_graph.cytoscape_data(network)['elements']
 
     # Make layout (much faster than default Cytoscape layouts)
-    # layout = nx.nx_agraph.graphviz_layout(network)
-    # layout = nx.drawing.kamada_kawai_layout(network, scale=1000)
-    layout = nx.drawing.spring_layout(network, scale=1000, seed=1, k=3/sqrt(len(network)))
+    layout = nx.nx_agraph.graphviz_layout(network)
     nodes = json_elements['nodes']
     for node in nodes:
         node['data']['label'] = node['data']['shortName']  # Use short name as node label
