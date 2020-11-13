@@ -25,8 +25,8 @@ app.layout = html.Div([
                 dbc.NavLink('Explore Network', href='/vis', id='explore'),
                 dbc.DropdownMenu(
                     children=[
-                        dbc.DropdownMenuItem('Tutorial', href='#'),
-                        dbc.DropdownMenuItem('About', href='#'),
+                        dbc.DropdownMenuItem('Tutorial', href='/tutorial'),
+                        dbc.DropdownMenuItem('About', href='/about'),
                     ],
                     nav=True,
                     in_navbar=True,
@@ -87,6 +87,14 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
             return dbc.Alert('Warning: You need to build a network first.',
                              color='warning',
                              style={'display': 'inline-block', 'margin': '10px'}), no_update
+    elif pathname == '/tutorial':
+        return dbc.Alert('Coming Soon.',
+                         color='primary',
+                         style={'display': 'inline-block', 'margin': '10px'}), no_update
+    elif pathname == '/about':
+        return dbc.Alert('Coming Soon.',
+                         color='primary',
+                         style={'display': 'inline-block', 'margin': '10px'}), no_update
     else:
         return '404'
 

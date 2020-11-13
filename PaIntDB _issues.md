@@ -16,16 +16,13 @@
 - Padj decimal issues
 - Change node selection to node ids, not node labels
 - Fix PA14 GO term enrichment
-- Fix subnetworks in flat lists ()
 - Fix down regulated genes in first-order networks
-
 
 
 ## GO enrichment
 - Change directory for PA14/PAO1 mapping in enrichment script.
 - Create GO term sets for PA14 instead of mapping
 - Clean it up, lots of unused code.
-
 
 
 ### DONE!
@@ -47,6 +44,7 @@
         - Check file format
 - Save mapped dictionary to JSON file.
 - Use os module for paths
+- - Fix subnetworks in flat lists ()
 
 ### Separate
 Assigning all parent GO terms for Pseudomonas genes (to make subnetworks)
