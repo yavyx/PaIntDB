@@ -162,8 +162,8 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
     # Add color mapping functionality for DE/Combined networks
     color_mapping = None
     stylesheet = stylesheets.default
-    # if network_params['type'] == 'gene_list':
-    #    stylesheet = stylesheets.default
+    if network_params['type'] == 'gene_list':
+        stylesheet = stylesheets.default
     if network_params['type'] == 'rna_seq':
         color_mapping = [
             html.H5('Color Mapping'),
@@ -198,7 +198,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         [
             html.Div(
                 style={
-                    'width': '25vw',
+                    'width': '24vw',
                     'backgroundColor': '#a6edff',
                     'padding': '10px',
                     'display': 'inline-block',
@@ -235,12 +235,12 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 label='Download',
                                 direction='right',
                                 children=[
-                                    dbc.DropdownMenuItem('Download Table (.csv)',
-                                                         id='download-table'),
                                     dbc.DropdownMenuItem('Network (.graphml)',
                                                          id='download-network'),
-                                    dbc.DropdownMenuItem('Network (.svg)',
-                                                         id='download-network-img')
+                                    dbc.DropdownMenuItem('Network Image (.svg)',
+                                                         id='download-network-img'),
+                                    dbc.DropdownMenuItem('Table (.csv)',
+                                                         id='download-table')
                                 ]
                             ),
                         ]
@@ -255,7 +255,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '74vw'
+                    'width': '73vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -351,7 +351,6 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         regulation, significance_source = [], []
 
     # Add queries depending on GUI filter selections
-
     if location:
         query.append('localization in @location')
     if enriched_terms:
@@ -416,9 +415,11 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
         # User-selected nodes are terminals
         terminals = [node['id'] for node in node_data]
         if network_type == 'gene_list':
+            # If there is no expression data, all prizes = 1
             network_df['prize'] = 1
             terminal_prizes = network_df.loc[network_df.index.isin(terminals), 'prize']
         elif network_type == 'rna_seq' or network_type == 'combined':
+            # Set prizes to expression values
             terminal_prizes = network_df.loc[network_df.index.isin(terminals), ['log2FoldChange']]
             # The bigger the fold change, the bigger the prize
             terminal_prizes.log2FoldChange = abs(terminal_prizes.log2FoldChange)
@@ -435,17 +436,17 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
                   {'b': 5})  # b > 1 results in more terminal nodes in solution
     make_prize_file(network_df, node_data, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
-    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))
+    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore)
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
-    forest.remove_nodes_from(list(nx.isolates(forest)))
-    augmented_forest.remove_nodes_from(list(nx.isolates(augmented_forest)))
     # If solution is empty, warning is shown
     if len(forest.nodes) == 0:
         return None, None
     sub_network = network.edge_subgraph(augmented_forest.edges())
-    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(sub_network)
-    json_sub_network = json.dumps(nx.node_link_data(sub_network))  # For downloading
+    unfrozen_sub = nx.Graph(sub_network)  # Copy needed to remove orphan nodes
+    unfrozen_sub.remove_nodes_from(list(nx.isolates(unfrozen_sub)))
+    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(unfrozen_sub)
+    json_sub_network = json.dumps(nx.node_link_data(unfrozen_sub))  # For downloading
     return cyto_sub_network, json_sub_network
 
 
