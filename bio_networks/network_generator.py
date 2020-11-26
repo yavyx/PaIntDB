@@ -18,6 +18,7 @@ class BioNetwork:
     def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
         self.strain = strain
         self.order = order
+        # Detection method input meaning: 0 = not experimental, 1 = experimental, 2 = unknown detection, 3 = all
         self.detection_method = detection_method
         self.metabolites = metabolites
         self.genes_of_interest = gene_list
@@ -67,7 +68,6 @@ class BioNetwork:
                 self._raw_info['interaction_participants'] = cursor.fetchall()
 
                 # Edge info (dataFrame to merge with the edge list dataFrame)
-
                 self._raw_info['sources'] = pd.read_sql_query("""SELECT is_experimental, interaction_id
                                                   FROM interaction_source 
                                                   INNER JOIN interaction_sources
@@ -76,7 +76,7 @@ class BioNetwork:
                                                   WHERE is_experimental = ?""",
                                                               con=db_connection,
                                                               params=[self.detection_method])
-
+            # Use all interactions
             elif self.detection_method == 3:
                 # Node info (lists to generate node attribute dictionaries later)
                 cursor.execute("""SELECT interactor_id, interaction_id, type

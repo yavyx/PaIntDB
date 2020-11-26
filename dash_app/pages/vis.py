@@ -1,6 +1,7 @@
 import json
 import os
 
+import dash
 from dash.dependencies import Output, Input, State, ALL
 from dash.dash import no_update
 import dash_bootstrap_components as dbc
@@ -219,10 +220,11 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 children=sidebar_filters
                             ),
                             html.Br(),
-                            html.P(id='num-selected-nodes'),
                             dbc.Button('Make Sub-Network', id='make-subnetwork', color='primary')
                         ]
                     ),
+                    html.Br(),
+                    html.P(id='num-selected-nodes'),
                     html.Div(
                         id='subnetwork-btns',
                         style={'display': 'none'},
@@ -237,7 +239,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 children=[
                                     dbc.DropdownMenuItem('Network (.graphml)',
                                                          id='download-network'),
-                                    dbc.DropdownMenuItem('Network Image (.svg)',
+                                    dbc.DropdownMenuItem('Network Image (.png)',
                                                          id='download-network-img'),
                                     dbc.DropdownMenuItem('Table (.csv)',
                                                          id='download-table')
@@ -263,7 +265,6 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                         dbc.Row(
                             [
                                 dbc.Col(
-                                    id='main-view',
                                     children=cyto.Cytoscape(
                                         id='main-view',
                                         style={
@@ -391,10 +392,13 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         # Throws warning if subnetwork solution is empty.
         if json_sub_network is None:
             selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
-                                     color='danger')
-            return {'display': 'none'}, {'display': 'none'}, no_update, no_update, selected_msg
+                                     color='warning')
+            cyto_sub_network = no_update
+            json_sub_network = no_update
         # Return subnetwork
-        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, ''
+        else:
+            selected_msg = ''
+        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg
     # Return full network
     return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg
 
@@ -433,7 +437,7 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
     network = nx.node_link_graph(json.loads(json_str_network))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
     graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
-                  {'b': 5})  # b > 1 results in more terminal nodes in solution
+                  {'b': 10})  # b > 1 results in more terminal nodes in solution
     make_prize_file(network_df, node_data, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore)
@@ -546,12 +550,16 @@ def download_sub_graphml(n_clicks, json_str_sub_network):
         return send_file(abs_filename)
 
 
-# @app.callback(
-#     Output('hidden-div', 'children'),
-#     [Input('main-view', 'selectedNodeData')],
-# )
-# def print_nodes(node_data):
-#     if node_data:
-#         print('miguebo  ', [node['id'] for node in node_data])
-#     return None
+@app.callback(
+    Output('main-view', 'generateImage'),
+    [Input('download-network-img', 'n_clicks')]
+)
+def download_png(n_clicks):
+    file_type = 'png'
+    action = 'store'
+    if n_clicks:
+        file_type = 'png'
+        action = 'download'
+    return {'type': file_type, 'action': action}
+
 

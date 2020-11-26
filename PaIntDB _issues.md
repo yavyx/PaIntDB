@@ -1,6 +1,12 @@
 # PaIntDB issues
 
 
+### Database
+- Fix mislabeled P-BS interactions
+- Add Corrie's missing interaction
+- Fix typo in ADIP interactomes
+- Fix experimental interactions
+
 ### Back-end
 - Make queries into dataframes instead of dictionaries
 - Write tests! (check parameters in all main (user input) functions.
