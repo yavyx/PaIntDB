@@ -124,7 +124,7 @@ layout = dbc.Container(
                                     id='detection-method',
                                     options=[
                                         {'label': 'All', 'value': 3},
-                                        {'label': 'Experimental', 'value': 2},
+                                        {'label': 'Experimental', 'value': 1},
                                     ],
                                     value=3
                                 )
@@ -289,6 +289,7 @@ def upload_message(contents, network_type):
      Output('enrichment-options', 'options'),
      Output('enrichment-options', 'value'),
      Output('make-network-message', 'children'),
+     # Hidden divs to share data across callbacks
      Output('hidden-bionetwork', 'children'),
      Output('node-details-df', 'children'),
      Output('network-parameters', 'children'),

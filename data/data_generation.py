@@ -43,8 +43,9 @@ def make_interactome(strain):
         # Create data frame from dictionary
         interactome_df = pd.DataFrame.from_dict(interactome, orient='index',
                                                 columns=['protein1', 'protein2', 'confidence'])
-        # Convert confidence values into edge costs
-        interactome_df['cost'] = 1.5 - interactome_df['confidence'] / 2
+        # Experimental interactions are assigned confidence 1, computational and unknown 0.5
+        interactome_df.replace([0, 2], 0.5, inplace=True)
+        interactome_df['cost'] = 1.5 - interactome_df['confidence']
         del interactome_df['confidence']
         interactome_df.to_csv(os.path.join('data', '{}_interactome.tsv'.format(strain)), sep='\t')
     return interactome_df
