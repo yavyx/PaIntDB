@@ -568,6 +568,6 @@ def download_png(n_clicks):
     if n_clicks:
         file_type = 'png'
         action = 'download'
-    return {'type': file_type, 'action': action}
+    return {'type': file_type, 'action': action, 'output': 'base64'}
 
 
