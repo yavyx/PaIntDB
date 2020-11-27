@@ -1,7 +1,6 @@
 import json
 import os
 
-import dash
 from dash.dependencies import Output, Input, State, ALL
 from dash.dash import no_update
 import dash_bootstrap_components as dbc
@@ -220,7 +219,8 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 children=sidebar_filters
                             ),
                             html.Br(),
-                            dbc.Button('Make Sub-Network', id='make-subnetwork', color='primary')
+                            dbc.Button('Make Sub-Network', id='make-subnetwork', color='primary',
+                                       style={'display': 'none'})
                         ]
                     ),
                     html.Br(),
@@ -242,7 +242,8 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                     dbc.DropdownMenuItem('Network Image (.png)',
                                                          id='download-network-img'),
                                     dbc.DropdownMenuItem('Table (.csv)',
-                                                         id='download-table')
+                                                         id='download-table',
+                                                         style={'display': 'none'})
                                 ]
                             ),
                         ]
@@ -315,7 +316,8 @@ def change_color_map(value):
      Output('subnetwork-btns', 'style'),
      Output('main-view', 'elements'),
      Output('hidden-subnetwork', 'children'),
-     Output('num-selected-nodes', 'children')],
+     Output('num-selected-nodes', 'children'),
+     Output('make-subnetwork', 'style')],
     [Input({'type': 'filter', 'index': ALL}, 'value'),  # Pattern-matching all callbacks with filter type
      Input('make-subnetwork', 'n_clicks')],
     [State('main-view', 'selectedNodeData'),
@@ -386,6 +388,9 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
 
     selected_msg = 'Selected {} out of {} nodes'.format(len(queried_nodes), len(nodes))
 
+    # Display make network button after selecting nodes
+    btn_display = {'display': 'block'} if len(queried_nodes) != 0 else {'display': 'none'}
+
     # Generate subnetwork when button is clicked.
     if subnetwork_clicks:
         cyto_sub_network, json_sub_network = make_subnetwork(node_data, network_df, bio_network, strain, network_type)
@@ -398,9 +403,9 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         # Return subnetwork
         else:
             selected_msg = ''
-        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg
+        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg, btn_display
     # Return full network
-    return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg
+    return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg, btn_display
 
 
 @app.callback(
@@ -437,7 +442,9 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
     network = nx.node_link_graph(json.loads(json_str_network))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
     graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
-                  {'b': 10})  # b > 1 results in more terminal nodes in solution
+                  {'b': 10,  # b > 1 results in more terminal nodes in solution
+                   'g': 0}  # g = 0 = remove degree cost correction
+                  )
     make_prize_file(network_df, node_data, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore)
@@ -456,7 +463,8 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
 
 @app.callback(
     [Output('node-details-table', 'children'),
-     Output('filtered-node-details', 'children')],
+     Output('filtered-node-details', 'children'),
+     Output('download-table', 'style')],
     [Input('main-view', 'selectedNodeData')],
     [State('node-details-df', 'children'),
      State('network-parameters', 'children')]
@@ -511,9 +519,9 @@ def show_node_details(node_data, node_details, network_params):
                             }
             )
         ]
-        return nodes_table, filtered_df.to_json()
+        return nodes_table, filtered_df.to_json(), {'display': 'block'}
     else:
-        return None, None
+        return None, None, {'display': 'none'}
 
 
 @app.callback(

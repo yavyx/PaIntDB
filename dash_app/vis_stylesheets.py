@@ -5,8 +5,8 @@ default = [
             'border-width': 1,
             'border-color': 'black',
             'min-zoomed-font-size': 30,
-            'width': 'mapData(degree, 1, 31, 15, 40)',
-            'height': 'mapData(degree, 1, 31, 15, 40)',
+            'width': 'mapData(degree, 1, 30, 13, 25)',
+            'height': 'mapData(degree, 1, 30, 13, 25)',
             'padding': '10%',
             'content': 'data(label)'
         }
