@@ -239,7 +239,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 children=[
                                     dbc.DropdownMenuItem('Network (.graphml)',
                                                          id='download-network'),
-                                    dbc.DropdownMenuItem('Network Image (.png)',
+                                    dbc.DropdownMenuItem('Network Image (.jpg)',
                                                          id='download-network-img'),
                                     dbc.DropdownMenuItem('Table (.csv)',
                                                          id='download-table',
@@ -563,11 +563,11 @@ def download_sub_graphml(n_clicks, json_str_sub_network):
     [Input('download-network-img', 'n_clicks')]
 )
 def download_png(n_clicks):
-    file_type = 'png'
+    file_type = 'jpg'
     action = 'store'
     if n_clicks:
-        file_type = 'png'
+        file_type = 'jpg'
         action = 'download'
-    return {'type': file_type, 'action': action, 'output': 'base64'}
+    return {'type': file_type, 'action': action}
 
 
