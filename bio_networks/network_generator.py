@@ -4,7 +4,6 @@ import sqlite3
 
 import networkx as nx
 import pandas as pd
-# from to_precision import sci_notation
 
 import bio_networks.helpers as h
 
@@ -274,33 +273,12 @@ class BioNetwork:
 
     def make_network(self):
         """Generates a PPI network from a list of genes."""
-        print('Querying database...')
-        start = datetime.now()
         BioNetwork.query_db(self)
-        print(datetime.now() - start, '\n')
-
-        print('Tidying queries...')
-        start = datetime.now()
         tidy_db_info = BioNetwork.format_attribute_dictionaries(self)
-        print(datetime.now() - start, '\n')
-
-        print('Making edge list...')
-        start = datetime.now()
         network_data = BioNetwork.make_edge_list(self)
-        print(datetime.now() - start, '\n')
-
-        print('Building network...')
-        start = datetime.now()
         BioNetwork.build_network(self, network_data, tidy_db_info)
-        print(datetime.now() - start, '\n')
-
         BioNetwork.add_locus_tags(self)
-
         return self.network
-
-    def write_gml(self, path):
-        """Export the network as a GraphML file."""
-        nx.write_graphml(self.network, path)
 
 
 class DENetwork(BioNetwork):
@@ -309,8 +287,6 @@ class DENetwork(BioNetwork):
     def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites):
         super().__init__(gene_list, strain, order, detection_method, metabolites)
         self.de_genes_df = de_genes_df
-        # self.genes_of_interest = gene_list
-        # self.network = DENetwork.make_network(self)
         self.network_type = 'rna_seq'
         # Add experimental info
         nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
@@ -318,7 +294,6 @@ class DENetwork(BioNetwork):
         self.network_df['padj'] = pd.Series(dict(self.network.nodes(data='padj')))
         # Format DataFrame fields
         self.network_df['log2FoldChange'] = self.network_df['log2FoldChange'].round(2)
-        # self.network_df['padj'] = self.network_df['padj'].apply(sci_notation, precision=2, delimiter='e')
         self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
 
     @staticmethod
@@ -329,7 +304,7 @@ class DENetwork(BioNetwork):
                            inplace=True)  # Rename first column (usually unnamed)
         de_info = dict()
         raw_de_info = de_genes_df[['gene', 'log2FoldChange', 'padj']].to_dict(orient='index')
-        # Format dictionary to use as input for networkX node attributes
+        # Format dictionary to use as input for networkx node attributes
         for key, value in raw_de_info.items():
             de_info[value['gene']] = dict(log2FoldChange=value['log2FoldChange'],
                                           padj=value['padj'])
@@ -359,7 +334,6 @@ class CombinedNetwork(DENetwork):
         if order == 1:
             self.mapped_genes = [node for node, attr in self.network.nodes(data=True)
                                  if attr['type'] == 'p' and attr['seed'] == 1]
-        print(len(self.mapped_genes))
 
     def add_significance_source(self):
         """Adds a significance_source attribute indicating if a node is from RNASeq, TnSeq, or both."""
@@ -372,10 +346,3 @@ class CombinedNetwork(DENetwork):
                 self.network.nodes[node]['significanceSource'] = 'TnSeq'
             else:
                 self.network.nodes[node]['significanceSource'] = 'none'
-
-    # def make_network(self):
-    #     print('Adding significance source...')
-    #     start = datetime.now()
-    #     CombinedNetwork.add_significance_source(self)
-    #     print(datetime.now() - start, '\n')
-    #     return self.network

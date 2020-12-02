@@ -14,7 +14,7 @@ import dash_html_components as html
 import dash_table
 import networkx as nx
 import pandas as pd
-
+import sigfig
 
 from bio_networks.network_generator import BioNetwork, DENetwork, CombinedNetwork
 from go_enrichment.go_enrichment import run_go_enrichment
@@ -192,12 +192,16 @@ layout = dbc.Container(
 
 def parse_gene_list(contents, network_type):
     """Parses the uploaded gene list, returns a Bootstrap table and a Pandas DataFrame."""
-    # TODO: Add checks for table headers
+    # TODO: Add checks for wrong gene names
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
+    # Round columns to significant values
     genes_df.loc[:, cols] = genes_df[cols].round(2)
+    genes_df['pvalue'] = [sigfig.round(n, sigfigs=3) for n in genes_df['pvalue']]
+    genes_df['padj'] = [sigfig.round(n, sigfigs=3) for n in genes_df['padj']]
+
     if network_type == 'DE' or network_type == 'combined':
         # Check RNASeq headers are there
         if not {'log2FoldChange', 'padj'}.issubset(genes_df.columns):
@@ -229,6 +233,7 @@ def parse_gene_list(contents, network_type):
 
 def parse_tnseq_list(contents, filename):
     """Parses the uploaded TnSeq gene list"""
+    # TODO: add checks for wrong gene names
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
