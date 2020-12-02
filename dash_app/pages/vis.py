@@ -225,29 +225,30 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     ),
                     html.Br(),
                     html.P(id='num-selected-nodes'),
-                    html.Div(
-                        id='subnetwork-btns',
-                        style={'display': 'none'},
+                    html.Br(),
+                    dbc.DropdownMenu(
+                        id='download-dropdown',
+                        color='primary',
+                        style={'padding-top': '5px'},
+                        label='Download',
+                        direction='right',
                         children=[
-                            dbc.Button('Return to selection', id='reset-network', color='primary'),
-                            dbc.DropdownMenu(
-                                id='download-dropdown',
-                                color='primary',
-                                style={'padding-top': '5px'},
-                                label='Download',
-                                direction='right',
-                                children=[
-                                    dbc.DropdownMenuItem('Network (.graphml)',
-                                                         id='download-network'),
-                                    dbc.DropdownMenuItem('Network Image (.png)',
-                                                         id='download-network-img'),
-                                    dbc.DropdownMenuItem('Table (.csv)',
-                                                         id='download-table',
-                                                         style={'display': 'none'})
-                                ]
-                            ),
+                            dbc.DropdownMenuItem('Network (.graphml)',
+                                                 id='download-network'),
+                            dbc.DropdownMenuItem('Network Image (.png)',
+                                                 id='download-network-img'),
+                            dbc.DropdownMenuItem('Table (.csv)',
+                                                 id='download-table',
+                                                 style={'display': 'none'})
                         ]
                     ),
+                    dbc.Button(
+                        'Return to selection',
+                        id='reset-network',
+                        color='primary',
+                        style={'display': 'none'}),
+                    #     ]
+                    # ),
                     Download(id='graphml-download2'),
                     Download(id='csv-download'),
                     # Hidden Divs to store node details and subnetwork for download
@@ -313,7 +314,7 @@ def change_color_map(value):
 
 @app.callback(
     [Output('full-network-panel', 'style'),
-     Output('subnetwork-btns', 'style'),
+     Output('reset-network', 'style'),
      Output('main-view', 'elements'),
      Output('hidden-subnetwork', 'children'),
      Output('num-selected-nodes', 'children'),
