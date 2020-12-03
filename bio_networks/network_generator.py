@@ -179,18 +179,13 @@ class BioNetwork:
         interaction_participants = self._raw_info['interaction_participants']
         interaction_edges = dict()
         interactions_of_interest = []
-        print('Creating edge list dictionary...')
-        start = datetime.now()
         # Create a dictionary edge list from the list of interactions (two rows per interaction)
         for i in range(0, len(interaction_participants), 2):
             interaction_edges[interaction_participants[i][1]] = (interaction_participants[i][0],  # 1st interactor
                                                                  interaction_participants[i+1][0],  # 2nd interactor
                                                                  interaction_participants[i][2])  # interaction type
-        print(datetime.now() - start)
 
         if self.order == 0:
-            print('Getting interactions of interest')
-            start = datetime.now()
             # Get interaction id's if both interactors are in input
             interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                         if interactors[0] in self.genes_of_interest
@@ -208,11 +203,8 @@ class BioNetwork:
                     if (interactors[0] in self.genes_of_interest or interactors[0] in metabolites_of_interest)
                     and (interactors[1] in self.genes_of_interest or interactors[1] in metabolites_of_interest)
                 ]
-            print(datetime.now() - start)
 
         elif self.order == 1:
-            print('Getting interactions of interest')
-            start = datetime.now()
             if self.metabolites is True:
                 interactions_of_interest = [interactionID for interactionID, interactors in interaction_edges.items()
                                             if interactors[0] in self.genes_of_interest
@@ -222,17 +214,13 @@ class BioNetwork:
                                             if (genes[0] in self.genes_of_interest
                                             or genes[1] in self.genes_of_interest)
                                             and genes[2] == 'p-p']
-            print(datetime.now() - start)
         self._interactions_of_interest = interactions_of_interest
 
-        print('Making dataframe...')
-        start = datetime.now()
         edge_list_df = (pd.DataFrame.from_dict(interaction_edges, orient='index',
                                                columns=['interactor1', 'interactor2', 'type'])
                         .merge(self._raw_info['sources'], how='left', left_index=True, right_on='id')
                         .query('id in @interactions_of_interest')  # Filter interactions
                         )
-        print(datetime.now() - start)
         return edge_list_df
 
     def build_network(self, edge_list_df, db_tidy_info):
@@ -284,7 +272,7 @@ class BioNetwork:
 class DENetwork(BioNetwork):
     """BioNetwork subclass with additional differential expression (DE)-related methods."""
 
-    def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites):
+    def __init__(self, gene_list, de_genes_df, strain, order, detection_method, metabolites=False):
         super().__init__(gene_list, strain, order, detection_method, metabolites)
         self.de_genes_df = de_genes_df
         self.network_type = 'rna_seq'
@@ -314,7 +302,7 @@ class DENetwork(BioNetwork):
 class CombinedNetwork(DENetwork):
     """DENetwork subclass with combined RNASeq (DE) and TnSeq information."""
 
-    def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites):
+    def __init__(self, gene_list, de_genes_df, tnseq_gene_list, strain, order, detection_method, metabolites=False):
         self.de_genes = gene_list
         self.tnseq_genes = tnseq_gene_list
         self.genes_of_interest = list(set(self.de_genes).union(set(self.tnseq_genes)))

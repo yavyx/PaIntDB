@@ -134,22 +134,6 @@ layout = dbc.Container(
                 )
             ]
         ),
-        dbc.Row(
-            dbc.Col(
-                html.Div(
-                    [
-                        # html.Br(),
-                        dbc.Checklist(
-                            id='metabolites',
-                            options=[
-                                {'label': 'Include metabolites', 'value': 1}
-                            ],
-                            style={'display': 'none'}  # Removed for now
-                        )
-                    ]
-                )
-            )
-        ),
         html.Br(),
         dbc.Button('2. Make Network', id='make-network-btn', color='primary'),
         html.Br(),
@@ -158,19 +142,15 @@ layout = dbc.Container(
                     type='dot'),
         html.Div(
             [
-                dbc.Button('Download (.graphml)', id='download-btn', color='link', style={'margin-top': '1vh'}),
-                Download(id='graphml-download1')
-            ],
-            id='download',
-            style={'display': 'none'},
-        ),
-        html.Div(
-            [
                 html.Hr(),
                 'Select the genes for enrichment: ',
                 dbc.RadioItems(id='enrichment-options'),
                 html.Br(),
-                dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary')
+                dbc.Button('3. Run GO Term Enrichment', id='run-enrichment', color='primary'),
+                dbc.Button('Download enrichment results (.csv)',
+                           id='download-btn', color='link',
+                           style={'margin-top': '1vh',
+                                  'display': 'none'}),
             ],
             id='enrichment-btns',
             style={'display': 'none'}
@@ -179,6 +159,7 @@ layout = dbc.Container(
         dcc.Loading(id='loading',
                     children=html.Div(id='enrichment-loading'),
                     type='dot'),
+        Download(id='enrichment-download'),
         html.Br(),
         dbc.Button('4. Explore Network', id='explore-btn', href='/vis', color='primary', block=False,
                    style={'display': 'none'}),
@@ -196,17 +177,17 @@ def parse_gene_list(contents, network_type):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
-    # Round columns to significant values
-    genes_df.loc[:, cols] = genes_df[cols].round(2)
-    genes_df['pvalue'] = [sigfig.round(n, sigfigs=3) for n in genes_df['pvalue']]
-    genes_df['padj'] = [sigfig.round(n, sigfigs=3) for n in genes_df['padj']]
 
     if network_type == 'DE' or network_type == 'combined':
         # Check RNASeq headers are there
         if not {'log2FoldChange', 'padj'}.issubset(genes_df.columns):
             return dbc.Alert('Check your header names. They should include "log2FoldChange" and "padj"',
                              color='danger', style={'display': 'inline-block'}), []
+        cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
+        # Round columns to significant values
+        genes_df.loc[:, cols] = genes_df[cols].round(2)
+        genes_df['pvalue'] = [sigfig.round(n, sigfigs=3) for n in genes_df['pvalue']]
+        genes_df['padj'] = [sigfig.round(n, sigfigs=3) for n in genes_df['padj']]
 
     small_df = genes_df.head()  # smaller df to display on app
     table = dash_table.DataTable(
@@ -290,7 +271,6 @@ def upload_message(contents, network_type):
 
 @app.callback(
     [Output('enrichment-btns', 'style'),
-     Output('download', 'style'),
      Output('enrichment-options', 'options'),
      Output('enrichment-options', 'value'),
      Output('make-network-message', 'children'),
@@ -304,54 +284,44 @@ def upload_message(contents, network_type):
      State('strain', 'value'),
      State('order', 'value'),
      State('detection-method', 'value'),
-     State('metabolites', 'value'),
      State('gene-list-upload', 'contents'),
      State('tnseq-gene-list-upload', 'contents'),
      State('gene-list-upload', 'filename'),
      State('tnseq-gene-list-upload', 'filename')]
 )
-def build_network(n_clicks, network_type, strain, order, detection_method, metabolites, rnaseq_contents,
-                  tnseq_contents, rnaseq_filename, tnseq_filename):
+def build_network(n_clicks, network_type, strain, order, detection_method, rnaseq_contents,tnseq_contents,
+                  rnaseq_filename, tnseq_filename):
     """Generates a network every time the make network button is clicked. Serializes results to JSON
     and stores them in hidden divs. Shows download and explore network button."""
     if n_clicks is None:
         raise PreventUpdate
 
-    start_time = datetime.now()
     upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = genes_df.gene.tolist()
     if network_type == 'basic':
-        bio_network = BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                 metabolites=metabolites)
+        bio_network = BioNetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method)
     elif network_type == 'DE':
         bio_network = DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
-                                metabolites=metabolites, de_genes_df=genes_df)
+                                de_genes_df=genes_df)
     elif network_type == 'combined':
         upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
         bio_network = CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
-                                      detection_method=detection_method, metabolites=metabolites,
+                                      detection_method=detection_method,
                                       de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)
     else:
         bio_network = None
 
-    if metabolites:
-        mapping_msg = html.Div('''{} genes were mapped to the network out of {} genes in your list.\n{} 
-                                       metabolites were mapped to these genes.'''
-                               .format(len(bio_network.mapped_genes),
-                                       len(bio_network.genes_of_interest),
-                                       len(bio_network.mapped_metabolites)
-                                       )
-                               )
+    if len(bio_network.network) == 0:
+        mapping_msg = dbc.Alert('The network is empty. Ensure that you selected the right strain.',
+                                color='warning', style={'display': 'inline-block'})
+        enrichment_btns_display = {'display': 'none'}
     else:
         mapping_msg = html.Div('{} genes were mapped to the network out of {} genes in your list.'
                                .format(len(bio_network.mapped_genes),
                                        len(bio_network.genes_of_interest))
                                )
-    end_time = datetime.now()
-
-    print("order = {}, detection_method = {}, metabolites = {}".format(order, detection_method, str(metabolites)))
-    print(end_time - start_time)
+        enrichment_btns_display = {'display': 'block'}
 
     enrichment_options = [
             {'label': 'Full gene list ({} genes)'.format(len(bio_network.genes_of_interest)), 'value': 'all'},
@@ -363,34 +333,34 @@ def build_network(n_clicks, network_type, strain, order, detection_method, metab
     genes_of_interest = bio_network.genes_of_interest
     network_params = {'strain': bio_network.strain, 'type': bio_network.network_type}
 
-    return {'display': 'block'}, {'display': 'block'}, enrichment_options, 'all', mapping_msg, json_network, \
+    return enrichment_btns_display, enrichment_options, 'all', mapping_msg, json_network, \
            network_df.to_json(), json.dumps(network_params), json.dumps(genes_of_interest)
 
 
 @app.callback(
-    Output('graphml-download1', 'data'),
+    Output('enrichment-download', 'data'),
     [Input('download-btn', 'n_clicks')],
     [State('gene-list-upload', 'filename'),
-     State('hidden-bionetwork', 'children')]
+     State('enrichment-results', 'children')]
 )
-def download_graphml(n_clicks, filename, json_str_network):
-    """Generates and sends a graphml file for download."""
+def download_enrichment_results(n_clicks, filename, enrichment_results):
+    """Generates and sends a csv file of enrichment results for download."""
     if n_clicks:
         # Create downloads directory if there isn't one
         downloads_dir = os.path.join(os.getcwd(), 'downloads')
         if not os.path.exists(downloads_dir):
             os.mkdir(downloads_dir)
-
-        rel_filename = os.path.join('downloads', '{}_network.graphml'.format(filename[:-4]))
+        rel_filename = os.path.join('downloads', '{}_enrichment.csv'.format(filename[:-4]))
         abs_filename = os.path.join(os.getcwd(), rel_filename)
-        network = nx.node_link_graph(json.loads(json_str_network))
-        nx.write_graphml(network, path=abs_filename)
+        enrichment = pd.read_json(enrichment_results)
+        enrichment.to_csv(abs_filename, index=False)
         return send_file(abs_filename)
 
 
 @app.callback(
     [Output('enrichment-results', 'children'),
-     Output('enrichment-loading', 'children')],
+     Output('enrichment-loading', 'children'),
+     Output('download-btn', 'style')],
     [Input('run-enrichment', 'n_clicks')],
     [State('network-parameters', 'children'),
      State('genes-of-interest', 'children'),
@@ -410,7 +380,8 @@ def run_enrichment(n_clicks, network_params, genes_of_interest, gene_list, json_
     enrichment_results, goea_results = run_go_enrichment(strain, enrichment_genes)
     # Keep only overrepresented terms (remove underrepresented)
     enrichment_results = enrichment_results.loc[enrichment_results['enrichment'] == 'e', :]
-    return enrichment_results.to_json(), 'Found {} enriched GO terms.'.format(len(enrichment_results))
+    enrichment_msg = 'Found {} enriched GO terms.'.format(len(enrichment_results))
+    return enrichment_results.to_json(), enrichment_msg, {'display': 'inline-block'}
 
 
 @app.callback(

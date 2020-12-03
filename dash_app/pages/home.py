@@ -24,15 +24,18 @@ layout = html.Div(
                     style={'width': '60vw',
                            'font-size': '20px'}
                 ),
-                html.P(dbc.Button('Get Started', color='primary', id='start', href='/menu'), className='lead'),
+                dbc.Button('Get Started', color='primary', id='start', href='/menu', size='lg')
             ],
             style={'margin': '10px',
                    'backgroundColor': '#d1d1d1'}
         ),
         html.Div(
             [
-                html.A(html.Img(src=app.get_asset_url('hancock-lab-logo.svg'), style={'width': '175px'}), href='http://cmdr.ubc.ca/bobh/'
-                       ),
+                html.A(
+                    html.Img(src=app.get_asset_url('hancock-lab-logo.svg'),
+                             style={'width': '175px'}),
+                    href='http://cmdr.ubc.ca/bobh/'
+                ),
                 dcc.Markdown('PaIntDB is being developed by the [Hancock Laboratory](http://cmdr.ubc.ca/bobh/) at the ' 
                              'University of British Columbia.\n\nFunding is currently provided by the Canadian '
                              'Institutes for Health Research FDN-154287.',

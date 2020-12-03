@@ -15,7 +15,7 @@ default = [
         'selector': ':selected',
         'style': {
             'min-zoomed-font-size': 10,
-            'border-width': 5,
+            'border-width': 4,
             'content': 'data(label)',
             'border-color': 'black',
             'border-opacity': 1,

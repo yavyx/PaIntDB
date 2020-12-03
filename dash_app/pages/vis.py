@@ -225,7 +225,6 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     ),
                     html.Br(),
                     html.P(id='num-selected-nodes'),
-                    html.Br(),
                     dbc.DropdownMenu(
                         id='download-dropdown',
                         color='primary',
@@ -242,14 +241,13 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                                  style={'display': 'none'})
                         ]
                     ),
+                    html.Br(),
                     dbc.Button(
                         'Return to selection',
                         id='reset-network',
                         color='primary',
                         style={'display': 'none'}),
-                    #     ]
-                    # ),
-                    Download(id='graphml-download2'),
+                    Download(id='graphml-download'),
                     Download(id='csv-download'),
                     # Hidden Divs to store node details and subnetwork for download
                     html.Div(id='filtered-node-details', style={'display': 'none'}),
@@ -341,7 +339,7 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
     network_type = network_params['type']
     query = []  # Query to filter nodes
 
-    # Filter output values
+    # Get selected filter input values
     short_name = values[0]
     location = values[1]
     enriched_terms = values[2]
@@ -370,7 +368,6 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
     if regulation:
         query.append('regulation in @regulation')
     query_str = ' & '.join(query)  # Join all queries
-
     if short_name:
         if not query:
             query_str += 'shortName in @short_name | index in @short_name'
@@ -444,11 +441,11 @@ def make_subnetwork(node_data, network_df, json_str_network, strain, network_typ
     # Make Graph object for prize-collecting Steiner forest (PCSF)
     graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
                   {'b': 10,  # b > 1 results in more terminal nodes in solution
-                   'g': 0}  # g = 0 = remove degree cost correction
+                   'g': 0}  # g = 0 = disable degree cost correction
                   )
     make_prize_file(network_df, node_data, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
-    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore)
+    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore after running PCSF)
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
     # If solution is empty, warning is shown
@@ -530,20 +527,19 @@ def show_node_details(node_data, node_details, network_params):
     [Input('download-table', 'n_clicks')],
     [State('filtered-node-details', 'children')]
 )
-def download_csv(n_clicks, json_df):
+def download_nodes_csv(n_clicks, json_df):
     if n_clicks:
-        # downloads_dir = os.path.join(os.getcwd(), 'downloads')
-        # if not os.path.exists(downloads_dir):
-        #     os.mkdir(downloads_dir)
-        node_details = pd.read_json(json_df)
-        # abs_filename = os.path.join(downloads_dir, 'node_details.csv')
-        print(node_details.head())
-        # TODO: Fix index issue
-        return send_data_frame(node_details.to_csv, 'node_details.csv')
+        downloads_dir = os.path.join(os.getcwd(), 'downloads')
+        if not os.path.exists(downloads_dir):
+            os.mkdir(downloads_dir)
+        nodes_df = pd.read_json(json_df)
+        abs_filename = os.path.join(downloads_dir, 'node_details.csv')
+        nodes_df.to_csv(abs_filename, index=False)
+        return send_file(abs_filename)
 
 
 @app.callback(
-    Output('graphml-download2', 'data'),
+    Output('graphml-download', 'data'),
     Input('download-network', 'n_clicks'),
     State('hidden-subnetwork', 'children')
 )
@@ -552,7 +548,7 @@ def download_sub_graphml(n_clicks, json_str_sub_network):
         downloads_dir = os.path.join(os.getcwd(), 'downloads')
         if not os.path.exists(downloads_dir):
             os.mkdir(downloads_dir)
-        rel_filename = os.path.join('downloads', 'subnetwork.graphml')
+        rel_filename = os.path.join('downloads', 'network.graphml')
         abs_filename = os.path.join(os.getcwd(), rel_filename)
         sub_network = nx.node_link_graph(json.loads(json_str_sub_network))
         nx.write_graphml(sub_network, path=abs_filename)
