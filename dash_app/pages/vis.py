@@ -218,13 +218,11 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                 id='node-filters',
                                 children=sidebar_filters
                             ),
-                            html.Br(),
+                            html.P(id='num-selected-nodes', style={'padding-top': '5px'}),
                             dbc.Button('Make Sub-Network', id='make-subnetwork', color='primary',
                                        style={'display': 'none'})
                         ]
                     ),
-                    html.Br(),
-                    html.P(id='num-selected-nodes'),
                     dbc.DropdownMenu(
                         id='download-dropdown',
                         color='primary',
@@ -241,14 +239,35 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                                  style={'display': 'none'})
                         ]
                     ),
-                    html.Br(),
-                    dbc.Button(
-                        'Return to selection',
-                        id='reset-network',
-                        color='primary',
-                        style={'display': 'none'}),
                     Download(id='graphml-download'),
                     Download(id='csv-download'),
+                    html.Br(),
+                    html.Div(
+                        id='subnetwork-btns',
+                        style={'display': 'none'},
+                        children=[
+                            dbc.Checklist(id='include-extra-genes',
+                                          options=[
+                                              {'label': 'Include extra genes', 'value': 1}
+                                          ],
+                                          switch=True,
+                                          value=[]
+                                          ),
+                            dbc.Checklist(id='include-low-confidence',
+                                          options=[
+                                              {'label': 'Include low-confidence interactions', 'value': 1}
+                                          ],
+                                          switch=True,
+                                          value=[]
+                                          ),
+                            html.Br(),
+                            dbc.Button(
+                                'Return to selection',
+                                id='reset-network',
+                                color='primary',
+                                )
+                        ]
+                    ),
                     # Hidden Divs to store node details and subnetwork for download
                     html.Div(id='filtered-node-details', style={'display': 'none'}),
                     html.Div(id='hidden-subnetwork', style={'display': 'none'})
@@ -312,21 +331,22 @@ def change_color_map(value):
 
 @app.callback(
     [Output('full-network-panel', 'style'),
-     Output('reset-network', 'style'),
+     Output('subnetwork-btns', 'style'),
      Output('main-view', 'elements'),
      Output('hidden-subnetwork', 'children'),
      Output('num-selected-nodes', 'children'),
      Output('make-subnetwork', 'style')],
     [Input({'type': 'filter', 'index': ALL}, 'value'),  # Pattern-matching all callbacks with filter type
-     Input('make-subnetwork', 'n_clicks')],
-    [State('main-view', 'selectedNodeData'),
-     State('node-details-df', 'children'),
+     Input('make-subnetwork', 'n_clicks'),
+     Input('include-low-confidence', 'value'),
+     Input('include-extra-genes', 'value')],
+    [State('node-details-df', 'children'),
      State('enrichment-results', 'children'),
      State('network-parameters', 'children'),
      State('cyto-network', 'children'),
      State('hidden-bionetwork', 'children')]
 )
-def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_results,
+def select_nodes(values, subnetwork_clicks, low_confidence, extra_genes, node_details, enrichment_results,
                  network_params, cyto_network, bio_network):
     """Select nodes according to user selected filters. Creates subnetwork with selected nodes."""
     cyto_network = json.loads(cyto_network)
@@ -391,8 +411,9 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
 
     # Generate subnetwork when button is clicked.
     if subnetwork_clicks:
-        cyto_sub_network, json_sub_network = make_subnetwork(node_data, network_df, bio_network, strain, network_type)
-        # Throws warning if subnetwork solution is empty.
+        cyto_sub_network, json_sub_network = make_subnetwork(queried_nodes, network_df, bio_network, strain,
+                                                             network_type, low_confidence, extra_genes)
+        # Throws warning if subnetwork sub_network is empty.
         if json_sub_network is None:
             selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
                                      color='warning')
@@ -401,7 +422,8 @@ def select_nodes(values, subnetwork_clicks, node_data, node_details, enrichment_
         # Return subnetwork
         else:
             selected_msg = ''
-        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg, btn_display
+        return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg, \
+               btn_display
     # Return full network
     return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg, btn_display
 
@@ -414,44 +436,58 @@ def reset_subnetwork_clicks(n_clicks):
     return 0
 
 
-def make_subnetwork(node_data, network_df, json_str_network, strain, network_type):
+def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network_type, low_confidence, extra_genes):
     """Returns a subnetwork using the PCSF algorithm, using the user-selected nodes as terminals."""
 
-    def make_prize_file(network_df, node_data, network_type):
+    def make_prize_file(network_df, queried_nodes, network_type):
         """Generates .tsv file with node prizes for use with OmicsIntegrator."""
-        # User-selected nodes are terminals
-        terminals = [node['id'] for node in node_data]
         if network_type == 'gene_list':
             # If there is no expression data, all prizes = 1
             network_df['prize'] = 1
-            terminal_prizes = network_df.loc[network_df.index.isin(terminals), 'prize']
+            terminal_prizes = network_df.loc[network_df.index.isin(queried_nodes), 'prize']
         elif network_type == 'rna_seq' or network_type == 'combined':
             # Set prizes to expression values
-            terminal_prizes = network_df.loc[network_df.index.isin(terminals), ['log2FoldChange']]
+            terminal_prizes = network_df.loc[network_df.index.isin(queried_nodes), ['log2FoldChange']]
             # The bigger the fold change, the bigger the prize
             terminal_prizes.log2FoldChange = abs(terminal_prizes.log2FoldChange)
-            if network_type == 'combined':
-                # Set TnSeq prizes to the max log2FoldChange
-                terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = max(network_df['log2FoldChange'])
-        if network_type == 'rna_seq' or network_type == 'combined':
             terminal_prizes = terminal_prizes.rename(columns={'log2FoldChange': 'prize'})
+            if network_type == 'combined':
+                # Set TnSeq prizes to the max prize
+                terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = max(terminal_prizes['prize'])
+                print(terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :])
         terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
 
     network = nx.node_link_graph(json.loads(json_str_network))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
-    graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),
-                  {'b': 10,  # b > 1 results in more terminal nodes in solution
+    graph = Graph(os.path.join('data', '{}_interactome.tsv'.format(strain)),  # Get interactome with costs
+                  {'b': 10,  # b > 1 results in more terminal nodes in sub_network
                    'g': 0}  # g = 0 = disable degree cost correction
                   )
-    make_prize_file(network_df, node_data, network_type)
+    make_prize_file(network_df, queried_nodes, network_type)
     graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
     os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore after running PCSF)
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
-    # If solution is empty, warning is shown
-    if len(forest.nodes) == 0:
+    # Include low confidence edges if selected by the user
+    sub_network = augmented_forest if low_confidence else forest
+    # If sub-network is empty, warning is shown
+    if len(sub_network.nodes) == 0:
         return None, None
-    sub_network = network.edge_subgraph(augmented_forest.edges())
+    # Sub-network includes extra genes (not in the input genes)
+    if extra_genes:
+        # Add attributes to sub_network
+        for attr in network_df.columns:
+            nx.set_node_attributes(sub_network, pd.Series(network_df[attr], index=network_df.index).to_dict(),
+                                   name=attr)
+        # Set locus tags as short names for new genes
+        for node in sub_network.nodes:
+            if 'short_name' not in sub_network.nodes[node]:
+                sub_network.nodes[node]['shortName'] = node
+        sub_network.remove_edges_from(nx.selfloop_edges(sub_network))
+    # Sub-network only includes genes in input genes
+    else:
+        sub_network = network.edge_subgraph(sub_network.edges())
+
     unfrozen_sub = nx.Graph(sub_network)  # Copy needed to remove orphan nodes
     unfrozen_sub.remove_nodes_from(list(nx.isolates(unfrozen_sub)))
     cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(unfrozen_sub)
@@ -566,5 +602,3 @@ def download_png(n_clicks):
         file_type = 'png'
         action = 'download'
     return {'type': file_type, 'action': action, 'filename': 'subnetwork'}
-
-
