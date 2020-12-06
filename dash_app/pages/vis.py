@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
 from dash_extensions import Download
-from dash_extensions.snippets import send_file, send_data_frame
+from dash_extensions.snippets import send_file
 import dash_html_components as html
 import dash_table
 import networkx as nx
@@ -159,14 +159,17 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
         if network_params['type'] == 'combined':
             sidebar_filters.extend([source_filter])
 
-    # Add color mapping functionality for DE/Combined networks
-    color_mapping = None
+    color_mapping = [html.Div(id='color-map'), html.Div(id='legend')]
+    legend = html.Div(id='legend')
+    # color_mapping = None
     stylesheet = stylesheets.default
+    # Add color mapping functionality for DE/Combined networks
     if network_params['type'] == 'gene_list':
         stylesheet = stylesheets.default
-    if network_params['type'] == 'rna_seq':
+    elif network_params['type'] == 'rna_seq':
         color_mapping = [
             html.H5('Color Mapping'),
+            html.Div(id='color-map'),
             html.Div(style={'padding': '10px'},
                      children=html.Img(
                          src=app.get_asset_url('de_legend.svg'),
@@ -174,16 +177,17 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                          width=100)
                      )
         ]
+        # legend = html.Div(id='legend')
         stylesheet = stylesheets.fold_change
     elif network_params['type'] == 'combined':
         color_mapping = [
             html.H5('Color Mapping'),
             dbc.RadioItems(
                 options=[
-                    {'label': 'Experiment', 'value': 'ss'},
-                    {'label': 'Differential Expression', 'value': 'de'}
+                    {'label': 'Experiment', 'value': 'experiment'},
+                    {'label': 'Differential Expression', 'value': 'regulation'}
                 ],
-                value='ss',
+                value='experiment',
                 id='color-map',
             ),
             html.Div(style={'padding': '10px'},
@@ -207,9 +211,16 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     'overflow': 'auto'
                 },
                 children=[
-                    html.Div(id='color-map-div',
-                             children=color_mapping
-                             ),
+                    html.Div(color_mapping),
+                    # legend,
+                    dbc.Checklist(
+                        id='show-labels',
+                        options=[
+                            {'label': 'Show node labels', 'value': 1}
+                        ],
+                        switch=True,
+                        value=[]
+                    ),
                     html.Hr(),
                     html.Div(
                         id='full-network-panel',
@@ -318,15 +329,20 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
 @app.callback(
     [Output('main-view', 'stylesheet'),
      Output('legend', 'src')],
-    [Input('color-map', 'value')]
+    [Input('color-map', 'value'),
+     Input('show-labels', 'value')]
 )
-def change_color_map(value):
-    if value == 'ss':
-        source = app.get_asset_url('sig_source_legend.svg')
-        return stylesheets.combined, source
+def change_stylesheet(color_map, show_labels):
+    if color_map == 'experiment':
+        legend = app.get_asset_url('sig_source_legend.svg')
+        stylesheet = stylesheets.combined
     else:
-        source = app.get_asset_url('de_legend.svg')
-        return stylesheets.fold_change, source
+        legend = app.get_asset_url('de_legend.svg')
+        stylesheet = stylesheets.fold_change
+    if show_labels:
+        return stylesheets.add_labels(stylesheet), legend
+    else:
+        return stylesheet, legend
 
 
 @app.callback(
@@ -454,7 +470,6 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
             if network_type == 'combined':
                 # Set TnSeq prizes to the max prize
                 terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = max(terminal_prizes['prize'])
-                print(terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :])
         terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
 
     network = nx.node_link_graph(json.loads(json_str_network))

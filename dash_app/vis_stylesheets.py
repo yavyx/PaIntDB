@@ -4,19 +4,19 @@ default = [
         'style': {
             'border-width': 1,
             'border-color': 'black',
-            'min-zoomed-font-size': 30,
+            # 'min-zoomed-font-size': 30,
             'width': 'mapData(degree, 1, 30, 13, 25)',
             'height': 'mapData(degree, 1, 30, 13, 25)',
             'padding': '10%',
-            'content': 'data(label)'
+
         }
     },
     {
         'selector': ':selected',
         'style': {
-            'min-zoomed-font-size': 10,
+            # 'min-zoomed-font-size': 10,
             'border-width': 4,
-            'content': 'data(label)',
+            'label': 'data(label)',
             'border-color': 'black',
             'border-opacity': 1,
             'opacity': 1,
@@ -76,5 +76,20 @@ combined = default + \
             }
         }
     ]
+
+
+def add_labels(stylesheet):
+    """Add node labels to the stylesheet."""
+    new_stylesheet = stylesheet + \
+        [
+            {
+                'selector': 'node',
+                'style': {
+                    'label': 'data(label)'
+                }
+            }
+        ]
+    return new_stylesheet
+
 
 
