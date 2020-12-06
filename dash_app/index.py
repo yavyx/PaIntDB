@@ -8,7 +8,7 @@ from dash.dash import no_update
 from networkx.readwrite import json_graph
 import pandas as pd
 
-from dash_app.app import app
+from dash_app.app import app, server
 from dash_app.pages import home, menu, vis
 
 app.layout = html.Div([
