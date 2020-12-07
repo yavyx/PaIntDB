@@ -78,8 +78,7 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
             network_df = pd.read_json(json_df)
             enrichment_results = pd.read_json(json_enrichment_results)
             # Create cyto network for visualization
-            cyto_network = dict()
-            cyto_network['elements'], cyto_network['nodes'], cyto_network['edges'] = vis.make_cyto_elements(network)
+            cyto_network = vis.make_cyto_elements(network)
             # Generate layout using generated data
             vis_layout = vis.make_vis_layout(network_df, enrichment_results, cyto_network, network_params)
             return vis_layout, json.dumps(cyto_network)

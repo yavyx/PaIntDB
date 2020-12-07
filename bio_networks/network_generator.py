@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import datetime
 import sqlite3
 
 import networkx as nx
@@ -37,7 +36,6 @@ class BioNetwork:
 
     def query_db(self):
         """Queries PaintDB depending on the selected filters and adds the raw information to the network."""
-
         with sqlite3.connect(DB_PATH) as db_connection:
             cursor = db_connection.cursor()
             if self.metabolites is True:
@@ -280,9 +278,14 @@ class DENetwork(BioNetwork):
         nx.set_node_attributes(self.network, DENetwork.process_de_genes_list(self.de_genes_df))
         self.network_df['log2FoldChange'] = pd.Series(dict(self.network.nodes(data='log2FoldChange')))
         self.network_df['padj'] = pd.Series(dict(self.network.nodes(data='padj')))
+
+        # df['DataFrame Column'] = df['DataFrame Column'].astype(float)
         # Format DataFrame fields
-        self.network_df['log2FoldChange'] = self.network_df['log2FoldChange'].round(2)
+        # self.network_df['log2FoldChange'] = self.network_df['log2FoldChange'].round(2)
+        # self.network_df['padj'] = [sigfig.round(n, sigfigs=3) for n in self.network_df['padj']]
+        # genes_df['padj'] = [sigfig.round(n, sigfigs=3) for n in genes_df['padj']]
         self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
+
 
     @staticmethod
     def process_de_genes_list(de_genes_df):
@@ -312,7 +315,7 @@ class CombinedNetwork(DENetwork):
         self.network_df['significanceSource'] = pd.Series(dict(self.network.nodes(data='significanceSource')))
         self.network_type = 'combined'
         # Add regulation column to network DataFrame
-        self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
+        # self.network_df['regulation'] = ['up' if change > 0 else 'down' for change in self.network_df['log2FoldChange']]
         self.network_df['regulation'] = [None if sig == 'TnSeq' else reg
                                          for sig, reg in
                                          zip(self.network_df['significanceSource'], self.network_df['regulation'])]

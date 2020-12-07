@@ -1,5 +1,6 @@
 import json
 import os
+import sqlite3
 
 from dash.dependencies import Output, Input, State, ALL
 from dash.dash import no_update
@@ -37,10 +38,10 @@ def make_cyto_elements(network):
         pos = layout[node['data']['id']]  # Extract positions from layout dict
         node['position'] = {'x': pos[0], 'y': pos[1]}  # Set positions
 
-    edges = json_elements['edges']
-    elements = nodes + edges
-
-    return elements, nodes, edges
+    elements = dict()
+    elements['nodes'] = nodes
+    elements['edges'] = json_elements['edges']
+    return elements
 
 
 def make_vis_layout(network_df, enrichment_results, cyto_network, network_params):
@@ -284,7 +285,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '73vw'
+                    'width': '75vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -303,7 +304,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                         minZoom=0.3,
                                         zoom=1,
                                         layout={'name': 'preset'},
-                                        elements=cyto_network['elements'],
+                                        elements=cyto_network,
                                         boxSelectionEnabled=True
                                     )
                                 ),
@@ -312,7 +313,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                         dbc.Row(
                             dbc.Col(
                                 html.Div(id='node-details-table',
-                                         style={'margin-top': '-30vh'}
+                                         style={'margin-top': '-25vh'}
                                          )
                             )
                         )
@@ -365,7 +366,7 @@ def select_nodes(values, subnetwork_clicks, low_confidence, extra_genes, node_de
     cyto_network = json.loads(cyto_network)
     enrichment_results = pd.read_json(enrichment_results)
     nodes = cyto_network['nodes']
-    edges = cyto_network['edges']
+    # edges = cyto_network['edges']
     network_df = pd.read_json(node_details)
     network_params = json.loads(network_params)
     strain = network_params['strain']
@@ -438,7 +439,7 @@ def select_nodes(values, subnetwork_clicks, low_confidence, extra_genes, node_de
         return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg, \
                btn_display
     # Return full network
-    return {'display': 'block'}, {'display': 'none'}, nodes + edges, no_update, selected_msg, btn_display
+    return {'display': 'block'}, {'display': 'none'}, cyto_network, no_update, selected_msg, btn_display
 
 
 @app.callback(
@@ -485,16 +486,38 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
     # If sub-network is empty, warning is shown
     if len(sub_network.nodes) == 0:
         return None, None
+
     # Sub-network includes extra genes (not in the input genes)
     if extra_genes:
-        # Add attributes to sub_network
-        for attr in network_df.columns:
-            nx.set_node_attributes(sub_network, pd.Series(network_df[attr], index=network_df.index).to_dict(),
-                                   name=attr)
+        nodes = [node for node in sub_network.nodes]
+
+        # Get extra gene information from database
+        with sqlite3.connect('PaIntDB.db') as db_connection:
+            descriptions = pd.read_sql_query("""SELECT id, product_name
+                                                FROM protein
+                                                WHERE id IN (%s)""" % ', '.join('?' * len(nodes)),
+                                             con=db_connection, params=nodes)
+            short_names = pd.read_sql_query("""SELECT id, name
+                                               FROM interactor
+                                               WHERE id IN (%s)""" % ', '.join('?' * len(nodes)),
+                                            con=db_connection, params=nodes)
+        # Format results to use as node attributes
+        descriptions = descriptions.set_index('id').to_dict(orient='index')
+        short_names = short_names.set_index('id').to_dict(orient='index')
+        description_attr = dict()
+        short_name_attr = dict()
+        for key, value in descriptions.items():
+            description_attr[key] = dict(description=value['product_name'])
+        for key, value in short_names.items():
+            short_name_attr[key] = dict(shortName=value['name'])
+        nx.set_node_attributes(sub_network, description_attr)
+        nx.set_node_attributes(sub_network, short_name_attr)
+
         # Set locus tags as short names for new genes
         for node in sub_network.nodes:
-            if 'short_name' not in sub_network.nodes[node]:
-                sub_network.nodes[node]['shortName'] = node
+             if sub_network.nodes[node]['shortName'] is None:
+                 sub_network.nodes[node]['shortName'] = node
+
         sub_network.remove_edges_from(nx.selfloop_edges(sub_network))
     # Sub-network only includes genes in input genes
     else:
@@ -502,9 +525,9 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
 
     unfrozen_sub = nx.Graph(sub_network)  # Copy needed to remove orphan nodes
     unfrozen_sub.remove_nodes_from(list(nx.isolates(unfrozen_sub)))
-    cyto_sub_network, sub_cyto_nodes, sub_cyto_edges = make_cyto_elements(unfrozen_sub)
+    cyto_sub_network = make_cyto_elements(unfrozen_sub)
     json_sub_network = json.dumps(nx.node_link_data(unfrozen_sub))  # For downloading
-    return cyto_sub_network, json_sub_network
+    return cyto_sub_network, json_sub_network #, subnetwork_df
 
 
 @app.callback(
@@ -521,11 +544,14 @@ def show_node_details(node_data, node_details, network_params):
         # Columns to display
         cols = ['shortName', 'description']
         network_params = json.loads(network_params)
-        if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
-            cols.extend(['log2FoldChange', 'padj'])
         # Get selected nodes
         node_ids = [node['label'] for node in node_data]
         network_df = pd.read_json(node_details)
+        if network_params['type'] == 'rna_seq' or network_params['type'] == 'combined':
+            cols.extend(['log2FoldChange', 'padj'])
+            network_df['log2FoldChange'] = network_df['log2FoldChange'].round(2)
+            # network_df['padj'] = [sigfig.round(n, sigfigs=3) for n in network_df['padj']]
+
         filtered_df = (network_df.loc[network_df.shortName.isin(node_ids), cols]
                        .reset_index()
                        .rename(columns={'index': 'Locus Tag',
@@ -538,7 +564,6 @@ def show_node_details(node_data, node_details, network_params):
                        )
 
         nodes_table = [
-            html.H5('Selected Node(s) Details'),
             dash_table.DataTable(
                 data=filtered_df.to_dict('records'),
                 columns=[{'name': i, 'id': i} for i in filtered_df.columns],
