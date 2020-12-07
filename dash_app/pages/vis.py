@@ -160,8 +160,6 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             sidebar_filters.extend([source_filter])
 
     color_mapping = [html.Div(id='color-map'), html.Div(id='legend')]
-    legend = html.Div(id='legend')
-    # color_mapping = None
     stylesheet = stylesheets.default
     # Add color mapping functionality for DE/Combined networks
     if network_params['type'] == 'gene_list':
@@ -177,7 +175,6 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                          width=100)
                      )
         ]
-        # legend = html.Div(id='legend')
         stylesheet = stylesheets.fold_change
     elif network_params['type'] == 'combined':
         color_mapping = [
@@ -234,6 +231,33 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                        style={'display': 'none'})
                         ]
                     ),
+                    html.Div(
+                        id='subnetwork-btns',
+                        style={'display': 'none'},
+                        children=[
+                            dbc.Checklist(id='include-extra-genes',
+                                          options=[
+                                              {'label': 'Include extra genes', 'value': 1}
+                                          ],
+                                          switch=True,
+                                          value=[]
+                                          ),
+                            html.Br(),
+                            dbc.Checklist(id='include-low-confidence',
+                                          options=[
+                                              {'label': 'Include low-confidence interactions', 'value': 1}
+                                          ],
+                                          switch=True,
+                                          value=[]
+                                          ),
+                            html.Br(),
+                            dbc.Button(
+                                'Return to selection',
+                                id='reset-network',
+                                color='primary',
+                            )
+                        ]
+                    ),
                     dbc.DropdownMenu(
                         id='download-dropdown',
                         color='primary',
@@ -252,33 +276,6 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     ),
                     Download(id='graphml-download'),
                     Download(id='csv-download'),
-                    html.Br(),
-                    html.Div(
-                        id='subnetwork-btns',
-                        style={'display': 'none'},
-                        children=[
-                            dbc.Checklist(id='include-extra-genes',
-                                          options=[
-                                              {'label': 'Include extra genes', 'value': 1}
-                                          ],
-                                          switch=True,
-                                          value=[]
-                                          ),
-                            dbc.Checklist(id='include-low-confidence',
-                                          options=[
-                                              {'label': 'Include low-confidence interactions', 'value': 1}
-                                          ],
-                                          switch=True,
-                                          value=[]
-                                          ),
-                            html.Br(),
-                            dbc.Button(
-                                'Return to selection',
-                                id='reset-network',
-                                color='primary',
-                                )
-                        ]
-                    ),
                     # Hidden Divs to store node details and subnetwork for download
                     html.Div(id='filtered-node-details', style={'display': 'none'}),
                     html.Div(id='hidden-subnetwork', style={'display': 'none'})
