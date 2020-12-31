@@ -16,9 +16,8 @@ import pandas as pd
 import sigfig
 
 from bio_networks.network_generator import BioNetwork, DENetwork, CombinedNetwork
-from go_enrichment.go_enrichment import run_go_enrichment
 from dash_app.app import app  # Loads app variable from app script
-
+from go_enrichment.go_enrichment import run_go_enrichment
 
 layout = dbc.Container(
     [
@@ -165,7 +164,7 @@ layout = dbc.Container(
     ],
     fluid=True,
     style={'background-color': '#ededed',
-           'height': '95vh',
+           'height': 'calc(100vh - 65px)',
            'overflow': 'auto'}
 )
 
@@ -312,7 +311,8 @@ def build_network(n_clicks, network_type, strain, order, detection_method, rnase
         bio_network = None
 
     if len(bio_network.network) == 0:
-        mapping_msg = dbc.Alert('The network is empty. Ensure that you selected the right strain.',
+        mapping_msg = dbc.Alert('The network is empty. Ensure that you uploaded a list of P. aeruginosa locus tags and '
+                                'that you selected the right strain.',
                                 color='warning', style={'display': 'inline-block'})
         enrichment_btns_display = {'display': 'none'}
     else:

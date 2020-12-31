@@ -9,32 +9,42 @@ from networkx.readwrite import json_graph
 import pandas as pd
 
 from dash_app.app import app, server
-from dash_app.pages import home, menu, vis
+from dash_app.pages import home, menu, vis, tutorial
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dbc.Navbar(
         id='top-bar',
         color='#1a3775',
-        dark=True,
         sticky='sticky',
+        style={'height': '65px'},
         children=[
-            dbc.Nav([
-                dbc.NavbarBrand('PaIntDB', href='/'),
-                dbc.NavLink('Build Network', href='/menu'),
-                dbc.NavLink('Explore Network', href='/vis', id='explore'),
-                dbc.DropdownMenu(
-                    children=[
-                        dbc.DropdownMenuItem('Tutorial', href='/tutorial'),
-                        dbc.DropdownMenuItem('About', href='/about'),
+            dbc.Nav(
+                dbc.Row(
+                    [
+                        html.A(
+                            html.Img(src=app.get_asset_url('PaintDB-logo-small.png'),
+                                     id='legend',
+                                     height='60px',
+                                     ),
+                            href='/'),
+                        dbc.NavLink('Build Network', href='/menu'),
+                        dbc.NavLink('Explore Network', href='/vis', id='explore'),
+                        dbc.DropdownMenu(
+                            children=[
+                                dbc.DropdownMenuItem('Tutorial', href='/tutorial'),
+                                dbc.DropdownMenuItem('About', href='/about'),
+                            ],
+                            nav=True,
+                            in_navbar=True,
+                            label='More'
+                        ),
                     ],
-                    nav=True,
-                    in_navbar=True,
-                    label='More'
-                )
-            ])
+                    align='center')
+            )
         ],
     ),
+    # Different pages are shown here
     html.Div(id='page-content'),
 
     # Hidden divs to store and share JSON data across callbacks and pages
@@ -87,9 +97,7 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
                              color='warning',
                              style={'display': 'inline-block', 'margin': '10px'}), no_update
     elif pathname == '/tutorial':
-        return dbc.Alert('Coming Soon.',
-                         color='primary',
-                         style={'display': 'inline-block', 'margin': '10px'}), no_update
+        return tutorial.layout, no_update
     elif pathname == '/about':
         return dbc.Alert('Coming Soon.',
                          color='primary',

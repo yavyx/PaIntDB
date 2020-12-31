@@ -204,7 +204,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     'backgroundColor': '#a6edff',
                     'padding': '10px',
                     'display': 'inline-block',
-                    'height': '95vh',
+                    'height': 'calc(100vh - 65px)',
                     'vertical-align': 'top',
                     'overflow': 'auto'
                 },
@@ -285,7 +285,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
             html.Div(
                 style={
                     'display': 'inline-block',
-                    'width': '75vw'
+                    'width': '74vw'
                 },
                 children=dbc.Container(
                     fluid=True,
@@ -297,7 +297,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                         id='main-view',
                                         style={
                                             'width': '100%',
-                                            'height': '90vh',
+                                            'height': 'calc(100vh - 80px)'
                                         },
                                         stylesheet=stylesheet,
                                         maxZoom=5,
@@ -515,8 +515,8 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
 
         # Set locus tags as short names for new genes
         for node in sub_network.nodes:
-             if sub_network.nodes[node]['shortName'] is None:
-                 sub_network.nodes[node]['shortName'] = node
+            if sub_network.nodes[node]['shortName'] is None:
+                sub_network.nodes[node]['shortName'] = node
 
         sub_network.remove_edges_from(nx.selfloop_edges(sub_network))
     # Sub-network only includes genes in input genes
@@ -527,7 +527,7 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
     unfrozen_sub.remove_nodes_from(list(nx.isolates(unfrozen_sub)))
     cyto_sub_network = make_cyto_elements(unfrozen_sub)
     json_sub_network = json.dumps(nx.node_link_data(unfrozen_sub))  # For downloading
-    return cyto_sub_network, json_sub_network #, subnetwork_df
+    return cyto_sub_network, json_sub_network
 
 
 @app.callback(
@@ -573,7 +573,7 @@ def show_node_details(node_data, node_details, network_params):
                 sort_action='native',
                 style_as_list_view=True,
                 style_table={
-                    'maxHeight': '30vh',
+                    'maxHeight': '25vh',
                     'overflowY': 'auto'
                 },
                 style_cell={'textAlign': 'left',

@@ -4,17 +4,15 @@ default = [
         'style': {
             'border-width': 1,
             'border-color': 'black',
-            # 'min-zoomed-font-size': 30,
-            'width': 'mapData(degree, 1, 30, 13, 25)',
-            'height': 'mapData(degree, 1, 30, 13, 25)',
+            'width': 'mapData(degree, 1, 15, 10, 30)',
+            'height': 'mapData(degree, 1, 15, 10, 30)',
             'padding': '10%',
-
+            'font-size': 24,
         }
     },
     {
         'selector': ':selected',
         'style': {
-            # 'min-zoomed-font-size': 10,
             'border-width': 4,
             'label': 'data(label)',
             'border-color': 'black',
