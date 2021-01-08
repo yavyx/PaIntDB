@@ -31,8 +31,8 @@ layout = dbc.Container(
                             id='network-type',
                             options=[
                                 {'label': 'Gene List', 'value': 'basic'},
-                                {'label': 'Differentially-Expressed (DE) Gene List', 'value': 'DE'},
-                                {'label': 'Combined (DE genes and TnSeq genes)', 'value': 'combined'}
+                                {'label': 'Differentially-expressed (DE) gene list', 'value': 'DE'},
+                                {'label': 'Combined (DE genes and Tn-Seq genes)', 'value': 'combined'}
                             ],
                             value='basic'),
                         html.Br(),

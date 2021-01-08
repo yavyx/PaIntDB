@@ -82,8 +82,8 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                     'index': 4
                 },
                 options=[
-                    {'label': 'RNASeq', 'value': 'RNASeq'},
-                    {'label': 'TnSeq', 'value': 'TnSeq'}
+                    {'label': 'RNA-Seq', 'value': 'RNASeq'},
+                    {'label': 'Tn-Seq', 'value': 'TnSeq'}
                 ],
                 value=[],
             )
@@ -467,7 +467,7 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
             terminal_prizes = terminal_prizes.rename(columns={'log2FoldChange': 'prize'})
             if network_type == 'combined':
                 # Set TnSeq prizes to the max prize
-                terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = max(terminal_prizes['prize'])
+                terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = terminal_prizes['prize'].max()
         terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
 
     network = nx.node_link_graph(json.loads(json_str_network))

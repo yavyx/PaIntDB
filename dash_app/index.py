@@ -28,8 +28,8 @@ app.layout = html.Div([
                                      height='60px',
                                      ),
                             href='/'),
-                        dbc.NavLink('Build Network', href='/menu'),
-                        dbc.NavLink('Explore Network', href='/vis', id='explore'),
+                        dbc.NavLink('Build Network', href='/menu', active='exact'),
+                        dbc.NavLink('Explore Network', href='/vis', id='explore', disabled=True),
                         dbc.DropdownMenu(
                             children=[
                                 dbc.DropdownMenuItem('Tutorial', href='/tutorial'),
@@ -59,11 +59,12 @@ app.layout = html.Div([
 
 @app.callback(
     Output('explore', 'disabled'),
-    [Input('hidden-bionetwork', 'children')]
+    [Input('hidden-bionetwork', 'children'),
+     Input('enrichment-results', 'children')]
 )
-def enable_explore_tab(bio_network):
+def enable_explore_tab(bio_network, enrichment=None):
     """Disables Explore tab if there is no network to explore."""
-    return True if bio_network is None else False
+    return False if bio_network and enrichment else True
 
 
 @app.callback(
