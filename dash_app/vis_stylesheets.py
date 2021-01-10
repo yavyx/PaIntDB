@@ -7,7 +7,7 @@ default = [
             'width': 'mapData(degree, 1, 15, 10, 30)',
             'height': 'mapData(degree, 1, 15, 10, 30)',
             'padding': '10%',
-            'font-size': 24,
+            'font-size': 22,
         }
     },
     {

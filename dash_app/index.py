@@ -9,14 +9,13 @@ from networkx.readwrite import json_graph
 import pandas as pd
 
 from dash_app.app import app, server
-from dash_app.pages import home, menu, vis, tutorial
+from dash_app.pages import home, menu, vis, user_guide
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     dbc.Navbar(
         id='top-bar',
         color='#1a3775',
-        sticky='sticky',
         style={'height': '65px'},
         children=[
             dbc.Nav(
@@ -32,7 +31,7 @@ app.layout = html.Div([
                         dbc.NavLink('Explore Network', href='/vis', id='explore', disabled=True),
                         dbc.DropdownMenu(
                             children=[
-                                dbc.DropdownMenuItem('Tutorial', href='/tutorial'),
+                                dbc.DropdownMenuItem('User Guide', href='/user_guide'),
                                 dbc.DropdownMenuItem('About', href='/about'),
                             ],
                             nav=True,
@@ -97,14 +96,16 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
             return dbc.Alert('Warning: You need to build a network first.',
                              color='warning',
                              style={'display': 'inline-block', 'margin': '10px'}), no_update
-    elif pathname == '/tutorial':
-        return tutorial.layout, no_update
+    elif pathname == '/user_guide':
+        return user_guide.layout, no_update
     elif pathname == '/about':
         return dbc.Alert('Coming Soon.',
                          color='primary',
                          style={'display': 'inline-block', 'margin': '10px'}), no_update
     else:
-        return '404'
+        return dbc.Alert('Page not found.',
+                         color='danger',
+                         style={'display': 'inline-block', 'margin': '10px'}), no_update
 
 
 if __name__ == '__main__':

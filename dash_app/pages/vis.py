@@ -243,6 +243,12 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                           switch=True,
                                           value=[]
                                           ),
+                            html.Abbr('Help',
+                                      title=(('Include additional genes, called Steiner nodes, that are not part '
+                                              'of your original data but have interactions with your genes. '
+                                              'Useful to connect subnetworks with '
+                                              'many smaller components.')),
+                                      ),
                             html.Br(),
                             dbc.Checklist(id='include-low-confidence',
                                           options=[
@@ -251,6 +257,10 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                                           switch=True,
                                           value=[]
                                           ),
+                            html.Abbr('Help',
+                                      title=(('Include all interactions in the subnetwork, instead of prioritizing '
+                                              'experimental interactions.')),
+                                      ),
                             html.Br(),
                             dbc.Button(
                                 'Return to selection',
@@ -259,6 +269,7 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                             )
                         ]
                     ),
+                    html.Hr(),
                     dbc.DropdownMenu(
                         id='download-dropdown',
                         color='primary',
