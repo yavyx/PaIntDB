@@ -16,9 +16,9 @@ data_upload_tab = dbc.Card(
                 '#### 1. Data upload\n'
                 'PaIntDB takes a list of  of *Pseudomonas aeruginosa* locus tags, which must be in the first column'
                 ' of a .csv file. The three upload options work as follows:\n'
-                '- Gene list: any extra columns are ignored.\n'
+                '- Gene list: any additional columns are ignored.\n'
                 '- Differentially-expressed gene list: the column with fold changes must be named '
-                '\'log2FoldChange\' and the column with p-values must be named \'padj\'. Any extra columns are '
+                '\'log2FoldChange\' and the column with p-values must be named \'padj\'. Any additional columns are '
                 'ignored. \n'
                 '- Combined: A differentially-expressed gene list, with the same requirements as above, and '
                 'another .csv file with locus tags in the first column.\n'
@@ -52,7 +52,6 @@ data_upload_tab = dbc.Card(
 explore_tab = dbc.Card(
     dbc.CardBody(
         [
-            dcc.Markdown('You can select '),
             dbc.CardImg(src=app.get_asset_url('tutorial_2.png'),
                         style={'width': '60vw',
                                'padding-bottom': '10px'}),
@@ -80,7 +79,7 @@ explore_tab = dbc.Card(
                 'After generating a subnetwork, you have the following options:\n\n'
                 '- Including additional genes, called Steiner nodes, that are not part '
                 'of your original data but have interactions with your genes. '
-                'Useful to connect subnetworks with many smaller components\n'
+                'Useful to connect subnetworks with many smaller components.\n'
                 '- Including low-confidence interactions in the subnetwork solution, instead of prioritizing '
                 'experimental interactions.\n'
                 '#### C. Network view\n'

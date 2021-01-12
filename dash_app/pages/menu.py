@@ -26,7 +26,7 @@ layout = dbc.Container(
                 dbc.Col(
                     [
                         html.Br(),
-                        'Select your input data: ',
+                        html.P('Select your input data: '),
                         dbc.RadioItems(
                             id='network-type',
                             options=[
@@ -49,9 +49,11 @@ layout = dbc.Container(
                                 children=dbc.Button(
                                     id='tnseq_upload-button',
                                     children='Upload TnSeq Gene List',
-                                    color='primary'))
-                        ], style={'marginTop': '1vh'}
-                        )
+                                    color='primary'))],
+                            style={'marginTop': '1vh'}
+                        ),
+                        dbc.Button('Load Example Data',
+                                   id='load-example', color='link', style={'display': 'inline-block'}),
 
                     ],
                     width=4
@@ -169,22 +171,27 @@ layout = dbc.Container(
 )
 
 
-def parse_gene_list(contents, network_type):
+def parse_gene_list(contents, network_type, example_data=False):
     """Parses the uploaded gene list, returns a Bootstrap table and a Pandas DataFrame."""
-    # TODO: Add checks for wrong gene names
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
-    genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+
+    if example_data is True:
+        genes_df = pd.read_csv(os.path.join('data', 'example_diff_expr.csv'))
+    else:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        genes_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+
+    cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
+    # Round columns to significant values
+    genes_df.loc[:, cols] = genes_df[cols].round(2)
 
     if network_type == 'DE' or network_type == 'combined':
         # Check RNASeq headers are there
         if not {'log2FoldChange', 'padj'}.issubset(genes_df.columns):
             return dbc.Alert('Check your header names. They should include "log2FoldChange" and "padj"',
                              color='danger', style={'display': 'inline-block'}), []
-        cols = [col for col in genes_df.columns if col not in ['pvalue', 'padj']]  # select all columns except p-values
-        # Round columns to significant values
-        genes_df.loc[:, cols] = genes_df[cols].round(2)
-        genes_df['pvalue'] = [sigfig.round(n, sigfigs=3) for n in genes_df['pvalue']]
+        # if genes_df['pvalue']:
+        #     genes_df['pvalue'] = [sigfig.round(n, sigfigs=3) for n in genes_df['pvalue']]
         genes_df['padj'] = [sigfig.round(n, sigfigs=3) for n in genes_df['padj']]
 
     small_df = genes_df.head()  # smaller df to display on app
@@ -210,12 +217,14 @@ def parse_gene_list(contents, network_type):
     return upload_contents, genes_df
 
 
-def parse_tnseq_list(contents, filename):
+def parse_tnseq_list(contents, filename, example_data=False):
     """Parses the uploaded TnSeq gene list"""
-    # TODO: add checks for wrong gene names
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
-    tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+    if example_data is True:
+        tnseq_df = pd.read_csv(os.path.join('data', 'tn_seq_example.csv'))
+    else:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        tnseq_df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
     tnseq_genes = tnseq_df.iloc[:, 0].tolist()
     upload_msg = html.Div(['Your TnSeq genes were uploaded successfully!',
                            filename])
@@ -235,17 +244,18 @@ def show_tnseq_upload_btn(network_type):
     Output('make-network-btn', 'style'),
     [Input('gene-list-upload', 'contents'),
      Input('tnseq-gene-list-upload', 'contents'),
-     Input('network-type', 'value')]
+     Input('network-type', 'value'),
+     Input('load-example', 'n_clicks')]
 )
-def show_make_network_btn(contents, tnseq_contents, network_type):
+def show_make_network_btn(contents, tnseq_contents, network_type, example_data):
     """Shows make network button upload after upload is read."""
     if network_type == 'combined':
-        if contents and tnseq_contents:
+        if contents and tnseq_contents or example_data:
             return {'display': 'block'}
         else:
             return {'display': 'none'}
     elif network_type == 'basic' or network_type == 'DE':
-        if contents:
+        if contents or example_data:
             return {'display': 'block'}
         else:
             return {'display': 'none'}
@@ -253,10 +263,11 @@ def show_make_network_btn(contents, tnseq_contents, network_type):
 
 @app.callback(
     Output('data-upload-output', 'children'),
-    [Input('gene-list-upload', 'contents')],
+    [Input('gene-list-upload', 'contents'),
+     Input('load-example', 'n_clicks')],
     [State('network-type', 'value')]
 )
-def upload_message(contents, network_type):
+def upload_message(contents, load_example, network_type):
     """Returns a successful message after file was uploaded."""
     if contents:
         try:
@@ -265,6 +276,17 @@ def upload_message(contents, network_type):
         except ValueError:
             return dbc.Alert('There was a problem uploading your file. Check that it is the correct format.',
                              color='danger', style={'display': 'inline-block'})
+    elif load_example:
+        small_table, genes_df = parse_gene_list(contents, network_type, example_data=True)
+        return small_table
+
+
+# @app.callback(
+#     [Input('load-example', 'n_clicks')]
+# )
+# def load_example_data(n_clicks):
+#     if n_clicks:
+
 
 
 @app.callback(
@@ -282,19 +304,22 @@ def upload_message(contents, network_type):
      State('strain', 'value'),
      State('order', 'value'),
      State('detection-method', 'value'),
+     State('load-example', 'n_clicks'),
      State('gene-list-upload', 'contents'),
      State('tnseq-gene-list-upload', 'contents'),
      State('gene-list-upload', 'filename'),
      State('tnseq-gene-list-upload', 'filename')]
 )
-def build_network(n_clicks, network_type, strain, order, detection_method, rnaseq_contents,tnseq_contents,
-                  rnaseq_filename, tnseq_filename):
+def build_network(n_clicks, network_type, strain, order, detection_method, example_data_clicks, rnaseq_contents,
+                  tnseq_contents, rnaseq_filename, tnseq_filename):
     """Generates a network every time the make network button is clicked. Serializes results to JSON
     and stores them in hidden divs. Shows download and explore network button."""
     if n_clicks is None:
         raise PreventUpdate
 
-    upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename)
+    example_data = True if example_data_clicks else False
+    upload_msg, genes_df = parse_gene_list(rnaseq_contents, rnaseq_filename, example_data)
+
     genes_df.rename(columns={genes_df.columns[0]: 'gene'}, inplace=True)
     gene_list = genes_df.gene.tolist()
     if network_type == 'basic':
@@ -303,7 +328,7 @@ def build_network(n_clicks, network_type, strain, order, detection_method, rnase
         bio_network = DENetwork(gene_list=gene_list, strain=strain, order=order, detection_method=detection_method,
                                 de_genes_df=genes_df)
     elif network_type == 'combined':
-        upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename)
+        upload_msg, tnseq_genes = parse_tnseq_list(tnseq_contents, tnseq_filename, example_data)
         bio_network = CombinedNetwork(gene_list=gene_list, strain=strain, order=order,
                                       detection_method=detection_method,
                                       de_genes_df=genes_df, tnseq_gene_list=tnseq_genes)

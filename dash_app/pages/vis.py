@@ -2,22 +2,22 @@ import json
 import os
 import sqlite3
 
-from dash.dependencies import Output, Input, State, ALL
-from dash.dash import no_update
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_cytoscape as cyto
-from dash_extensions import Download
-from dash_extensions.snippets import send_file
 import dash_html_components as html
 import dash_table
 import networkx as nx
-from OmicsIntegrator import Graph
 import pandas as pd
+from OmicsIntegrator import Graph
+from dash.dash import no_update
+from dash.dependencies import Output, Input, State, ALL
+from dash_extensions import Download
+from dash_extensions.snippets import send_file
 
 import dash_app.vis_stylesheets as stylesheets
-from dash_app.app import app  # Loads app variable from app script
 import go_enrichment.go_enrichment as goe
+from dash_app.app import app  # Loads app variable from app script
 
 
 def make_cyto_elements(network):
@@ -238,14 +238,14 @@ def make_vis_layout(network_df, enrichment_results, cyto_network, network_params
                         children=[
                             dbc.Checklist(id='include-extra-genes',
                                           options=[
-                                              {'label': 'Include extra genes', 'value': 1}
+                                              {'label': 'Include additional genes', 'value': 1}
                                           ],
                                           switch=True,
                                           value=[]
                                           ),
                             html.Abbr('Help',
-                                      title=(('Include additional genes, called Steiner nodes, that are not part '
-                                              'of your original data but have interactions with your genes. '
+                                      title=(('Include additional genes, called Steiner nodes, that are are not '
+                                              'included in the original data, but help connect other genes that are. '
                                               'Useful to connect subnetworks with '
                                               'many smaller components.')),
                                       ),
