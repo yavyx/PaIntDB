@@ -9,7 +9,7 @@ from networkx.readwrite import json_graph
 import pandas as pd
 
 from dash_app.app import app, server
-from dash_app.pages import home, menu, vis, user_guide
+from dash_app.pages import home, menu, vis, user_guide, about
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -99,9 +99,7 @@ def display_page(pathname, bio_network, json_df, json_enrichment_results, networ
     elif pathname == '/user_guide':
         return user_guide.layout, no_update
     elif pathname == '/about':
-        return dbc.Alert('Coming Soon.',
-                         color='primary',
-                         style={'display': 'inline-block', 'margin': '10px'}), no_update
+        return about.layout, no_update
     else:
         return dbc.Alert('Page not found.',
                          color='danger',

@@ -30,7 +30,7 @@ layout = html.Div(
                            style={'margin-left': '5px'})
             ],
             style={'margin': '10px',
-                   'backgroundColor': '#d1d1d1'}
+                   'backgroundColor': '#a6edff'}
         ),
         html.Div(
             [

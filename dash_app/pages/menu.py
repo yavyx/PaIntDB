@@ -281,14 +281,6 @@ def upload_message(contents, load_example, network_type):
         return small_table
 
 
-# @app.callback(
-#     [Input('load-example', 'n_clicks')]
-# )
-# def load_example_data(n_clicks):
-#     if n_clicks:
-
-
-
 @app.callback(
     [Output('enrichment-btns', 'style'),
      Output('enrichment-options', 'options'),

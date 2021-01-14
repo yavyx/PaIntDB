@@ -29,8 +29,9 @@ data_upload_tab = dbc.Card(
                 '   - Zero-order: Maps direct interactions between the queried genes. '
                 'Recommended for long lists (>200 genes).\n'
                 '   - First-order: Uses your queried genes as "seed" genes and finds any interaction between them '
-                'and the other genes in the database. Recommended for short lists (<200 genes).\n'
-                '- Interaction detection method:\n'
+                'and the other genes in the database. Recommended for short lists (<200 genes). Warning: When used '
+                'with longer lists this option results in very large networks and performance is very slow.\n'
+                '- Interaction detection method:\n' 
                 '   - All: includes interactions predicted computationally.\n'
                 '   - Experimental:  only includes interactions verified experimentally, resulting in smaller '
                 'networks.\n'
@@ -111,7 +112,7 @@ layout = html.Div(
                 ),
             ],
             style={'margin': '10px',
-                   'backgroundColor': '#d1d1d1'}
+                   'backgroundColor': '#a6edff'}
         )
     ]
 )
