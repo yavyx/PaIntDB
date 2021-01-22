@@ -49,7 +49,7 @@ layout = html.Div(
                 ),
                 dcc.Markdown('PaIntDB is being developed by the [Hancock Laboratory](http://cmdr.ubc.ca/bobh/) at the ' 
                              'University of British Columbia.\n\nFunding is currently provided by the Canadian '
-                             'Institutes for Health Research FDN-154287.',
+                             'Institutes of Health Research FDN-154287.',
                              style={'margin-top': '10px'})
             ],
             style={'font-size': '14px',

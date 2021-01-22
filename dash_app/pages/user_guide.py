@@ -97,6 +97,32 @@ explore_tab = dbc.Card(
     style={'background-color': '#ededed'}
 )
 
+gallery_tab = dbc.Card(
+    dbc.CardBody(
+        [
+            dbc.Row([
+                dbc.Col([
+                    html.Img(src=app.get_asset_url('Fig_9_biofilm_regulation (2).png'))
+                ],
+                    width=3),
+                dbc.Col([
+                    html.Img()
+                ],
+                    width=3),
+                dbc.Col([
+                    html.Img()
+                ],
+                    width=3),
+                dbc.Col([
+                    html.Img()
+                ],
+                    width=3)
+            ])
+        ]
+    ),
+    style={'background-color': '#ededed'}
+)
+
 
 layout = html.Div(
     [
@@ -107,6 +133,7 @@ layout = html.Div(
                     [
                         dbc.Tab(data_upload_tab, label='Build Network'),
                         dbc.Tab(explore_tab, label='Explore Network'),
+                        dbc.Tab(gallery_tab, label='Gallery'),
                     ],
 
                 ),
