@@ -104,7 +104,8 @@ gallery_tab = dbc.Card(
         [
             dbc.Row(
                 dbc.Col('Here are some examples of subnetworks that can be created with PaIntDB using its filtering '
-                        'system. The user-selected genes are connected using the using the smallest number '
+                        'system. These networks were made using the example data to integrate genes identified through '
+                        'RNA-Seq and Tn-Seq. The user-selected genes are connected using the using the smallest number '
                         'of additional nodes possible. The image title indicates the filter used.',
                         width=9)
             ),
@@ -112,9 +113,12 @@ gallery_tab = dbc.Card(
             dbc.Row([
                 dbc.Col(
                     [
-                        html.P('Legends', style=text_style),
-                        html.Img(src=app.get_asset_url('sig_source_legend.svg'), width='100%'),
-                        html.Img(src=app.get_asset_url('de_legend.svg'), width='100%', style={'padding-top': '5px'})
+                        # html.P('Legends', style=text_style),
+                        html.P('Experiment', style=text_style),
+                        html.Img(src=app.get_asset_url('sig_source_legend.svg'), width='100%',
+                                 style={'padding-bottom': '10px'}),
+                        html.P('Regulation', style=text_style),
+                        html.Img(src=app.get_asset_url('de_legend.svg'), width='100%')
                     ],
                     width=1),
                 dbc.Col(
