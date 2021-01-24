@@ -97,26 +97,52 @@ explore_tab = dbc.Card(
     style={'background-color': '#ededed'}
 )
 
+text_style = {'text-align': 'center', 'font-weight': 'bold'}
+
 gallery_tab = dbc.Card(
     dbc.CardBody(
         [
+            dbc.Row(
+                dbc.Col('Here are some examples of subnetworks that can be created with PaIntDB using its filtering '
+                        'system. The user-selected genes are connected using the using the smallest number '
+                        'of additional nodes possible. The image title indicates the filter used.',
+                        width=9)
+            ),
+            html.Br(),
             dbc.Row([
-                dbc.Col([
-                    html.Img(src=app.get_asset_url('Fig_9_biofilm_regulation (2).png'))
-                ],
-                    width=3),
-                dbc.Col([
-                    html.Img()
-                ],
-                    width=3),
-                dbc.Col([
-                    html.Img()
-                ],
-                    width=3),
-                dbc.Col([
-                    html.Img()
-                ],
-                    width=3)
+                dbc.Col(
+                    [
+                        html.P('Legends', style=text_style),
+                        html.Img(src=app.get_asset_url('sig_source_legend.svg'), width='100%'),
+                        html.Img(src=app.get_asset_url('de_legend.svg'), width='100%', style={'padding-top': '5px'})
+                    ],
+                    width=1),
+                dbc.Col(
+                    [
+                        html.P('GO term: Protein Secretion', style=text_style),
+                        html.Img(src=app.get_asset_url('protein_secretion_network.png'), width='100%')
+                    ],
+                    width=4),
+                dbc.Col(
+                    [
+                        html.P('Experiment: Tn-Seq', style=text_style),
+                        html.Img(src=app.get_asset_url('tn_seq_network.png'), width='100%')
+                    ],
+                    width=5),
+            ]),
+            dbc.Row([
+                dbc.Col(
+                    [
+                        html.P('Localization: Outer Membrane Vesicle', style=text_style),
+                        html.Img(src=app.get_asset_url('outer_membrane_vesicle.png'), width='100%')
+                    ],
+                    width=5),
+                dbc.Col(
+                    [
+                        html.P('Localization: Cytoplasmic Membrane', style=text_style),
+                        html.Img(src=app.get_asset_url('membrane_network.png'), width='100%')
+                    ],
+                    width=5)
             ])
         ]
     ),
