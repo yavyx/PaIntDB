@@ -479,7 +479,7 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
             if network_type == 'combined':
                 # Set TnSeq prizes to the max prize
                 terminal_prizes.loc[network_df['significanceSource'] == 'TnSeq', :] = terminal_prizes['prize'].max()
-        terminal_prizes.to_csv(os.path.join('temp_data', 'node_prizes.tsv'), sep='\t')
+        terminal_prizes.to_csv('node_prizes.tsv', sep='\t')
 
     network = nx.node_link_graph(json.loads(json_str_network))
     # Make Graph object for prize-collecting Steiner forest (PCSF)
@@ -488,8 +488,8 @@ def make_subnetwork(queried_nodes, network_df, json_str_network, strain, network
                    'g': 0}  # g = 0 = disable degree cost correction
                   )
     make_prize_file(network_df, queried_nodes, network_type)
-    graph.prepare_prizes(os.path.join('temp_data', 'node_prizes.tsv'))
-    os.remove(os.path.join('temp_data', 'node_prizes.tsv'))  # Delete prize file (not needed anymore after running PCSF)
+    graph.prepare_prizes('node_prizes.tsv')
+    os.remove('node_prizes.tsv')  # Delete prize file (not needed anymore after running PCSF)
     vertex_indices, edge_indices = graph.pcsf()
     forest, augmented_forest = graph.output_forest_as_networkx(vertex_indices, edge_indices)
     # Include low confidence edges if selected by the user
