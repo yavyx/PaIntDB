@@ -103,17 +103,21 @@ gallery_tab = dbc.Card(
     dbc.CardBody(
         [
             dbc.Row(
-                dbc.Col('Here are some examples of subnetworks that can be created with PaIntDB using its filtering '
-                        'system. These networks were made using the example data to integrate genes identified through '
-                        'RNA-Seq and Tn-Seq. The user-selected genes are connected using the using the smallest number '
-                        'of additional nodes possible. The image title indicates the filter used.',
-                        width=9)
+                dbc.Col(
+                    dcc.Markdown(
+                        'Here are some examples of subnetworks that can be created with PaIntDB using its filtering '
+                        'system. These networks were made using the example data of differentially-expressed genes '
+                        'identified through RNA-Seq in a *P. aeruginosa* PAO1 relA/spoT knockout mutant vs. wild type. '
+                        'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
+                        'RNA-Seq/Tn-Seq integration works. The selected genes are '
+                        'connected using the using the smallest number of additional nodes possible to generate the '
+                        'subnetworks. The image title indicates the filter used.'),
+                    width=10)
             ),
             html.Br(),
             dbc.Row([
                 dbc.Col(
                     [
-                        # html.P('Legends', style=text_style),
                         html.P('Experiment', style=text_style),
                         html.Img(src=app.get_asset_url('sig_source_legend.svg'), width='100%',
                                  style={'padding-bottom': '10px'}),

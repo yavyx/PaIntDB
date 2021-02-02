@@ -11,9 +11,16 @@ layout = html.Div(
                 html.H1('About'),
                 html.Hr(),
                 dcc.Markdown(
+                    'PaIntDB is a tool to aid in the interpretation and visualization of high-throughput omics results '
+                    'and the generation of new hypotheses implied by your data.'
                     'PaIntDB contains more than 157,000 protein-protein and protein-metabolite interactions in '
                     '*Pseudomonas aeruginosa* strains PAO1 and PA14, compiled from various sources, including '
                     'interactions derived from orthologous proteins in *E. coli*.\n\n'
+                    'The example data is a set of differentially-expressed genes identified through RNA-Seq in a '
+                    '*P. aeruginosa* PAO1 relA/spoT knockout mutant vs. wild type. '
+                    'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
+                    'RNA-Seq/Tn-Seq integration works.\n\n'
+                    'For the best experience we recommend using Chrome or Firefox.'
                     'The source code and database file are available in [Github](https://github.com/yavyx/PaIntDB).\n'
                     'If you encounter any bugs, please open an issue in Github.\n\n'
                     'List of compiled interaction databases and studies:\n'

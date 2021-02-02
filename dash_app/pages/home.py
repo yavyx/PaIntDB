@@ -19,9 +19,8 @@ layout = html.Div(
                     '*Pseudomonas aeruginosa* strains PAO1 and PA14.\n\n'
                     'It takes a list of significant genes identified through high-throughput experiments, maps the '
                     'interactions between them and returns a protein-protein interaction network that can be explored '
-                    'visually and filtered '
-                    'to find putative biological pathways and co-expressed genes related to your conditions of '
-                    ' study.\n\n',
+                    'visually and filtered to find putative biological pathways and co-expressed genes related to your '
+                    'conditions of study.\n\n',
                     style={'width': '60vw',
                            'font-size': '20px'}
                 ),
