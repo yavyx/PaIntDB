@@ -38,7 +38,7 @@ layout = html.Div(
                     'If you use PaIntDB to analyze your data please cite this publication:\n\n'
                     'Castillo-Arnemann JJ, Solodova O, Dhillon BK, Hancock REW (2021). PaIntDB: Network-based omics integration'
                     ' and visualization using protein-protein interactions in *Pseudomonas aeruginosa*. *Bioinformatics*.'
-                    ' doi: [10.1093/bioinformatics/btab363](10.1093/bioinformatics/btab363)\n\n'
+                    ' doi: [10.1093/bioinformatics/btab363](https://pubmed.ncbi.nlm.nih.gov/33978706/)\n\n'
                     'The example data is a set of differentially-expressed genes identified through RNA-Seq in a '
                     '*P. aeruginosa* PAO1 relA/spoT knockout mutant vs. wild type. '
                     'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
