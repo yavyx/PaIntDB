@@ -12,17 +12,12 @@ layout = html.Div(
                 html.Hr(),
                 dcc.Markdown(
                     'PaIntDB is a tool to aid in the interpretation and visualization of high-throughput omics results '
-                    'and the generation of new hypotheses implied by your data.'
-                    'PaIntDB contains more than 157,000 protein-protein and protein-metabolite interactions in '
-                    '*Pseudomonas aeruginosa* strains PAO1 and PA14, compiled from various sources, including '
-                    'interactions derived from orthologous proteins in *E. coli*.\n\n'
-                    'The example data is a set of differentially-expressed genes identified through RNA-Seq in a '
-                    '*P. aeruginosa* PAO1 relA/spoT knockout mutant vs. wild type. '
-                    'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
-                    'RNA-Seq/Tn-Seq integration works.\n\n'
-                    'For the best experience we recommend using Chrome or Firefox.'
-                    'The source code and database file are available in [Github](https://github.com/yavyx/PaIntDB).\n'
-                    'If you encounter any bugs, please open an issue in Github.\n\n'
+                    'and the generation of new hypotheses implied by your data. It takes a list of genes with optional '
+                    'expression data and maps the interactions between them using our database of more than '
+                    '157,000 protein-protein interactions (PPI) in '
+                    '*Pseudomonas aeruginosa* strains PAO1 and PA14 that was compiled from various sources, including '
+                    'interactions derived from orthologous proteins in *E. coli*. You can visualize, explore and filter '
+                    'the resulting PPI networks to find interesting groups of genes involved in the conditions of study.\n\n'
                     'List of compiled interaction databases and studies:\n'
                     '[APID](http://cicblade.dep.usal.es:8080/APID/init.action), '
                     '[BindingDB](https://www.bindingdb.org/bind/index.jsp), '
@@ -39,7 +34,18 @@ layout = html.Div(
                     '[RegulonDB](http://regulondb.ccg.unam.mx/), '
                     '[UniProt](https://www.uniprot.org/), '
                     '[XLinkDB](http://xlinkdb.gs.washington.edu/xlinkdb/), '
-                    '[Zhang (2012)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3404098/).',
+                    '[Zhang (2012)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3404098/).\n\n'
+                    'If you use PaIntDB to analyze your data please cite this publication:\n\n'
+                    'Castillo-Arnemann JJ, Solodova O, Dhillon BK, Hancock REW (2021). PaIntDB: Network-based omics integration'
+                    ' and visualization using protein-protein interactions in *Pseudomonas aeruginosa*. *Bioinformatics*.'
+                    ' doi: [10.1093/bioinformatics/btab363](10.1093/bioinformatics/btab363)\n\n'
+                    'The example data is a set of differentially-expressed genes identified through RNA-Seq in a '
+                    '*P. aeruginosa* PAO1 relA/spoT knockout mutant vs. wild type. '
+                    'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
+                    'RNA-Seq/Tn-Seq integration works.\n\n'
+                    'For the best experience we recommend using Chrome or Firefox.'
+                    'The source code and database file are available in [Github](https://github.com/yavyx/PaIntDB).\n'
+                    'If you encounter any bugs, please open an issue in Github.\n\n',
                     style={'width': '60vw',
                            'font-size': '20px'}
                 )

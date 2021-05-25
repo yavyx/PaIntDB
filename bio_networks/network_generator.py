@@ -10,8 +10,7 @@ DB_PATH = 'PaIntDB.db'
 
 
 class BioNetwork:
-    """Creates NetworkX networks with additional biological attributes for use with PaintDB.
-    Detection method key: """
+    """Creates NetworkX networks with additional biological attributes for use with PaintDB."""
 
     def __init__(self, gene_list, strain, order, detection_method, metabolites=False):
         self.strain = strain

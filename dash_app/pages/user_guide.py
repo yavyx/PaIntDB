@@ -45,7 +45,7 @@ data_upload_tab = dbc.Card(
                 style={'width': '70vw',
                        'font-size': '16px'}
             ),
-        ]
+        ],
     ),
     style={'background-color': '#ededed'}
 )
@@ -111,8 +111,8 @@ gallery_tab = dbc.Card(
                         'The Tn-Seq example data is a random subset of genes, used to illustrate how the '
                         'RNA-Seq/Tn-Seq integration works. The selected genes are '
                         'connected using the using the smallest number of additional nodes possible to generate the '
-                        'subnetworks. The image title indicates the filter used.'),
-                    width=10)
+                        'subnetworks. The image title indicates the filter used.')
+                ),
             ),
             html.Br(),
             dbc.Row([
@@ -137,7 +137,9 @@ gallery_tab = dbc.Card(
                         html.Img(src=app.get_asset_url('tn_seq_network.png'), width='100%')
                     ],
                     width=5),
-            ]),
+            ],
+                justify='center'
+            ),
             dbc.Row([
                 dbc.Col(
                     [
@@ -151,7 +153,9 @@ gallery_tab = dbc.Card(
                         html.Img(src=app.get_asset_url('membrane_network.png'), width='100%')
                     ],
                     width=5)
-            ])
+            ],
+                justify='center'
+            )
         ]
     ),
     style={'background-color': '#ededed'}
@@ -169,7 +173,6 @@ layout = html.Div(
                         dbc.Tab(explore_tab, label='Explore Network'),
                         dbc.Tab(gallery_tab, label='Gallery'),
                     ],
-
                 ),
             ],
             style={'margin': '10px',
