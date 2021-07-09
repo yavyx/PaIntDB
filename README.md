@@ -5,6 +5,10 @@ PaIntDB contains more than 150K protein-protein (PPI) and protein-metabolite int
 the integration and visualization of high-throughput (proteomics, RNASeq and/or TnSeq) experimental results, using a 
 list of genes as input and mapping them onto a network using the PPI data. It is available at www.paintdb.ca.
 
+If you use PaIntDB to analyze your data, please cite:
+
+Castillo-Arnemann JJ, Solodova O, Dhillon BK, Hancock REW (2021). PaIntDB: Network-based omics integration and visualization using protein-protein interactions in *Pseudomonas aeruginosa*. Bioinformatics. doi: [10.1093/bioinformatics/btab363](https://pubmed.ncbi.nlm.nih.gov/33978706/)
+
 You need Python 3 and `pip` installed to install and run the application locally. To install the app on Windows, you also need Microsoft Visual C++ Build Tools, this is a good [installation tutorial](https://www.scivision.co/python-windows-visual-c-14-required/).
 
 ## Installation
