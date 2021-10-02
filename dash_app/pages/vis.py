@@ -438,7 +438,7 @@ def select_nodes(values, subnetwork_clicks, low_confidence, extra_genes, node_de
     if subnetwork_clicks:
         cyto_sub_network, json_sub_network = make_subnetwork(queried_nodes, network_df, bio_network, strain,
                                                              network_type, low_confidence, extra_genes)
-        # Throws warning if subnetwork sub_network is empty.
+        # Throws warning if subnetwork is empty.
         if json_sub_network is None:
             selected_msg = dbc.Alert('Could not compute subnetwork using the selected nodes. Try selecting more nodes.',
                                      color='warning')
@@ -450,7 +450,7 @@ def select_nodes(values, subnetwork_clicks, low_confidence, extra_genes, node_de
         return {'display': 'none'}, {'display': 'block'}, cyto_sub_network, json_sub_network, selected_msg, \
                btn_display
     # Return full network
-    return {'display': 'block'}, {'display': 'none'}, cyto_network, no_update, selected_msg, btn_display
+    return {'display': 'block'}, {'display': 'none'}, cyto_network, bio_network, selected_msg, btn_display
 
 
 @app.callback(
@@ -627,7 +627,7 @@ def download_nodes_csv(n_clicks, json_df):
     Input('download-network', 'n_clicks'),
     State('hidden-subnetwork', 'children')
 )
-def download_sub_graphml(n_clicks, json_str_sub_network):
+def download_graphml(n_clicks, json_str_sub_network):
     if n_clicks:
         downloads_dir = os.path.join(os.getcwd(), 'downloads')
         if not os.path.exists(downloads_dir):
